@@ -535,7 +535,14 @@ final class StartupHandler {
         log.verbose("[Remount] Volume is already mounted: remountURL=\(volRemountURLString.pii.quoted)")
         return true
       } else {
-        // Try first bookmark found. Maybe it will trigger auto-mount. Needs testing!
+        guard Preference.bool(for: .remountVolumesOnRestore) else {
+          log.verbose("[Remount] Remount on restore disabled; skipping remountURL=\(volRemountURLString.pii.quoted)")
+          return false
+        }
+
+        // Try first bookmark found. The resolution process will trigger remount of the volume, even if the resource
+        // ultimately isn't found on it. This method seems better than using `NSWorkspace.shared.open(remountURL)`,
+        // because the latter always prompts the user with an authentication dialog even if stored credentials exist.
         log.verbose("[Remount] Trying to load first bookmark from remountURL=\(volRemountURLString.pii.quoted)…")
         let firstItemBookmark = relatedItems[0].bookmark
         if PlaybackID.url(fromBookmark: firstItemBookmark, log) != nil {
@@ -543,18 +550,13 @@ final class StartupHandler {
           return true
         }
 
-        guard Preference.bool(for: .remountVolumesOnRestore) else {
-          log.verbose("[Remount] Remount on restore disabled; skipping remountURL=\(volRemountURLString.pii.quoted)")
-          return false
+        // Bookmark resolution failed for file. But did it mount the volume?
+        if isMounted(remountURL: remountURL) {
+          log.verbose("[Remount] Volume was successful mounted by restoring bookmark: remountURL=\(volRemountURLString.pii.quoted)")
+          return true
         }
 
-        log.verbose("[Remount] Volume not mounted; attempting to remount: \(volRemountURLString.pii.quoted)")
-        if NSWorkspace.shared.open(remountURL) {
-          log.verbose("[Remount] Successfully remounted volume: \(volRemountURLString.pii.quoted)")
-          return true
-        } else {
-          log.error("[Remount] Failed to remount volume: \(volRemountURLString.pii.quoted)")
-        }
+        log.error("[Remount] Failed to remount volume: \(volRemountURLString.pii.quoted)")
       }
     } else {
       log.error("[Remount] Failed to build URL from volume remount string: \(volRemountURLString.pii.quoted)")
