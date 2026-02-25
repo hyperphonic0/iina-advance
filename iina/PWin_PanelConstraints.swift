@@ -409,6 +409,7 @@ extension PlayerWindowController {
       // Sidebars (if closing)
       animateShowOrHideSidebars(from: transition.inputGeometry,
                                 to: stageGeo,
+                                outputLayout: transition.outputLayout,
                                 isInitialLayout: transition.isWindowInitialLayout, log)
 
       if sidebarUpdateGeo == nil {
@@ -460,6 +461,7 @@ extension PlayerWindowController {
       // Sidebars (if opening)
       animateShowOrHideSidebars(from: transition.geometry(for: .midTransitionHiddenUpdates),
                                 to: transition.outputGeometry,
+                                outputLayout: transition.outputLayout,
                                 isInitialLayout: transition.isWindowInitialLayout, log)
 
       sidebarUpdateGeo = sidebarUpdateGeo ?? stageGeo

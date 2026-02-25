@@ -40,6 +40,9 @@ class CustomTitleBarViewController: NSViewController {
     self.pwc = pwc
 
     super.init(nibName: nil, bundle: nil)
+    leadingSidebarToggleButton.isHidden = !layout.leadingSidebarToggleButton.isShowable
+    trailingSidebarToggleButton.isHidden = !layout.trailingSidebarToggleButton.isShowable
+    onTopButton.isHidden =  !layout.computeOnTopButtonVisibility(isOnTop: pwc.isOnTop).isShowable
   }
   
   required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -346,7 +349,6 @@ final class CustomTitleBar {
     button.action = action
     button.identifier = .init(identifier)
     button.refusesFirstResponder = true
-    button.isHidden = true
     // Avoid expanding in size, even if there is extra space.
     // Use `defaultHigh` instead of `required`: this looks like it helps prevent title bar buttons from getting slightly clipped
     button.setContentHuggingPriority(.defaultHigh, for: .horizontal)

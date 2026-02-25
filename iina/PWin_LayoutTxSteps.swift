@@ -827,16 +827,17 @@ extension PlayerWindowController {
       topBar.view.appearance = topBarAppearance
       topBar.updateAppearance(windowAppearance: topBarAppearance)
 
+      let colorScheme = outputLayout.topBarColorScheme
       // Top bar control colors. Do this after applying theme!
       if outputLayout.leadingSidebarToggleButton.isShowable {
-        leadingSidebarToggleButton.setColors(for: .visualEffectView)
+        leadingSidebarToggleButton.setColors(for: colorScheme)
         leadingSidebarToggleButton.needsDisplay = true
       }
       if outputLayout.trailingSidebarToggleButton.isShowable {
-        trailingSidebarToggleButton.setColors(for: .visualEffectView)
+        trailingSidebarToggleButton.setColors(for: colorScheme)
         trailingSidebarToggleButton.needsDisplay = true
       }
-      onTopButton.setColors(for: .visualEffectView)
+      onTopButton.setColors(for: colorScheme)
       onTopButton.needsDisplay = true
     }
 

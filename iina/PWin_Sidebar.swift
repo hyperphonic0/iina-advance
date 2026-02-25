@@ -480,6 +480,7 @@ extension PlayerWindowController {
   /// Do not call directly. Will be called by `LayoutTransition` via animation tasks.
   func animateShowOrHideSidebars(from geo0: PWinGeometry,
                                  to geo1: PWinGeometry,
+                                 outputLayout: LayoutState,
                                  isInitialLayout: Bool, _ log: any Logger.Subsystem) {
     let leadingOpen0 = geo0.isLeadingSidebarShown
     let leadingOpen1 = geo1.isLeadingSidebarShown
@@ -487,6 +488,11 @@ extension PlayerWindowController {
     let trailingOpen1 = geo1.isTrailingSidebarShown
     let leadingVisible: Bool? = isInitialLayout && leadingOpen1 ? true : (leadingOpen0 == leadingOpen1 ? nil : leadingOpen1)
     let trailingVisible: Bool? = isInitialLayout && trailingOpen1 ? true : (trailingOpen0 == trailingOpen1 ? nil : trailingOpen1)
+
+    defer {
+      trailingSidebarConstraints?.top.animateToConstant(topOffsetFromViewport(outputLayout))
+      leadingSidebarConstraints?.top.animateToConstant(topOffsetFromViewport(outputLayout))
+    }
 
     guard leadingVisible != nil || trailingVisible != nil else { return }
 
@@ -582,8 +588,7 @@ extension PlayerWindowController {
       equalTo: boundaryView.leadingAnchor, constant: coefficients.1 * sidebarWidth)
     viewportLeadingOffsetFromTrailing.identifier = "ViewportLeading-LeadingSidebar-Trailing"
 
-    // When using GlassEffectView, there is 1px border around the inside of the frame, which looks bad when topBar==`outside`. Clip it out:
-    let topConstraint = leadingSidebarView.topAnchor.constraint(equalTo: viewportView.topAnchor, constant: -2)
+    let topConstraint = leadingSidebarView.topAnchor.constraint(equalTo: viewportView.topAnchor, constant: topOffsetFromViewport(layout))
     let bottomConstraint = viewportView.bottomAnchor.constraint(equalTo: leadingSidebarView.bottomAnchor)
 
     assert(coefficients.2 * sidebarWidth == 0,
@@ -601,6 +606,11 @@ extension PlayerWindowController {
       log.verbose("Adding tabGroup \(tabGroupToShow.rawValue.quoted) to \(leadingSidebar.locationID), placement=\(leadingSidebar.placement)")
       addTabGroupView(for: tabGroupToShow, to: tabContainerView, effectiveAppearance: window!.contentView!.effectiveAppearance)
     }
+  }
+
+  /// When using GlassEffectView, there is 1px border around the inside of the frame, which looks bad when topBar==`outside`. Clip it out.
+  private func topOffsetFromViewport(_ layout: LayoutState) -> CGFloat {
+    layout.topBarPlacement == .outsideViewport ? -2 : 0
   }
 
   /**
@@ -712,7 +722,7 @@ extension PlayerWindowController {
     trailingCon.identifier = "ViewportTrailing-TrailingSidebar-Trailing"
 
     // When using GlassEffectView, there is 1px border around the inside of the frame, which looks bad when topBar==`outside`. Clip it out:
-    let topConstraint = trailingSidebarView.topAnchor.constraint(equalTo: viewportView.topAnchor, constant: -2)
+    let topConstraint = trailingSidebarView.topAnchor.constraint(equalTo: viewportView.topAnchor, constant: topOffsetFromViewport(layout))
     let bottomConstraint = viewportView.bottomAnchor.constraint(equalTo: trailingSidebarView.bottomAnchor)
 
     assert(panelConstraints.vpTrailingOffsetFromCVTrailing.constraint != nil)

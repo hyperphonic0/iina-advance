@@ -484,6 +484,7 @@ struct Constants {
   static let oscClearBG_TextShadowBlurRadius_Multiplier: CGFloat = 0.02
   static let clarLiquidGlass_TextShadowOffsetX: CGFloat = 0.4
   static let clarLiquidGlass_TextShadowOffsetY: CGFloat = 0.4
+  static let clarLiquidGlass_ButtonShadowBlurRadius: CGFloat = 1.6
   // See also: Constants.Slider.shadowBlurRadius
 
   // - Title Bar

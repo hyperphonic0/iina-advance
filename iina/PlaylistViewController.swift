@@ -765,9 +765,6 @@ extension PlaylistViewController: NSTableViewDelegate {
     if tableView == playlistTableView {  // Playlist table
                                          // use cached value
       let isPlaying = self.lastNowPlayingIndex == row
-      if isPlaying {
-        Logger.log("IS PLAYING")
-      }
 
       switch identifier {
       case .isChosen:

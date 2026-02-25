@@ -28,6 +28,8 @@ class TwoRowBarOSCView: ClickThroughView {
   static let id = "OSC_2RowView"
   static let hStackViewID = "\(TwoRowBarOSCView.id)-HStackView"
 
+  private var oscPosition: Preference.OSCPosition? = nil
+
   // - Various views
 
   let hStackView = ClickThroughStackView()
@@ -128,27 +130,32 @@ class TwoRowBarOSCView: ClickThroughView {
       playSliderTypeView.addConstraintsToFillSuperview(top: 0, leading: oscGeo.leadingSpace_Row1,
                                                        trailing: oscGeo.trailingSpace_Row1)
 
-      hStackView_HeightConstraint.createOrReplace(to: 0, priorityInt: 1, pwc.log) { [self] c in
-        hStackView.topAnchor.constraint(equalTo: bottomAnchor, constant: c)
-      }
+      if oscPosition != .bottom {
+        hStackView_HeightConstraint.createOrReplace(to: 0, priorityInt: 1, pwc.log) { [self] c in
+          hStackView.topAnchor.constraint(equalTo: bottomAnchor, constant: c)
+        }
 
-      hStackView_BottomMarginConstraint.createOrReplace(to: 0, priorityInt: 1, pwc.log) { [self] c in
-        bottomAnchor.constraint(equalTo: hStackView.bottomAnchor, constant: c)
+        hStackView_BottomMarginConstraint.createOrReplace(to: 0, priorityInt: 1, pwc.log) { [self] c in
+          bottomAnchor.constraint(equalTo: hStackView.bottomAnchor, constant: c)
+        }
       }
     case .top:
       playSliderTypeView.addConstraintsToFillSuperview(bottom: 0, leading: oscGeo.leadingSpace_Row1,
                                                        trailing: oscGeo.trailingSpace_Row1)
 
-      hStackView_HeightConstraint.createOrReplace(to: 0, priorityInt: 1, pwc.log) { [self] c in
-        topAnchor.constraint(equalTo: hStackView.bottomAnchor, constant: c)
-      }
+      if oscPosition != .top {
+        hStackView_HeightConstraint.createOrReplace(to: 0, priorityInt: 1, pwc.log) { [self] c in
+          topAnchor.constraint(equalTo: hStackView.bottomAnchor, constant: c)
+        }
 
-      hStackView_BottomMarginConstraint.createOrReplace(to: 0, priorityInt: 1, pwc.log) { [self] c in
-        hStackView.topAnchor.constraint(equalTo: topAnchor, constant: c)
+        hStackView_BottomMarginConstraint.createOrReplace(to: 0, priorityInt: 1, pwc.log) { [self] c in
+          hStackView.topAnchor.constraint(equalTo: topAnchor, constant: c)
+        }
       }
     default:
       Logger.fatal("Unsupported position for TwoRowBarOSCView: \(oscGeo.position.description)")
     }
+    oscPosition = oscGeo.position
 
     let bottomMargin = ControlBarGeometry.twoRowOSC_BottomMargin(playSliderHeight: oscGeo.playSliderHeight)
     let hStackViewHeight = oscGeo.fullIconHeight + bottomMargin
