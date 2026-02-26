@@ -430,22 +430,22 @@ extension PlayerWindowController {
 
     // - Bottom Bar
 
-    // Unclear why bottomBarView sometimes fails to update its appearance along with the other views.
+    // Unclear why bottomBar.view sometimes fails to update its appearance along with the other views.
     // Workaround: force redraw when appearanceDidChange
     let needsBottomBarUpdate = transition.isWindowInitialLayout || transition.isBottomBarPlacementOrStyleChanging || appearanceDidChange
     if needsBottomBarUpdate {
-      rebuildBottomBarView(colorScheme: transition.outputLayout.oscColorScheme)
+      bottomBar.rebuildBottomBarView(colorScheme: transition.outputLayout.oscColorScheme, log)
       // Just add the new view now. It will have its Z order corrected in `rebuildPanelConstraints`.
-      window.contentView!.addSubview(bottomBarView)
+      window.contentView!.addSubview(bottomBar.view)
     }
 
     /// Show dividing line only for `.outsideViewport` bottom bar. Don't show in music mode as it doesn't look good
     let showBottomBarTopBorder = (outputLayout.bottomBarPlacement == .outsideViewport) || (outputLayout.hasBottomOSC && (outputLayout.oscColorScheme == .visualEffectView))
-    bottomBarTopBorder.isHidden = !showBottomBarTopBorder
+    bottomBar.topBorder.isHidden = !showBottomBarTopBorder
 
     /// These should all be either 0 height or unchanged from `transition.inputLayout`.
     /// But may need to add or remove from fadeableViews
-    fadeableViews.applyVisibility(outputLayout.bottomBarView, to: bottomBarView)
+    fadeableViews.applyVisibility(outputLayout.bottomBarView, to: bottomBar.view)
 
     osd.rebuildOSDView()
     osd.rebuildAdditionalInfoView()
@@ -536,10 +536,10 @@ extension PlayerWindowController {
     miniPlayer.loadIfNeeded()
     pip.showOrHidePipOverlayView()
 
-    if transition.isEnteringMusicMode || (transition.isWindowInitialLayout && transition.outputLayout.isMusicMode) {
+    if transition.outputLayout.isMusicMode && (!bottomBar.view.subviews.contains(miniPlayer.view) || transition.isWindowInitialLayout || !transition.inputLayout.isMusicMode) {
       // If initial layout, bottomBar has been rebuilt, so we need to repopulate it
-      log.verbose("Entering music mode: adding miniPlayer view to bottomBarView")
-      bottomBarView.addSubview(miniPlayer.view, positioned: .below, relativeTo: bottomBarTopBorder)
+      log.verbose("Adding miniPlayer view to bottomBar.view")
+      bottomBar.view.addSubview(miniPlayer.view, positioned: .below, relativeTo: bottomBar.topBorder)
       miniPlayer.view.addAllConstraintsToFillSuperview()
 
       // Now confiure various subviews
@@ -635,7 +635,7 @@ extension PlayerWindowController {
         }
 
       case .bottom:
-        currentControlBar = bottomBarView
+        currentControlBar = bottomBar.view
 
         let oscContentView: NSView
         if newGeo.isTwoRowBarOSC {
@@ -648,9 +648,9 @@ extension PlayerWindowController {
           oscOneRowView.updateSubviews(from: self, newGeo)
         }
 
-        if !bottomBarView.subviews.contains(oscContentView) {
-          log.verbose("Adding \(oscContentView.idString) to bottomBarView")
-          bottomBarView.addSubview(oscContentView, positioned: .below, relativeTo: bottomBarTopBorder)
+        if !bottomBar.view.subviews.contains(oscContentView) {
+          log.verbose("Adding \(oscContentView.idString) to bottomBar.view")
+          bottomBar.view.addSubview(oscContentView, positioned: .below, relativeTo: bottomBar.topBorder)
           // Match leading/trailing spacing of title bar icons above
           oscContentView.addConstraintsToFillSuperview(top: 0, bottom: 0,
                                                        leading: Constants.titleBarIconHSpacing,
@@ -776,7 +776,7 @@ extension PlayerWindowController {
       let cropController = self.cropSettingsView ?? transition.outputLayout.interactiveMode!.viewController()
       cropController.pwc = self
       self.cropSettingsView = cropController
-      bottomBarView.addSubview(cropController.view, positioned: .below, relativeTo: bottomBarTopBorder)
+      bottomBar.view.addSubview(cropController.view, positioned: .below, relativeTo: bottomBar.topBorder)
       cropController.view.addAllConstraintsToFillSuperview()
       cropController.view.alphaValue = 0
       let videoSizeRaw = transition.outputGeometry.video.videoSizeRaw
@@ -1532,7 +1532,7 @@ extension PlayerWindowController {
     }
 
     if outputLayout.bottomBarHeight > 0 {
-      if let bottomBarView = bottomBarView as? NSVisualEffectView {
+      if let bottomBarView = bottomBar.view as? NSVisualEffectView {
         // Full screen + "behindWindow" doesn't blend properly and looks ugly
         if outputLayout.bottomBarPlacement == .insideViewport || outputLayout.isFullScreen {
           bottomBarView.blendingMode = .withinWindow

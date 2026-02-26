@@ -39,7 +39,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
 
   /// The music player panel.
   ///
-  /// This is only shown while in music mode, and will be a subview of `bottomBarView`. It contains a "mini" OSC, and if configured, the
+  /// This is only shown while in music mode, and will be a subview of `bottomBar.view`. It contains a "mini" OSC, and if configured, the
   /// playlist.
   var miniPlayer: MiniPlayerViewController!
 
@@ -512,12 +512,10 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
   /// depending on configuration.
   let topBar = TopBar()
 
-  /// Control bar at bottom of window, if configured. May be `insideViewport` or `outsideViewport`.
-  /// Used to hold other views in music mode & interactive mode
-  var bottomBarView: NSView = BottomBarVisualEffectView()
-  /// Top border of `bottomBarView`.
-  let bottomBarTopBorder = BorderLineView(id: "BottomBar-TopBorder", fillColor: .titleBarBorder)
-
+  /// Bar at bottom of window, if configured. May be `insideViewport` or `outsideViewport`.
+  /// In windowed / full screen mode, this holds only the OSC. Used to hold other views in music mode & interactive mode
+  let bottomBar = BottomBar()
+  
   var leadingSidebarView: NSView = ClickThroughVisualEffectView()
   /// Shown if leading sidebar is "outside"
   let leadingSidebarTrailingBorder = BorderLineView(id: "LeadingSidebar-TrailingBorder", fillColor: .quaternaryLabelColor)

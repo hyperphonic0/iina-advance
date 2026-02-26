@@ -257,7 +257,8 @@ extension PlayerWindowController {
     }
 
     var isOSCStyleChanging: Bool {
-      (inputLayout.oscColorScheme != outputLayout.oscColorScheme)
+      guard outputLayout.hasControlBar else { return false }
+      return (inputLayout.oscColorScheme != outputLayout.oscColorScheme)
       || (inputLayout.controlBarGeo.isTwoRowBarOSC != outputLayout.controlBarGeo.isTwoRowBarOSC)
       || (inputLayout.controlBarGeo.timeLabelsWrapSlider != outputLayout.controlBarGeo.timeLabelsWrapSlider)
     }

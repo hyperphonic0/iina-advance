@@ -57,7 +57,7 @@ import Foundation
  ├────────────────────────────┴────────────────────────────┴──────────────────────────────┤ ─ ◄--- `geo.insideBars.bottom == 0`
  │ Bottom Bar (outside)                 ▲                                                 │
  │                                      │`geo.outsideBars.bottom`                         │  [€] = `viewportMargins.leading`
- │                                      ▼ (of `wc.bottomBarView`)                         │  [¥] = `viewportMargins.trailing`
+ │                                      ▼ (of `wc.bottomBar.view`)                         │  [¥] = `viewportMargins.trailing`
  └────────────────────────────────────────────────────────────────────────────────────────┘
  ```
  */

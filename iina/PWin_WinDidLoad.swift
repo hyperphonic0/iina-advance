@@ -252,45 +252,6 @@ extension PlayerWindowController {
     fragToolbarView.distribution = .fill
   }
 
-  /// The `bottomBarView` may need to be completely rebuilt if the style changes.
-  /// This also removes the previous `bottomBarView` from `contentView`.
-  func rebuildBottomBarView(colorScheme: Preference.PanelColorScheme) {
-    log.verbose("[Load] Rebuilding bottomBarView: style=\(colorScheme)")
-    bottomBarView.removeAllSubviews()
-    bottomBarView.removeFromSuperview()
-
-    let bottomBarView: NSView
-    switch colorScheme {
-    case .clearGradient:
-      bottomBarView = BottomBarGradientView()
-    case .clearGlass, .tintedGlass:
-      if #available(macOS 26.0, *) {
-        let desiredStyle: NSGlassEffectView.Style = colorScheme == .clearGlass ? .clear : .regular
-        bottomBarView = BottomBarGlassEffectView(desiredStyle)
-      } else {
-        fallthrough
-      }
-    default:
-      bottomBarView = BottomBarVisualEffectView()
-    }
-
-    bottomBarView.idString = "BottomBarView"  // helps with debug logging
-    bottomBarView.isHidden = true
-    bottomBarView.clipsToBounds = true  // for better animations when toggling OSC position/placement
-    bottomBarView.translatesAutoresizingMaskIntoConstraints = false
-
-    bottomBarView.addSubview(bottomBarTopBorder)
-    bottomBarTopBorder.addConstraintsToFillSuperview(top: 0, leading: 0, trailing: 0)
-    // Want to make a 0.5px border. But it seems that in some display modes, that is not only not possible,
-    // but it will trigger an auto-layout constraint error. So use defaultHigh and be prepared to accept a 1px border.
-    let bottomBarTopBorder_HeightConstraint = bottomBarTopBorder.bottomAnchor.constraint(equalTo: bottomBarView.topAnchor, constant: 0.5)
-    bottomBarTopBorder_HeightConstraint.identifier = "BottomBarTopBorder-HeightConstraint"
-    bottomBarTopBorder_HeightConstraint.priority = .defaultHigh
-    bottomBarTopBorder_HeightConstraint.isActive = true
-
-    self.bottomBarView = bottomBarView
-  }
-
   private func initExitMusicModeButton(in contentView: NSView) {
     contentView.addSubview(exitMusicModeButton)
     exitMusicModeButton.idString = "ExitMusicModeBtn"

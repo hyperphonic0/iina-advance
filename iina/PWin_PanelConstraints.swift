@@ -159,7 +159,7 @@ extension PlayerWindowController {
       let constant1 = stageGeo.bottomBarTopOffsetFromCVTop
       // Do not use "required" priority - can cause errors leaving music mode when video was hidden
       p.bottomBarTopOffsetFromCVTop.createOrUpdate(to: constant1, log) { [self] c in
-        bottomBarView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: c)
+        bottomBar.view.topAnchor.constraint(equalTo: contentView.topAnchor, constant: c)
       }
     } else {
       // Need to manually remove this one because it doesn't depend on viewportView, & thus won't get removed if/when viewport gets removed.
@@ -173,13 +173,13 @@ extension PlayerWindowController {
       log.verbose("BottomBar & Viewport: vpBtmOffsetFromTopOfBottomBar=\(Int(constant1)) bottomBarBtmOffsetFromVPBtm=\(Int(constant2))")
 
       p.vpBtmOffsetFromTopOfBottomBar.createOrUpdate(to: constant1, log) { [self] c in
-        viewportView.bottomAnchor.constraint(equalTo: bottomBarView.topAnchor, constant: c)
+        viewportView.bottomAnchor.constraint(equalTo: bottomBar.view.topAnchor, constant: c)
       }
 
       // In music mode, need to be lower priority than VideoView constraints. Otherwise live resize of window will break.
       // Leave as lower priority always - doesn't seem to hurt, and prevent conflicting constraints
       p.bottomBarBtmOffsetFromVPBtm.createOrUpdate(to: constant2, priorityInt: 260, log) { [self] c in
-        bottomBarView.bottomAnchor.constraint(equalTo: viewportView.bottomAnchor, constant: c)
+        bottomBar.view.bottomAnchor.constraint(equalTo: viewportView.bottomAnchor, constant: c)
       }
     }
 
@@ -200,7 +200,7 @@ extension PlayerWindowController {
       }
 
       p.bottomBarLeadingSpace.createOrUpdate(to: 0, requiredSecondAnchor: leadingSpacePartner, log) { [self] c in
-        bottomBarView.leadingAnchor.constraint(equalTo: leadingSpacePartner, constant: c)
+        bottomBar.view.leadingAnchor.constraint(equalTo: leadingSpacePartner, constant: c)
       }
 
       // - Trailing
@@ -213,14 +213,14 @@ extension PlayerWindowController {
       }
 
       p.bottomBarTrailingSpace.createOrUpdate(to: 0, requiredSecondAnchor: trailingSpacePartner, log) { [self] c in
-        bottomBarView.trailingAnchor.constraint(equalTo: trailingSpacePartner, constant: c)
+        bottomBar.view.trailingAnchor.constraint(equalTo: trailingSpacePartner, constant: c)
       }
 
       // enable for animations or if in music mode & neither playlist nor video is open
       if outputGeo.mode == .musicMode && !stage.isFinalStage && !outputGeo.isMusicModePlaylistShown && !outputGeo.isViewportShown {
         let constant1 = stageGeo.bottomBarBtmOffsetFromCVTop
         p.bottomBarBtmOffsetFromCVTop.createOrUpdate(to: constant1, log) { [self] c in
-          bottomBarView.bottomAnchor.constraint(equalTo: contentView.topAnchor, constant: c)
+          bottomBar.view.bottomAnchor.constraint(equalTo: contentView.topAnchor, constant: c)
         }
       } else {
         // remove
@@ -229,11 +229,11 @@ extension PlayerWindowController {
 
       // This will always have constant: 0
       p.cvBtmOffsetFromBottomBarBtm.createOrUpdate(to: 0, log) { [self] c in
-        contentView.bottomAnchor.constraint(equalTo: bottomBarView.bottomAnchor, constant: c)
+        contentView.bottomAnchor.constraint(equalTo: bottomBar.view.bottomAnchor, constant: c)
       }
 
       contentView.needsLayout = true
-      bottomBarView.needsLayout = true
+      bottomBar.view.needsLayout = true
     }
 
     // - Viewport View
@@ -244,7 +244,7 @@ extension PlayerWindowController {
     {
       let bottomBarHeight = stageGeo.bottomBarHeight
       p.cvBtmOffsetFromBottomBarTop.createOrUpdate(to: bottomBarHeight, log) { [self] c in
-        contentView.bottomAnchor.constraint(equalTo: bottomBarView.topAnchor, constant: c)
+        contentView.bottomAnchor.constraint(equalTo: bottomBar.view.topAnchor, constant: c)
       }
     } else {
       p.cvBtmOffsetFromBottomBarTop.remove(log)
@@ -352,16 +352,16 @@ extension PlayerWindowController {
     }
 
 
-    // Add/remove bottomBarView if needed
+    // Add/remove bottomBar.view if needed
     if useBottomBar {
-      if !contentView.containsSubview(bottomBarView) {
-        log.verbose("Adding bottomBarView to window contentView")
-        contentView.addSubview(bottomBarView, positioned: .above, relativeTo: viewportView)
+      if !contentView.containsSubview(bottomBar.view) {
+        log.verbose("Adding bottomBar.view to window contentView")
+        contentView.addSubview(bottomBar.view, positioned: .above, relativeTo: viewportView)
       }
     } else {
-      if bottomBarView.superview != nil {
-        log.verbose("Removing bottomBarView from superview")
-        bottomBarView.removeFromSuperview()
+      if bottomBar.view.superview != nil {
+        log.verbose("Removing bottomBar.view from superview")
+        bottomBar.view.removeFromSuperview()
       }
     }
 
@@ -686,7 +686,7 @@ extension PlayerWindowController {
     possibleSubviews.append(viewportView)
 
     if layout.bottomBarPlacement == .insideViewport {
-      possibleSubviews.append(bottomBarView)
+      possibleSubviews.append(bottomBar.view)
     }
     if layout.leadingSidebarPlacement == .insideViewport {
       possibleSubviews.append(leadingSidebarView)
@@ -696,7 +696,7 @@ extension PlayerWindowController {
     }
 
     if layout.bottomBarPlacement == .outsideViewport {
-      possibleSubviews.append(bottomBarView)
+      possibleSubviews.append(bottomBar.view)
     }
 
     possibleSubviews += [
