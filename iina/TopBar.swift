@@ -6,21 +6,10 @@
 //  Copyright © 2025 lhc. All rights reserved.
 //
 
-/// OSC at top of window, if configured.
-final class TopControlBarView: ClickThroughView {
-  init() {
-    super.init(frame: .zero)
-    idString = "OSC-Top"
-
-    translatesAutoresizingMaskIntoConstraints = false
-    clipsToBounds = true  // for better animations when toggling OSC position/placement
-  }
-
-  @MainActor required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
-}
+// MARK: - TopBar root view claases
 
 /// Top bar root view which inherits from `NSVisualEffectView`
-final class TopBarVisualEffectView: ClickThroughVisualEffectView {
+final fileprivate class TopBarVisualEffectView: ClickThroughVisualEffectView {
   init() {
     super.init(frame: .zero)
     material = .titlebar
@@ -32,16 +21,26 @@ final class TopBarVisualEffectView: ClickThroughVisualEffectView {
 
 /// Top bar root view with Glass
 @available(macOS 26.0, *)
-final class TopBarGlassEffectView: ClickThroughGlassEffectView {
+final fileprivate class TopBarGlassEffectView: ClickThroughGlassEffectView {
   init(style desiredStyle: Style) {
     super.init(frame: .zero)
     wantsLayer = true
     setStyle(desiredStyle)
   }
   required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+  func update(_ targetLayout: LayoutState) {
+    if targetLayout.isLegacyStyle {
+      // Is rounded by default. Make sharp in case of custom window
+      cornerRadius = 0
+    } else {
+      // try to match window corners
+      cornerRadius = Constants.glassButtonCornerRadius
+    }
+  }
 }
 
-final class TopBarGradientView: NSView {
+final fileprivate class TopBarGradientView: NSView {
   init() {
     super.init(frame: .zero)
     wantsLayer = true
@@ -58,6 +57,23 @@ final class TopBarGradientView: NSView {
   @MainActor required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 }
 
+// MARK: - Other support classes
+
+/// OSC at top of window, if configured.
+final class TopControlBarView: ClickThroughView {
+  init() {
+    super.init(frame: .zero)
+    idString = "OSC-Top"
+
+    translatesAutoresizingMaskIntoConstraints = false
+    clipsToBounds = true  // for better animations when toggling OSC position/placement
+  }
+
+  @MainActor required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+}
+
+
+// MARK: - TopBar
 
 /// Container & pseudo-controller for the "top" OSC. Contains the view itself (`view`), its subviews, state & logic.
 final class TopBar {
@@ -78,17 +94,18 @@ final class TopBar {
   var titleBarHeightConstraint: NSLayoutConstraint!
 
   init() {
-    let topBarColorScheme: Preference.PanelColorScheme = LayoutState.effectiveTopBarColorSchemeFromPrefs
-    view = TopBar.buildView(topBarColorScheme: topBarColorScheme)
-    configureView()
+    view = NSView()
   }
 
-  static func buildView(topBarColorScheme: Preference.PanelColorScheme) -> NSView {
+  fileprivate static func buildView(targetLayout: LayoutState) -> NSView {
+    let topBarColorScheme: Preference.PanelColorScheme = targetLayout.topBarColorScheme
     switch topBarColorScheme {
     case .clearGlass, .tintedGlass:
       if #available(macOS 26.0, *) {
         let style: NSGlassEffectView.Style = topBarColorScheme == .clearGlass ? .clear : .regular
-        return TopBarGlassEffectView(style: style)
+        let glassView = TopBarGlassEffectView(style: style)
+        glassView.update(targetLayout)
+        return glassView
       } else {
         fallthrough
       }
@@ -101,13 +118,16 @@ final class TopBar {
   }
 
   /// Returns `true` if view needed to be rebuilt
-  func rebuildViewIfNeeded(topBarColorScheme: Preference.PanelColorScheme, superview: NSView) {
+  func rebuildTopBarViewIfNeeded(targetLayout: LayoutState, superview: NSView) {
     guard #available(macOS 26.0, *) else { return }
+
+    let topBarColorScheme: Preference.PanelColorScheme = targetLayout.topBarColorScheme
     switch topBarColorScheme {
     case .clearGlass, .tintedGlass:
       if let glassView = view as? TopBarGlassEffectView {
         let targetStyle: NSGlassEffectView.Style = topBarColorScheme == .clearGlass ? .clear : .regular
         if glassView.style == targetStyle {
+          glassView.update(targetLayout)
           return
         }
         // As of MacOS 26.0, glass effect views seem to be unreliable at changing between light & dark.
@@ -123,17 +143,17 @@ final class TopBar {
         return
       }
     }
-    rebuildView(topBarColorScheme: topBarColorScheme, superview: superview)
+    rebuildTopBarView(targetLayout: targetLayout, superview: superview)
   }
 
-  func rebuildView(topBarColorScheme: Preference.PanelColorScheme, superview: NSView) {
+  func rebuildTopBarView(targetLayout: LayoutState, superview: NSView) {
     view.removeFromSuperview()
-    view = TopBar.buildView(topBarColorScheme: topBarColorScheme)
+    view = TopBar.buildView(targetLayout: targetLayout)
     superview.addSubview(view)
     configureView()
   }
 
-  func configureView() {
+  fileprivate func configureView() {
     view.idString = "TopBarView"
     view.clipsToBounds = true  // for better animations when toggling OSC position/placement
     view.translatesAutoresizingMaskIntoConstraints = false

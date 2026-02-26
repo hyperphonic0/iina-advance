@@ -2142,6 +2142,7 @@ extension NSView {
 
   // MARK: Shadow
 
+  @available(*, deprecated, message: "Use overload `addShadow(Preference.PanelColorScheme, ControlTypeForShadow)` instead")
   func addShadow(blurRadiusMultiplier: CGFloat = 0.0,
                  blurRadiusConstant: CGFloat = Constants.iconDefaultShadowBlurRadiusConstant,
                  xOffsetConstant: CGFloat = 0.0, yOffsetConstant: CGFloat = 0.0,
@@ -2160,9 +2161,10 @@ extension NSView {
     self.shadow = shadow
   }
 
+  /// Adds or removes shadow for this view.
   func addShadow(_ scheme: Preference.PanelColorScheme, _ controlType: ControlTypeForShadow) {
     guard scheme.usesShadow else {
-      shadow = nil
+      shadow = nil  // remove shadow
       return
     }
 

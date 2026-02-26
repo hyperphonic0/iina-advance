@@ -8,6 +8,7 @@
 
 import Cocoa
 
+/// Floating OSC view with flat blended panel
 final class FloatingControlBarVisualEffectView: ClickThroughVisualEffectView, @MainActor DraggableObject {
   let controlBar: FloatingControlBar
 
@@ -27,6 +28,7 @@ final class FloatingControlBarVisualEffectView: ClickThroughVisualEffectView, @M
   func cancelDrag() { controlBar.cancelDrag() }
 }
 
+/// Floating OSC view with glass panel
 @available(macOS 26.0, *)
 final class FloatingControlBarGlassEffectView: ClickThroughGlassEffectView, @MainActor DraggableObject {
   let controlBar: FloatingControlBar
