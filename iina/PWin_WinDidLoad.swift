@@ -394,10 +394,10 @@ extension PlayerWindowController {
   private func addShadow(toSidebar sidebarView: NSView) {
     sidebarView.wantsLayer = true
     let layer = sidebarView.layer!
-    layer.shadowColor = Constants.defaultShadowColor.cgColor
+    layer.shadowColor = Constants.Color.defaultShadow.cgColor
     layer.shadowOffset = .zero
     layer.shadowOpacity = 1
-    layer.shadowRadius = 12
+    layer.shadowRadius = Constants.sidebarShadowRadius
   }
 
   /// Init `fragPlaybackBtnsView` & its subviews

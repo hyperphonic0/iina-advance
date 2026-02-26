@@ -526,8 +526,7 @@ struct Constants {
     static let minPlaylistHeight: CGFloat = 138
   }
 
-  /// `NSShadow.shadowColor` is not dark enough. Use pure black.
-  static let defaultShadowColor: NSColor = .black
+  static let sidebarShadowRadius: CGFloat = 12
   static let iconDefaultShadowBlurRadiusConstant: CGFloat = 0.5
 
   // Use slightly bigger blur for this than other text labels, because unlike them, this overlays the video directly
@@ -535,13 +534,7 @@ struct Constants {
   static let seekPreviewTimeLabel_ShadowRadiusConstant: CGFloat = 3.0
   static let seekPreviewTimeLabel_xOffsetConstant: CGFloat = 0
   static let seekPreviewTimeLabel_yOffsetConstant: CGFloat = 0.5
-  static let oscClearBG_ButtonShadowBlurRadius: CGFloat = 1.2
-  /// Shadow blur of time labels = its contentHeight * multiplier + constant
-  static let oscClearBG_TextShadowBlurRadius_Constant: CGFloat = 0.8
-  static let oscClearBG_TextShadowBlurRadius_Multiplier: CGFloat = 0.04
-  static let clarLiquidGlass_TextShadowOffsetX: CGFloat = 0.4
-  static let clarLiquidGlass_TextShadowOffsetY: CGFloat = 0.4
-  static let clarLiquidGlass_ButtonShadowBlurRadius: CGFloat = 1.6
+
   // See also: Constants.Slider.shadowBlurRadius
 
   struct Color {
@@ -549,6 +542,9 @@ struct Constants {
     static let defaultWindowBackgroundColor = CGColor.black
     /// The viewport color when in Interactive Mode
     static let interactiveModeBackground: CGColor = NSColor.windowBackgroundColor.cgColor
+
+    /// `NSShadow.shadowColor` is not dark enough. Use pure black.
+    static let defaultShadow: NSColor = .black
 
     static let blackShadow = CGColor(gray: 0, alpha: 0.75)
     static let whiteShadow = CGColor(gray: 1, alpha: 0.75)
@@ -665,6 +661,70 @@ extension Notification.Name {
   static let iinaSecondSubVisibilityChanged = Notification.Name("iinaSecondSubVisibilityChanged")
   static let iinaSubVisibilityChanged = Notification.Name("iinaSubVisibilityChanged")
   static let iinaHistoryTasksFinished = Notification.Name("iinaHistoryTasksFinished")
+}
+
+enum ControlTypeForShadow {
+  case button
+  /// Generic text control
+  case text
+  /// Title bar text
+  case titleText
+  case titleBarButton
+}
+
+extension Preference.PanelColorScheme {
+
+  var btnShadowBlurRadius: CGFloat {
+    switch self {
+    case .clearGradient: return 0.8
+    case .clearGlass: return 0.8
+    default: return 0
+    }
+  }
+
+  var btnShadowBlurRadius_Multiplier: CGFloat {
+    switch self {
+    case .clearGradient: return 0.02
+    case .clearGlass: return 0.02
+    default: return 0
+    }
+  }
+
+  var titleBtnShadowBlurRadius: CGFloat {
+    switch self {
+    case .clearGradient: return 1.2
+    case .clearGlass: return 1.2
+    default: return 0
+    }
+  }
+
+  /// Shadow blur of time labels = its contentHeight * multiplier + constant
+  var textShadowBlurRadius: CGFloat {
+    switch self {
+    case .clearGradient: return 0.8
+    case .clearGlass: return 0.8
+    default: return 0
+    }
+  }
+
+  var textShadowBlurRadius_Multiplier: CGFloat {
+    switch self {
+    case .clearGradient: return 0.04
+    case .clearGlass: return 0.04
+    default: return 0
+    }
+  }
+
+  var textShadowOffsetX: CGFloat { 0 }
+  var textShadowOffsetY: CGFloat { 0 }
+
+  var titleTextShadowBlurRadius: CGFloat {
+    switch self {
+    case .clearGradient: return 1
+    case .clearGlass: return 1
+    default: return 0
+    }
+  }
 }
 
 extension NSStackView.VisibilityPriority {

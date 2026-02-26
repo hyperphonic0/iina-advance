@@ -151,10 +151,6 @@ class CustomTitleBarViewController: NSViewController {
   func addViewTo(superview: NSView) {
     superview.addSubview(view)
     view.addConstraintsToFillSuperview(top: 0, leading: 0, trailing: 0)
-    view.appearance = superview.appearance
-    if #available(macOS 26.0, *), let glassView = view as? NSGlassEffectView {
-      glassView.contentView?.appearance = superview.appearance
-    }
 
     let builder = CustomTitleBar.shared
     let iconSpacingH = Constants.titleBarIconHSpacing
@@ -301,10 +297,11 @@ class CustomTitleBarViewController: NSViewController {
 
   func setColors(topBarColorScheme: Preference.PanelColorScheme) {
     for btn in symButtons {
-      btn.setColors(for: topBarColorScheme)
+      btn.setColors(for: topBarColorScheme, .titleBarButton)
       btn.needsDisplay = true
     }
-//    titleText.setColors(topBarColorScheme) // TODO: add shadow for clear BG (also for native!)
+
+    titleText.addShadow(topBarColorScheme, .titleText)
     titleText.needsDisplay = true
   }
 

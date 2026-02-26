@@ -738,9 +738,9 @@ extension PlayerWindowController {
         leftArrowButton.setColors(for: oscColorScheme)
         rightArrowButton.setColors(for: oscColorScheme)
         muteButton.setColors(for: oscColorScheme)
-        leftTimeLabel.setColors(oscColorScheme)
-        rightTimeLabel.setColors(oscColorScheme)
-        oscTwoRowView.timeSlashLabel.setColors(oscColorScheme)
+        leftTimeLabel.setColors(oscColorScheme, .text)
+        rightTimeLabel.setColors(oscColorScheme, .text)
+        oscTwoRowView.timeSlashLabel.setColors(oscColorScheme, .text)
 
         if oscColorScheme.hasClearBG {
           oscKnobRenderer.mainKnobColor = NSColor.controlForClearBG
@@ -827,21 +827,29 @@ extension PlayerWindowController {
     }
 
     topBarAppearance.performAsCurrentDrawingAppearance { [self] in
+      let topBarColorScheme = outputLayout.topBarColorScheme
+      log.verbose("Updating topBarView appearance to \(topBarColorScheme.description), isDark=\(topBarAppearance.isDark.yesno)")
+      /// `windowAppearance` can be nil, which means dynamic system appearance
       topBar.view.appearance = topBarAppearance
-      let colorScheme = outputLayout.topBarColorScheme
-      topBar.updateAppearance(topBarColorScheme: colorScheme, windowAppearance: topBarAppearance)
 
-      // Top bar control colors. Do this after applying theme!
+      topBar.bottomBorder.isHidden = topBarColorScheme != .visualEffectView
+      topBar.view.needsDisplay = true
+      topBar.view.needsLayout = true
+
+      // Colors for native controls. Do this after applying theme!
       if outputLayout.leadingSidebarToggleButton.isShowable {
-        leadingSidebarToggleButton.setColors(for: colorScheme)
+        leadingSidebarToggleButton.setColors(for: topBarColorScheme, .titleBarButton)
         leadingSidebarToggleButton.needsDisplay = true
       }
       if outputLayout.trailingSidebarToggleButton.isShowable {
-        trailingSidebarToggleButton.setColors(for: colorScheme)
+        trailingSidebarToggleButton.setColors(for: topBarColorScheme, .titleBarButton)
         trailingSidebarToggleButton.needsDisplay = true
       }
-      onTopButton.setColors(for: colorScheme)
+      onTopButton.setColors(for: topBarColorScheme, .titleBarButton)
       onTopButton.needsDisplay = true
+
+      // Colors for custom title bar controls
+      customTitleBar?.setColors(topBarColorScheme: topBarColorScheme)
     }
 
     // Other misc views

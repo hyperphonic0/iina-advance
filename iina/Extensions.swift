@@ -1532,53 +1532,43 @@ extension NSTextField {
     self.attributedStringValue = attrString
   }
 
-  /// Keep this identical to `NSText.setColors`
-  func setColors(_ colorScheme: Preference.PanelColorScheme) {
-    switch colorScheme {
-    case .clearGradient:
-      alphaValue = 0.8
-      textColor = .white
-      addShadow(blurRadiusMultiplier: Constants.oscClearBG_TextShadowBlurRadius_Multiplier,
-                blurRadiusConstant: Constants.oscClearBG_TextShadowBlurRadius_Constant,
-                xOffsetConstant: 0, yOffsetConstant: 0)
-    case .clearGlass:
-      alphaValue = 1.0
-      textColor = .white
-      addShadow(blurRadiusMultiplier: Constants.oscClearBG_TextShadowBlurRadius_Multiplier,
-                blurRadiusConstant: Constants.oscClearBG_TextShadowBlurRadius_Constant,
-                xOffsetConstant: 0.4, yOffsetConstant: 0.4)
-    default:
-      // Default alpha for text labels is 0.5. They don't change their text color.
-      alphaValue = 0.5
-      textColor = nil
-      shadow = nil
-    }
-  }
 }
 
-extension NSText {
-  func setColors(_ colorScheme: Preference.PanelColorScheme) {
-    switch colorScheme {
+protocol HasContentColor {
+  func setContentColor(_ contentColor: NSColor?)
+}
+extension NSText: HasContentColor {
+  func setContentColor(_ contentColor: NSColor?) { textColor = contentColor }
+}
+extension NSTextField: HasContentColor {
+  func setContentColor(_ contentColor: NSColor?) { textColor = contentColor }
+}
+extension NSView {
+  func setColors(_ scheme: Preference.PanelColorScheme, _ controlType: ControlTypeForShadow) {
+    let contentColor: NSColor?
+
+    switch scheme {
     case .clearGradient:
       alphaValue = 0.8
-      textColor = .white
-      addShadow(blurRadiusMultiplier: Constants.oscClearBG_TextShadowBlurRadius_Multiplier,
-                blurRadiusConstant: Constants.oscClearBG_TextShadowBlurRadius_Constant,
-                xOffsetConstant: 0, yOffsetConstant: 0)
+      contentColor = .white
     case .clearGlass:
       alphaValue = 1.0
-      textColor = .white
-      addShadow(blurRadiusMultiplier: Constants.oscClearBG_TextShadowBlurRadius_Multiplier,
-                blurRadiusConstant: Constants.oscClearBG_TextShadowBlurRadius_Constant,
-                xOffsetConstant: 0.4, yOffsetConstant: 0.4)
+      contentColor = .white
     default:
       // Default alpha for text labels is 0.5. They don't change their text color.
       alphaValue = 0.5
-      textColor = nil
-      shadow = nil
+      contentColor = nil
+    }
+
+    addShadow(scheme, controlType)
+
+    if let contentColorSelf = self as? HasContentColor {
+      contentColorSelf.setContentColor(contentColor)
     }
   }
+
 }
+
 
 extension NSSlider {
 
@@ -2156,7 +2146,7 @@ extension NSView {
                  blurRadiusConstant: CGFloat = Constants.iconDefaultShadowBlurRadiusConstant,
                  shadowOffsetMultiplier: CGFloat = 0.0,
                  xOffsetConstant: CGFloat = 0.0, yOffsetConstant: CGFloat = 0.0,
-                 color: NSColor = Constants.defaultShadowColor) {
+                 color: NSColor = Constants.Color.defaultShadow) {
     let controlHeight = fittingSize.height
     let shadow = NSShadow()
     // Amount of blur (in pixels) applied to the shadow.
@@ -2166,6 +2156,39 @@ extension NSView {
     // the distance from the text the shadow is dropped (+X = to the right; -Y = below the text):
     shadow.shadowOffset = NSSize(width: controlHeight * shadowOffsetMultiplier + xOffsetConstant, height: controlHeight * shadowOffsetMultiplier + yOffsetConstant)
     self.shadow = shadow
+  }
+
+  func addShadow(_ scheme: Preference.PanelColorScheme, _ controlType: ControlTypeForShadow) {
+    switch scheme {
+    case .clearGlass, .clearGradient:
+      switch controlType {
+      case .button:
+        addShadow(blurRadiusMultiplier: scheme.btnShadowBlurRadius_Multiplier,
+                  blurRadiusConstant: scheme.btnShadowBlurRadius,
+                  xOffsetConstant: 0,
+                  yOffsetConstant: 0)
+      case .text:
+        addShadow(blurRadiusMultiplier: scheme.textShadowBlurRadius_Multiplier,
+                  blurRadiusConstant: scheme.textShadowBlurRadius,
+                  xOffsetConstant: scheme.textShadowOffsetX,
+                  yOffsetConstant: scheme.textShadowOffsetY)
+      case .titleText:
+        // Unclear why Y offset needs to be flipped for this one
+        addShadow(blurRadiusMultiplier: 0,
+                  blurRadiusConstant: scheme.titleTextShadowBlurRadius,
+                  xOffsetConstant: 0,
+                  yOffsetConstant: 0)
+      case .titleBarButton:
+        addShadow(blurRadiusMultiplier: 0,
+                  blurRadiusConstant: scheme.titleBtnShadowBlurRadius,
+                  xOffsetConstant: 0,
+                  // Unclear why Y offset needs to be flipped for this one
+                  yOffsetConstant: 0)
+      }
+
+    default:
+      shadow = nil
+    }
   }
 
   // MARK: Inter-view relations

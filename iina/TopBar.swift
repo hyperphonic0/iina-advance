@@ -166,18 +166,4 @@ final class TopBar {
     topBarBottomBorder_HeightConstraint.isActive = true
   }
 
-  /// `windowAppearance` can be nil, which means dynamic system appearance
-  func updateAppearance(topBarColorScheme: Preference.PanelColorScheme, windowAppearance: NSAppearance?) {
-    if let customTitleBar = view.pwc?.customTitleBar {
-      customTitleBar.setColors(topBarColorScheme: topBarColorScheme)
-    }
-
-    view.needsDisplay = true
-    view.needsLayout = true
-
-    bottomBorder.isHidden = topBarColorScheme != .visualEffectView
-
-    view.pwc?.log.verbose("Updated topBarView appearance to \(topBarColorScheme.description), isDark=\(view.effectiveAppearance.isDark.yesno)")
-  }
-
 }
