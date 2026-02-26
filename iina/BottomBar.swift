@@ -1,5 +1,5 @@
 //
-//  BottomBarView.swift
+//  BottomBar.swift
 //  iina
 //
 //  Created by Matt Svoboda on 8/23/25.
