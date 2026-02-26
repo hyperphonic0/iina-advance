@@ -114,11 +114,11 @@
                                                                     </textFieldCell>
                                                                     <prototypeCellViews>
                                                                         <tableCellView autoresizesSubviews="NO" id="o4q-SO-fgb" userLabel="IsChosen Table Cell View">
-                                                                            <rect key="frame" x="0.0" y="0.0" width="21" height="17"/>
-                                                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                                            <rect key="frame" x="0.0" y="0.0" width="22" height="17"/>
+                                                                            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                             <subviews>
                                                                                 <textField autoresizesSubviews="NO" focusRingType="none" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="eZG-xB-blk" customClass="EditableTextField" customModule="IINA_Advance" customModuleProvider="target">
-                                                                                    <rect key="frame" x="0.0" y="1" width="23" height="16"/>
+                                                                                    <rect key="frame" x="-2" y="1" width="24" height="16"/>
                                                                                     <textFieldCell key="cell" controlSize="large" lineBreakMode="truncatingTail" allowsUndo="NO" sendsActionOnEndEditing="YES" alignment="center" title="▶︎" id="4yj-cg-fli" customClass="EditableTextFieldCell" customModule="IINA_Advance" customModuleProvider="target">
                                                                                         <font key="font" metaFont="system"/>
                                                                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -131,8 +131,8 @@
                                                                             </subviews>
                                                                             <constraints>
                                                                                 <constraint firstItem="eZG-xB-blk" firstAttribute="centerY" secondItem="o4q-SO-fgb" secondAttribute="centerY" id="cAh-01-gbv"/>
-                                                                                <constraint firstItem="eZG-xB-blk" firstAttribute="leading" secondItem="o4q-SO-fgb" secondAttribute="leading" constant="2" id="hny-ME-Dej"/>
-                                                                                <constraint firstAttribute="trailing" secondItem="eZG-xB-blk" secondAttribute="trailing" id="xBh-tU-m5j"/>
+                                                                                <constraint firstItem="eZG-xB-blk" firstAttribute="leading" secondItem="o4q-SO-fgb" secondAttribute="leading" id="hny-ME-Dej"/>
+                                                                                <constraint firstAttribute="trailing" secondItem="eZG-xB-blk" secondAttribute="trailing" constant="2" id="xBh-tU-m5j"/>
                                                                             </constraints>
                                                                             <connections>
                                                                                 <outlet property="textField" destination="eZG-xB-blk" id="VdA-GL-I8v"/>
@@ -140,7 +140,7 @@
                                                                         </tableCellView>
                                                                     </prototypeCellViews>
                                                                 </tableColumn>
-                                                                <tableColumn identifier="TrackName" editable="NO" width="211" minWidth="100" maxWidth="4000" id="csQ-Z4-hxP">
+                                                                <tableColumn identifier="TrackName" editable="NO" width="213" minWidth="100" maxWidth="4000" id="csQ-Z4-hxP">
                                                                     <tableHeaderCell key="headerCell" lineBreakMode="truncatingTail" borderStyle="border" alignment="left">
                                                                         <color key="textColor" name="headerTextColor" catalog="System" colorSpace="catalog"/>
                                                                         <color key="backgroundColor" name="headerColor" catalog="System" colorSpace="catalog"/>
@@ -153,7 +153,7 @@
                                                                     <tableColumnResizingMask key="resizingMask" resizeWithTable="YES"/>
                                                                     <prototypeCellViews>
                                                                         <tableCellView autoresizesSubviews="NO" id="yTp-yO-UE2" customClass="PlaylistTrackCellView" customModule="IINA_Advance" customModuleProvider="target">
-                                                                            <rect key="frame" x="22" y="0.0" width="216" height="17"/>
+                                                                            <rect key="frame" x="22" y="0.0" width="219" height="17"/>
                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                             <subviews>
                                                                                 <button hidden="YES" autoresizesSubviews="NO" toolTip="Folded common prefix" horizontalHuggingPriority="750" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="U4W-Xv-hkh" customClass="PlaylistPrefixButton" customModule="IINA_Advance" customModuleProvider="target">
@@ -181,7 +181,7 @@
                                                                                     </connections>
                                                                                 </textField>
                                                                                 <textField hidden="YES" autoresizesSubviews="NO" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="249" translatesAutoresizingMaskIntoConstraints="NO" id="rsK-ba-ojP" customClass="EditableTextField" customModule="IINA_Advance" customModuleProvider="target">
-                                                                                    <rect key="frame" x="167" y="1" width="27" height="16"/>
+                                                                                    <rect key="frame" x="170" y="1" width="27" height="16"/>
                                                                                     <textFieldCell key="cell" controlSize="large" lineBreakMode="truncatingMiddle" allowsUndo="NO" alignment="right" title="Info" id="XWP-pU-mZg" customClass="EditableTextFieldCell" customModule="IINA_Advance" customModuleProvider="target">
                                                                                         <font key="font" metaFont="system"/>
                                                                                         <color key="textColor" name="secondaryLabelColor" catalog="System" colorSpace="catalog"/>
@@ -189,7 +189,7 @@
                                                                                     </textFieldCell>
                                                                                 </textField>
                                                                                 <button hidden="YES" autoresizesSubviews="NO" translatesAutoresizingMaskIntoConstraints="NO" id="MbV-7g-8Gm">
-                                                                                    <rect key="frame" x="196" y="3" width="12" height="12"/>
+                                                                                    <rect key="frame" x="199" y="3" width="12" height="12"/>
                                                                                     <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="sub-track" imagePosition="only" alignment="center" controlSize="large" refusesFirstResponder="YES" imageScaling="proportionallyUpOrDown" inset="2" id="Hae-Zb-lOE">
                                                                                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                                                                         <font key="font" metaFont="system"/>
@@ -203,7 +203,7 @@
                                                                                     </connections>
                                                                                 </button>
                                                                                 <textField autoresizesSubviews="NO" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="yEn-uv-K8Z" customClass="EditableTextField" customModule="IINA_Advance" customModuleProvider="target">
-                                                                                    <rect key="frame" x="210" y="1" width="4" height="16"/>
+                                                                                    <rect key="frame" x="213" y="1" width="4" height="16"/>
                                                                                     <textFieldCell key="cell" controlSize="large" scrollable="YES" lineBreakMode="clipping" allowsUndo="NO" sendsActionOnEndEditing="YES" id="zbw-ad-lgl" customClass="EditableTextFieldCell" customModule="IINA_Advance" customModuleProvider="target">
                                                                                         <font key="font" metaFont="system"/>
                                                                                         <color key="textColor" name="secondaryLabelColor" catalog="System" colorSpace="catalog"/>
@@ -211,13 +211,14 @@
                                                                                     </textFieldCell>
                                                                                 </textField>
                                                                                 <customView hidden="YES" autoresizesSubviews="NO" translatesAutoresizingMaskIntoConstraints="NO" id="K4f-mB-ja8" customClass="PlaylistPlaybackProgressView" customModule="IINA_Advance" customModuleProvider="target">
-                                                                                    <rect key="frame" x="0.0" y="2" width="212" height="3"/>
+                                                                                    <rect key="frame" x="0.0" y="2" width="215" height="3"/>
                                                                                     <constraints>
                                                                                         <constraint firstAttribute="height" constant="3" id="07t-ih-NtZ"/>
                                                                                     </constraints>
                                                                                 </customView>
                                                                             </subviews>
                                                                             <constraints>
+                                                                                <constraint firstItem="mzW-2W-iPg" firstAttribute="firstBaseline" secondItem="U4W-Xv-hkh" secondAttribute="firstBaseline" id="6un-4z-9pz"/>
                                                                                 <constraint firstItem="K4f-mB-ja8" firstAttribute="leading" secondItem="yTp-yO-UE2" secondAttribute="leading" id="7Fe-BD-Ad9"/>
                                                                                 <constraint firstItem="yEn-uv-K8Z" firstAttribute="centerY" secondItem="mzW-2W-iPg" secondAttribute="centerY" id="BxW-tV-Ixs"/>
                                                                                 <constraint firstAttribute="trailing" secondItem="yEn-uv-K8Z" secondAttribute="trailing" constant="4" id="G6G-5M-gSa"/>
@@ -226,7 +227,6 @@
                                                                                 <constraint firstAttribute="bottom" secondItem="K4f-mB-ja8" secondAttribute="bottom" constant="2" id="XZo-GL-gZh"/>
                                                                                 <constraint firstItem="mzW-2W-iPg" firstAttribute="leading" secondItem="U4W-Xv-hkh" secondAttribute="trailing" id="XeG-0c-05U"/>
                                                                                 <constraint firstItem="rsK-ba-ojP" firstAttribute="centerY" secondItem="mzW-2W-iPg" secondAttribute="centerY" id="c3b-62-9Tr"/>
-                                                                                <constraint firstItem="U4W-Xv-hkh" firstAttribute="centerY" secondItem="yTp-yO-UE2" secondAttribute="centerY" id="g5U-ZA-Kco"/>
                                                                                 <constraint firstItem="MbV-7g-8Gm" firstAttribute="leading" secondItem="rsK-ba-ojP" secondAttribute="trailing" constant="4" id="hoP-Vl-aD1"/>
                                                                                 <constraint firstItem="yEn-uv-K8Z" firstAttribute="trailing" secondItem="K4f-mB-ja8" secondAttribute="trailing" id="mSL-zL-ggu"/>
                                                                                 <constraint firstItem="U4W-Xv-hkh" firstAttribute="leading" secondItem="yTp-yO-UE2" secondAttribute="leading" id="pTq-Bj-ICm"/>
@@ -414,7 +414,7 @@
                                                 <rect key="frame" x="0.0" y="0.0" width="241" height="273"/>
                                                 <clipView key="contentView" autoresizesSubviews="NO" drawsBackground="NO" copiesOnScroll="NO" id="6tr-hz-bdD" userLabel="Chapter-Table Clip View">
                                                     <rect key="frame" x="0.0" y="0.0" width="241" height="273"/>
-                                                    <autoresizingMask key="autoresizingMask"/>
+                                                    <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                     <subviews>
                                                         <tableView autoresizesSubviews="NO" focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" tableStyle="fullWidth" columnReordering="NO" columnResizing="NO" multipleSelection="NO" autosaveColumns="NO" rowHeight="31" rowSizeStyle="automatic" viewBased="YES" id="BvG-MR-6LX" userLabel="Chapters Table" customClass="EditableTableView" customModule="IINA_Advance" customModuleProvider="target">
                                                             <rect key="frame" x="0.0" y="0.0" width="241" height="273"/>
