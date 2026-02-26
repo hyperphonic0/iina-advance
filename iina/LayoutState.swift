@@ -73,7 +73,7 @@ struct LayoutState {
        isInPiP: Bool, isLegacyStyle: Bool,
        topBarPlacement: Preference.PanelPlacement, bottomBarPlacement: Preference.PanelPlacement,
        enableOSC: Bool, oscPosition: Preference.OSCPosition,
-       oscColorScheme: Preference.PanelColorScheme,
+       oscColorScheme: Preference.PanelColorScheme? = nil,
        topBarColorScheme: Preference.PanelColorScheme,
        sidebarsColorScheme: Preference.PanelColorScheme,
        controlBarGeo givenControlBarGeo: ControlBarGeometry? = nil,
@@ -89,7 +89,14 @@ struct LayoutState {
       mode = .windowedNormal
     }
     self.mode = mode
-    self.oscColorScheme = oscPosition == .top ? topBarColorScheme : oscColorScheme
+    if let oscColorScheme {
+      self.oscColorScheme = oscColorScheme
+    } else if mode == .musicMode {
+      self.oscColorScheme = LayoutState.effectiveColorSchemeForMusicModeBottomBar
+    } else {
+      // When in music mode, bottom bar's color scheme is the same as OSC color scheme
+      self.oscColorScheme = LayoutState.effectiveOSCColorSchemeFromPrefs
+    }
 
     self.isInPiP = (mode == .windowedNormal || mode == .musicMode) ? isInPiP : false
 
@@ -248,7 +255,6 @@ struct LayoutState {
                                           : Preference.bool(for: .useLegacyWindowedMode))
     let topBarPlacement: Preference.PanelPlacement = Preference.enum(for: .topBarPlacement)
     let interactiveMode = mode.isInteractiveMode ? oldSpec?.interactiveMode ?? InteractiveMode.crop : nil
-    let oscColorScheme = effectiveOSCColorSchemeFromPrefs
     let topBarColorScheme = effectiveTopBarColorSchemeFromPrefs
     let sidebarsColorScheme = effectiveSidebarsColorSchemeFromPrefs
 
@@ -260,7 +266,6 @@ struct LayoutState {
                        bottomBarPlacement: Preference.enum(for: .bottomBarPlacement),
                        enableOSC: Preference.bool(for: .enableOSC),
                        oscPosition: Preference.enum(for: .oscPosition),
-                       oscColorScheme: oscColorScheme,
                        topBarColorScheme: topBarColorScheme,
                        sidebarsColorScheme: sidebarsColorScheme,
                        interactiveMode: interactiveMode,
@@ -278,6 +283,16 @@ struct LayoutState {
       return .visualEffectView
     default:
       return globalScheme
+    }
+  }
+
+  static var effectiveColorSchemeForMusicModeBottomBar: Preference.PanelColorScheme {
+    let globalScheme = effectiveGlobalColorSchemeFromPrefs()
+    switch globalScheme {
+    case .clearGlass, .tintedGlass:
+      return .tintedGlass
+    default:
+      return .visualEffectView
     }
   }
 

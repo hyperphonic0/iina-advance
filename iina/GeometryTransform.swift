@@ -898,6 +898,8 @@ extension PlayerWindowController {
     allEqual = allEqual && cmpAndLogError(pref.enableOSC, tgt.enableOSC, "enableOSC")
     allEqual = allEqual && cmpAndLogError(pref.oscPosition, tgt.oscPosition, "oscPosition")
     allEqual = allEqual && cmpAndLogError(pref.oscColorScheme, tgt.oscColorScheme, "oscColorScheme")
+    allEqual = allEqual && cmpAndLogError(pref.topBarColorScheme, tgt.topBarColorScheme, "topBarColorScheme")
+    allEqual = allEqual && cmpAndLogError(pref.sidebarsColorScheme, tgt.sidebarsColorScheme, "sidebarsColorScheme")
     allEqual = allEqual && cmpAndLogError(pref.isLegacyStyle, tgt.isLegacyStyle, "isLegacyStyle")
     allEqual = allEqual && cmpAndLogError(pref.topBarPlacement, tgt.topBarPlacement, "topBarPlacement")
     allEqual = allEqual && cmpAndLogError(pref.bottomBarPlacement, tgt.bottomBarPlacement, "bottomBarPlacement")

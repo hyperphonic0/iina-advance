@@ -752,10 +752,7 @@ extension PlayerWindowController {
         oscKnobRenderer.invalidateCachedKnobs()
 
         if outputLayout.isMusicMode {
-          miniPlayer.volumeButton.setColors(for: oscColorScheme)
-          miniPlayer.togglePlaylistButton.setColors(for: oscColorScheme)
-          miniPlayer.toggleAlbumArtButton.setColors(for: oscColorScheme)
-          exitMusicModeButton.setColors(for: oscColorScheme)
+          miniPlayer.setColors(oscColorScheme)
         }
       }
     }

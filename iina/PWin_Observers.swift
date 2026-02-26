@@ -253,7 +253,6 @@ extension PlayerWindowController {
 
     case .enableOSC,
         .oscPosition,
-        .oscColorScheme,
         .oscForceSingleRow,
         .topBarPlacement,
         .topBarColorScheme,

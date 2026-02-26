@@ -176,6 +176,14 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
 
   // MARK: - UI: Controller
 
+  func setColors(_ colorScheme: Preference.PanelColorScheme) {
+    volumeButton.setColors(for: colorScheme)
+    togglePlaylistButton.setColors(for: colorScheme)
+    toggleAlbumArtButton.setColors(for: colorScheme)
+    titleLabel.setColors(colorScheme, .text)
+    artistAlbumLabel.setColors(colorScheme, .text)
+  }
+
   func addPlaylistViewIfMissing() {
     // move playist view
     let playlistView = pwc.playlistView.view

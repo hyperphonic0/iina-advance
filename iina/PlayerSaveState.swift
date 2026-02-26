@@ -1569,7 +1569,6 @@ extension LayoutState {
         // v1 of the CSV lacked this info. Fall back to default
         moreSidebarState = Sidebar.SidebarMiscState.fromDefaultPrefs()
       }
-      let oscColorScheme = effectiveOSCColorSchemeFromPrefs
       let topBarColorScheme = effectiveTopBarColorSchemeFromPrefs
       let sidebarsColorScheme = effectiveSidebarsColorSchemeFromPrefs
 
@@ -1577,7 +1576,6 @@ extension LayoutState {
                          isInPiP: isInPiP,
                          isLegacyStyle: isLegacyStyle, topBarPlacement: topBarPlacement,
                          bottomBarPlacement: bottomBarPlacement, enableOSC: enableOSC, oscPosition: oscPosition,
-                         oscColorScheme: oscColorScheme,
                          topBarColorScheme: topBarColorScheme,
                          sidebarsColorScheme: sidebarsColorScheme,
                          interactiveMode: interactiveMode, moreSidebarState: moreSidebarState)
