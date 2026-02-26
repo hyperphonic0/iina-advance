@@ -455,9 +455,9 @@ extension PlayerWindowController {
     topBarAppearance.performAsCurrentDrawingAppearance {
       if appearanceDidChange {
         // Workaround for race condition when changing theme
-        topBar.rebuildTopBarView(targetLayout: outputLayout, superview: contentView)
+        topBar.rebuildTopBarView(targetLayout: outputLayout, targetAppearance: topBarAppearance, superview: contentView, log)
       } else {
-        topBar.rebuildTopBarViewIfNeeded(targetLayout: outputLayout, superview: contentView)
+        topBar.rebuildTopBarViewIfNeeded(targetLayout: outputLayout, targetAppearance: topBarAppearance, superview: contentView, log)
         if topBar.view.superview == nil {
           contentView.addSubview(topBar.view)
         }
@@ -824,9 +824,6 @@ extension PlayerWindowController {
     topBarAppearance.performAsCurrentDrawingAppearance { [self] in
       let topBarColorScheme = outputLayout.topBarColorScheme
       log.verbose("Updating topBarView appearance to \(topBarColorScheme.description), isDark=\(topBarAppearance.isDark.yesno)")
-      /// `windowAppearance` can be nil, which means dynamic system appearance
-      topBar.view.appearance = topBarAppearance
-
       topBar.bottomBorder.isHidden = topBarColorScheme != .visualEffectView
       topBar.view.needsDisplay = true
       topBar.view.needsLayout = true

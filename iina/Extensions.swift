@@ -2142,7 +2142,7 @@ extension NSView {
 
   // MARK: Shadow
 
-  @available(*, deprecated, message: "Use overload `addShadow(Preference.PanelColorScheme, ControlTypeForShadow)` instead")
+  /// __Deprecated__: use overload `addShadow(Preference.PanelColorScheme, ControlTypeForShadow)` instead.
   func addShadow(blurRadiusMultiplier: CGFloat = 0.0,
                  blurRadiusConstant: CGFloat = Constants.iconDefaultShadowBlurRadiusConstant,
                  xOffsetConstant: CGFloat = 0.0, yOffsetConstant: CGFloat = 0.0,
@@ -2241,7 +2241,7 @@ extension NSView {
         radiusConstant = 3.0
       case .tintedGlass:
         radiusMultiplier = 0
-        radiusConstant = 0.75
+        radiusConstant = 0.5
       default:
         return
       }

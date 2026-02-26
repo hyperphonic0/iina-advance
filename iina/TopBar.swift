@@ -22,6 +22,12 @@ final fileprivate class TopBarVisualEffectView: ClickThroughVisualEffectView {
 /// Top bar root view with Glass
 @available(macOS 26.0, *)
 final fileprivate class TopBarGlassEffectView: ClickThroughGlassEffectView {
+  var customAppearance: NSAppearance? = nil {
+    didSet {
+      contentView?.appearance = customAppearance
+    }
+  }
+
   init(style desiredStyle: Style) {
     super.init(frame: .zero)
     wantsLayer = true
@@ -36,6 +42,20 @@ final fileprivate class TopBarGlassEffectView: ClickThroughGlassEffectView {
     } else {
       // try to match window corners
       cornerRadius = Constants.glassButtonCornerRadius
+    }
+  }
+
+  override var appearance: NSAppearance? {
+    get {
+      customAppearance
+    }
+    set {
+      pwc?.log.verbose("Set requested for TopBarGlassEffectViewappearance.appearance: \(newValue?.name.rawValue ?? "nil")")
+    }
+  }
+  override var effectiveAppearance: NSAppearance {
+    get {
+      customAppearance ?? super.effectiveAppearance
     }
   }
 }
@@ -97,28 +117,34 @@ final class TopBar {
     view = NSView()
   }
 
-  fileprivate static func buildView(targetLayout: LayoutState) -> NSView {
+  fileprivate static func buildView(targetLayout: LayoutState, targetAppearance: NSAppearance?) -> NSView {
     let topBarColorScheme: Preference.PanelColorScheme = targetLayout.topBarColorScheme
+
+    let view: NSView
     switch topBarColorScheme {
     case .clearGlass, .tintedGlass:
       if #available(macOS 26.0, *) {
         let style: NSGlassEffectView.Style = topBarColorScheme == .clearGlass ? .clear : .regular
         let glassView = TopBarGlassEffectView(style: style)
         glassView.update(targetLayout)
-        return glassView
+        glassView.customAppearance = targetAppearance
+        view = glassView
       } else {
         fallthrough
       }
     case .clearGradient:
-      return TopBarGradientView()
+      view = TopBarGradientView()
     case .visualEffectView, .none:
       // Default to NSVisualEffectView
-      return TopBarVisualEffectView()
+      view = TopBarVisualEffectView()
     }
+
+    view.appearance = targetAppearance
+    return view
   }
 
   /// Returns `true` if view needed to be rebuilt
-  func rebuildTopBarViewIfNeeded(targetLayout: LayoutState, superview: NSView) {
+  func rebuildTopBarViewIfNeeded(targetLayout: LayoutState, targetAppearance: NSAppearance?, superview: NSView, _ log: any Logger.Subsystem) {
     guard #available(macOS 26.0, *) else { return }
 
     let topBarColorScheme: Preference.PanelColorScheme = targetLayout.topBarColorScheme
@@ -126,7 +152,7 @@ final class TopBar {
     case .clearGlass, .tintedGlass:
       if let glassView = view as? TopBarGlassEffectView {
         let targetStyle: NSGlassEffectView.Style = topBarColorScheme == .clearGlass ? .clear : .regular
-        if glassView.style == targetStyle {
+        if glassView.style == targetStyle, targetAppearance == glassView.effectiveAppearance {
           glassView.update(targetLayout)
           return
         }
@@ -138,17 +164,19 @@ final class TopBar {
       if view as? TopBarGradientView != nil {
         return
       }
+
     case .visualEffectView, .none:
       if view as? TopBarVisualEffectView != nil {
         return
       }
     }
-    rebuildTopBarView(targetLayout: targetLayout, superview: superview)
+    rebuildTopBarView(targetLayout: targetLayout, targetAppearance: targetAppearance, superview: superview, log)
   }
 
-  func rebuildTopBarView(targetLayout: LayoutState, superview: NSView) {
+  func rebuildTopBarView(targetLayout: LayoutState, targetAppearance: NSAppearance?, superview: NSView, _ log: any Logger.Subsystem) {
+    log.verbose("[Load] Rebuilding bottomBarView: colorScheme=\(targetLayout.topBarColorScheme)")
     view.removeFromSuperview()
-    view = TopBar.buildView(targetLayout: targetLayout)
+    view = TopBar.buildView(targetLayout: targetLayout, targetAppearance: targetAppearance)
     superview.addSubview(view)
     configureView()
   }
