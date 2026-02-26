@@ -607,7 +607,7 @@ extension PlayerWindowController {
       let newGeo = outputLayout.controlBarGeo
       log.verbose("Setting up OSC: pos=\(outputLayout.oscPosition) musicMode=\(outputLayout.isMusicMode.yn) playIconSize=\(newGeo.playIconSize) playIconSpacing=\(newGeo.playIconSpacing)")
 
-      rebuildOSCToolbar(transition, .midTransitionHiddenUpdates)
+      rebuildOSCToolbar(transition, .midTransitionHiddenUpdates, hasColorChange: appearanceDidChange || transition.isOSCStyleChanging)
 
       switch outputLayout.oscPosition {
       case .top:
@@ -729,7 +729,7 @@ extension PlayerWindowController {
       volumeSliderCell.knobHeight = sliderKnobHeight
       volumeSlider.needsDisplay = true
 
-      if transition.isWindowInitialLayout || transition.isOSCPositionChanging || transition.isOSCStyleChanging ||
+      if appearanceDidChange || transition.isWindowInitialLayout || transition.isOSCPositionChanging || transition.isOSCStyleChanging ||
           (transition.inputLayout.controlBarGeo.barHeight != transition.outputLayout.controlBarGeo.barHeight) {
         let oscColorScheme = transition.outputLayout.oscColorScheme
         log.verbose("Updating OSC colors: hasClearBG=\(oscColorScheme.hasClearBG.yn) colorScheme=\(oscColorScheme.description)")
@@ -750,6 +750,13 @@ extension PlayerWindowController {
 
         // Invalidate all cached knob images so they are rebuilt with new style
         oscKnobRenderer.invalidateCachedKnobs()
+
+        if outputLayout.isMusicMode {
+          miniPlayer.volumeButton.setColors(for: oscColorScheme)
+          miniPlayer.togglePlaylistButton.setColors(for: oscColorScheme)
+          miniPlayer.toggleAlbumArtButton.setColors(for: oscColorScheme)
+          exitMusicModeButton.setColors(for: oscColorScheme)
+        }
       }
     }
 
@@ -1455,13 +1462,12 @@ extension PlayerWindowController {
   }
 
   /// Recreates the toolbar with the latest icons with the latest sizes & padding from prefs
-  private func rebuildOSCToolbar(_ transition: LayoutTransition, _ stage: LayoutTransition.Stage) {
+  private func rebuildOSCToolbar(_ transition: LayoutTransition, _ stage: LayoutTransition.Stage, hasColorChange: Bool) {
     let oldGeo = transition.inputLayout.controlBarGeo
     let newGeo = transition.outputLayout.controlBarGeo
     let newButtonTypes = newGeo.toolbarItems
 
     let hasSizeChange = oldGeo.toolIconSize != newGeo.toolIconSize || oldGeo.toolIconSpacing != newGeo.toolIconSpacing
-    let hasColorChange = transition.inputLayout.oscBackgroundIsClear != transition.outputLayout.oscBackgroundIsClear
     var needsButtonsUpdate = hasSizeChange || hasColorChange
 
     let isOpeningBarOSCFromZero = transition.isOpeningBarOSCFromZero

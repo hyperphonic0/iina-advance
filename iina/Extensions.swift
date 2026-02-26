@@ -2144,51 +2144,113 @@ extension NSView {
 
   func addShadow(blurRadiusMultiplier: CGFloat = 0.0,
                  blurRadiusConstant: CGFloat = Constants.iconDefaultShadowBlurRadiusConstant,
-                 shadowOffsetMultiplier: CGFloat = 0.0,
                  xOffsetConstant: CGFloat = 0.0, yOffsetConstant: CGFloat = 0.0,
                  color: NSColor = Constants.Color.defaultShadow) {
-    let controlHeight = fittingSize.height
     let shadow = NSShadow()
-    // Amount of blur (in pixels) applied to the shadow.
-    let blurRadius = controlHeight * blurRadiusMultiplier + blurRadiusConstant
+
+    let controlHeight = fittingSize.height
+    let blurRadius = (controlHeight * blurRadiusMultiplier) + blurRadiusConstant
     shadow.shadowBlurRadius = blurRadius
-    shadow.shadowColor = color
+
     // the distance from the text the shadow is dropped (+X = to the right; -Y = below the text):
-    shadow.shadowOffset = NSSize(width: controlHeight * shadowOffsetMultiplier + xOffsetConstant, height: controlHeight * shadowOffsetMultiplier + yOffsetConstant)
+    shadow.shadowOffset = NSSize(width: xOffsetConstant, height: yOffsetConstant)
+
+    shadow.shadowColor = color
+
     self.shadow = shadow
   }
 
   func addShadow(_ scheme: Preference.PanelColorScheme, _ controlType: ControlTypeForShadow) {
-    switch scheme {
-    case .clearGlass, .clearGradient:
-      switch controlType {
-      case .button:
-        addShadow(blurRadiusMultiplier: scheme.btnShadowBlurRadius_Multiplier,
-                  blurRadiusConstant: scheme.btnShadowBlurRadius,
-                  xOffsetConstant: 0,
-                  yOffsetConstant: 0)
-      case .text:
-        addShadow(blurRadiusMultiplier: scheme.textShadowBlurRadius_Multiplier,
-                  blurRadiusConstant: scheme.textShadowBlurRadius,
-                  xOffsetConstant: scheme.textShadowOffsetX,
-                  yOffsetConstant: scheme.textShadowOffsetY)
-      case .titleText:
-        // Unclear why Y offset needs to be flipped for this one
-        addShadow(blurRadiusMultiplier: 0,
-                  blurRadiusConstant: scheme.titleTextShadowBlurRadius,
-                  xOffsetConstant: 0,
-                  yOffsetConstant: 0)
-      case .titleBarButton:
-        addShadow(blurRadiusMultiplier: 0,
-                  blurRadiusConstant: scheme.titleBtnShadowBlurRadius,
-                  xOffsetConstant: 0,
-                  // Unclear why Y offset needs to be flipped for this one
-                  yOffsetConstant: 0)
+    guard scheme.usesShadow else {
+      shadow = nil
+      return
+    }
+
+    let shadowColor = scheme == .tintedGlass && iinaAppearance.isDark ? Constants.Color.whiteShadowNS : Constants.Color.blackShadowNS
+    let radiusMultiplier, radiusConstant, x, y: CGFloat
+
+    switch controlType {
+    case .button:
+      switch scheme {
+      case .clearGradient:
+        radiusMultiplier = 0.02
+        radiusConstant = 0.8
+        x = 0
+        y = 0
+      case .clearGlass:
+        radiusMultiplier = 0.02
+        radiusConstant = 0.8
+        x = 0
+        y = 0
+      case .tintedGlass:
+        radiusMultiplier = 0.02
+        radiusConstant = 0.8
+        x = 0
+        y = 0
+      default:
+        return
       }
 
-    default:
-      shadow = nil
+    case .text:
+      switch scheme {
+      case .clearGradient:
+        radiusMultiplier = 0.02
+        radiusConstant = 1.0
+        x = 0
+        y = 0
+      case .clearGlass:
+        radiusMultiplier = 0.02
+        radiusConstant = 1.0
+        x = 0
+        y = 0
+      case .tintedGlass:
+        radiusMultiplier = 0.015
+        radiusConstant = 0.0
+        x = 0
+        y = 0
+      default:
+        return
+      }
+
+    case .titleText:
+      switch scheme {
+      case .clearGradient:
+        radiusMultiplier = 0
+        radiusConstant = 2
+      case .clearGlass:
+        radiusMultiplier = 0
+        radiusConstant = 2
+      case .tintedGlass:
+        radiusMultiplier = 0
+        radiusConstant = 0.3
+      default:
+        return
+      }
+      x = 0
+      y = 0
+
+    case .titleBarButton:
+      switch scheme {
+      case .clearGradient:
+        radiusMultiplier = 0
+        radiusConstant = 3.0
+      case .clearGlass:
+        radiusMultiplier = 0
+        radiusConstant = 3.0
+      case .tintedGlass:
+        radiusMultiplier = 0
+        radiusConstant = 0.75
+      default:
+        return
+      }
+      x = 0
+      y = 0
+
     }
+    addShadow(blurRadiusMultiplier: radiusMultiplier,
+              blurRadiusConstant: radiusConstant,
+              xOffsetConstant: x, yOffsetConstant: y,
+              color: shadowColor)
   }
 
   // MARK: Inter-view relations

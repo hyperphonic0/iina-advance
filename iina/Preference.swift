@@ -900,6 +900,17 @@ struct Preference {
         return false
       }
     }
+
+    var usesShadow: Bool {
+      switch self {
+      case .clearGlass,
+          .clearGradient,
+          .tintedGlass:
+        return true
+      default:
+        return false
+      }
+    }
   }
 
   enum ShowTopBarTrigger: Int, InitializingFromKey {

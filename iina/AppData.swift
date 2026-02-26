@@ -548,6 +548,8 @@ struct Constants {
 
     static let blackShadow = CGColor(gray: 0, alpha: 0.75)
     static let whiteShadow = CGColor(gray: 1, alpha: 0.75)
+    static let blackShadowNS = NSColor(cgColor: blackShadow)!
+    static let whiteShadowNS = NSColor(cgColor: whiteShadow)!
 
     static let clearBlackGradientColors = [CGColor(red: 0, green: 0, blue: 0, alpha: 0.0),
                                            CGColor(red: 0, green: 0, blue: 0, alpha: 0.01),
@@ -667,64 +669,9 @@ enum ControlTypeForShadow {
   case button
   /// Generic text control
   case text
+  case titleBarButton
   /// Title bar text
   case titleText
-  case titleBarButton
-}
-
-extension Preference.PanelColorScheme {
-
-  var btnShadowBlurRadius: CGFloat {
-    switch self {
-    case .clearGradient: return 0.8
-    case .clearGlass: return 0.8
-    default: return 0
-    }
-  }
-
-  var btnShadowBlurRadius_Multiplier: CGFloat {
-    switch self {
-    case .clearGradient: return 0.02
-    case .clearGlass: return 0.02
-    default: return 0
-    }
-  }
-
-  var titleBtnShadowBlurRadius: CGFloat {
-    switch self {
-    case .clearGradient: return 1.2
-    case .clearGlass: return 1.2
-    default: return 0
-    }
-  }
-
-  /// Shadow blur of time labels = its contentHeight * multiplier + constant
-  var textShadowBlurRadius: CGFloat {
-    switch self {
-    case .clearGradient: return 0.8
-    case .clearGlass: return 0.8
-    default: return 0
-    }
-  }
-
-  var textShadowBlurRadius_Multiplier: CGFloat {
-    switch self {
-    case .clearGradient: return 0.04
-    case .clearGlass: return 0.04
-    default: return 0
-    }
-  }
-
-  var textShadowOffsetX: CGFloat { 0 }
-  var textShadowOffsetY: CGFloat { 0 }
-
-  var titleTextShadowBlurRadius: CGFloat {
-    switch self {
-    case .clearGradient: return 1
-    case .clearGlass: return 1
-    default: return 0
-    }
-  }
 }
 
 extension NSStackView.VisibilityPriority {

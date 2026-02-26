@@ -514,8 +514,6 @@ struct LayoutState {
 
   var hasTopOrBottomOSC: Bool { enableOSC && (oscPosition == .top || oscPosition == .bottom) }
 
-  /// Has OSC with clear background.
-  var oscBackgroundIsClear: Bool { oscColorScheme.hasClearBG }
   var canShowSidebars: Bool { mode.canShowSidebars }
   var isLeadingSidebarVisible: Bool { leadingSidebar.isVisible }
   var isTrailingSidebarVisible: Bool { trailingSidebar.isVisible }
