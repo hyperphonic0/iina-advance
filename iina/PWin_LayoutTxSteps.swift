@@ -843,6 +843,11 @@ extension PlayerWindowController {
       onTopButton.setColors(for: topBarColorScheme, .titleBarButton)
       onTopButton.needsDisplay = true
 
+      if let titleTextField {
+        titleTextField.addShadow(topBarColorScheme, .titleText)
+        titleTextField.needsDisplay = true
+      }
+
       // Colors for custom title bar controls
       customTitleBar?.setColors(topBarColorScheme: topBarColorScheme)
     }
