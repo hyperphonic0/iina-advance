@@ -136,6 +136,13 @@ class ScrollableSlider: NSSlider {
 
 
 class ScrollableSliderCell: NSSliderCell {
+  private static let knobXInset: CGFloat = {
+    if #available(macOS 26.0, *) {
+      return 2
+    } else {
+      return 0
+    }
+  }()
   var player: PlayerCore { pwc!.player }
   unowned var pwc: PlayerWindowController?
 
@@ -224,7 +231,7 @@ class ScrollableSliderCell: NSSliderCell {
 
     let extraHeightAvailable = max(0.0, slider.bounds.height - superRect.height)
     let extraHeight = min(extraHeightAvailable, extraHeightNeeded)
-    let rect = superRect.insetBy(dx: 0, dy: -(extraHeight * 0.5))
+    let rect = superRect.insetBy(dx: ScrollableSliderCell.knobXInset, dy: -(extraHeight * 0.5))
     return rect
   }
 

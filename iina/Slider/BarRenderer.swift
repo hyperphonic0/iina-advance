@@ -488,13 +488,7 @@ final class BarRenderer {
 
   func drawBar(_ barImg: CGImage, in barRect: NSRect, scaleFactor: CGFloat,
                tallestBarHeight: CGFloat, drawShadow: Bool) {
-    var drawRect = imageRect(in: barRect, tallestBarHeight: tallestBarHeight)
-    if #unavailable(macOS 11) {
-      drawRect = NSRect(x: drawRect.origin.x,
-                        y: drawRect.origin.y + 1,
-                        width: drawRect.width,
-                        height: drawRect.height - 2)
-    }
+    let drawRect = imageRect(in: barRect, tallestBarHeight: tallestBarHeight)
 
     let ctx = NSGraphicsContext.current!.cgContext
 
