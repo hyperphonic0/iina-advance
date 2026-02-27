@@ -533,7 +533,7 @@ extension PlayerWindowController {
     if transition.outputLayout.isMusicMode && (!bottomBar.view.subviews.contains(miniPlayer.view) || transition.isWindowInitialLayout || !transition.inputLayout.isMusicMode) {
       // If initial layout, bottomBar has been rebuilt, so we need to repopulate it
       log.verbose("Adding miniPlayer view to bottomBar.view")
-      bottomBar.view.addSubview(miniPlayer.view, positioned: .below, relativeTo: bottomBar.topBorder)
+      bottomBar.contentView.addSubview(miniPlayer.view, positioned: .below, relativeTo: bottomBar.topBorder)
       miniPlayer.view.addAllConstraintsToFillSuperview()
 
       // Now confiure various subviews
@@ -642,9 +642,9 @@ extension PlayerWindowController {
           oscOneRowView.updateSubviews(from: self, newGeo)
         }
 
-        if !bottomBar.view.subviews.contains(oscContentView) {
+        if !bottomBar.contentView.subviews.contains(oscContentView) {
           log.verbose("Adding \(oscContentView.idString) to bottomBar.view")
-          bottomBar.view.addSubview(oscContentView, positioned: .below, relativeTo: bottomBar.topBorder)
+          bottomBar.contentView.addSubview(oscContentView, positioned: .below, relativeTo: bottomBar.topBorder)
           // Match leading/trailing spacing of title bar icons above
           oscContentView.addConstraintsToFillSuperview(top: 0, bottom: 0,
                                                        leading: Constants.titleBarIconHSpacing,
@@ -767,7 +767,7 @@ extension PlayerWindowController {
       let cropController = self.cropSettingsView ?? transition.outputLayout.interactiveMode!.viewController()
       cropController.pwc = self
       self.cropSettingsView = cropController
-      bottomBar.view.addSubview(cropController.view, positioned: .below, relativeTo: bottomBar.topBorder)
+      bottomBar.contentView.addSubview(cropController.view, positioned: .below, relativeTo: bottomBar.topBorder)
       cropController.view.addAllConstraintsToFillSuperview()
       cropController.view.alphaValue = 0
       let videoSizeRaw = transition.outputGeometry.video.videoSizeRaw

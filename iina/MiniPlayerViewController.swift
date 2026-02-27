@@ -177,6 +177,7 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
   // MARK: - UI: Controller
 
   func setColors(_ colorScheme: Preference.PanelColorScheme) {
+    log.verbose("MiniPlayer: setting colorScheme \(colorScheme)")
     volumeButton.setColors(for: colorScheme)
     togglePlaylistButton.setColors(for: colorScheme)
     toggleAlbumArtButton.setColors(for: colorScheme)

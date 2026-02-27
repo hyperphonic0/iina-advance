@@ -58,6 +58,13 @@ final class BottomBar {
   init() {
     view = NSView()  // for now
   }
+  
+  var contentView: NSView {
+    if #available(macOS 26.0, *), let glassView = view as? BottomBarGlassEffectView {
+      return glassView.contentView!
+    }
+    return view
+  }
 
   /// The `bottomBarView` may need to be completely rebuilt if the style changes.
   /// This also removes the previous `bottomBarView` from `contentView`.
