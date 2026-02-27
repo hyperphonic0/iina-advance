@@ -87,6 +87,8 @@ final class PlayerCore: NSObject {
 
   private var subFileMonitor: FileMonitor? = nil
 
+  var windowAutosaveName: WindowAutosaveName { WindowAutosaveName.playerWindow(id: label) }
+
   // - Concurrency
 
   /// This ticket will be increased each time before a new task being submitted to `postLoadBGQ`.
@@ -676,7 +678,7 @@ final class PlayerCore: NSObject {
 
         let volRemountURLs: [String: Bool]
         if case .restoring = sessionState,
-           let playerToRestore = AppDelegate.shared.startupHandler.playersToRestore.removeValue(forKey: window.savedStateName) {
+           let playerToRestore = AppDelegate.shared.startupHandler.playersToRestore.removeValue(forKey: WindowAutosaveName(window.savedStateName)!) {
           // This is the last bit of work for this player which requires volume remount info
           volRemountURLs = playerToRestore.volRemountsProcessed
         } else {

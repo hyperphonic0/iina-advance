@@ -1952,9 +1952,9 @@ extension NSWindow {
   /// Provides a unique window ID for reference by `UIState`. Use this instead of `frameAutosaveName` (although in most cases
   /// it will be the same string).
   var savedStateName: String {
-    if let playerController = windowController as? PlayerWindowController {
+    if let pwc = windowController as? PlayerWindowController {
       // Not using AppKit autosave for player windows. Instead build ID based on player label
-      return WindowAutosaveName.playerWindow(id: playerController.player.label).string
+      return pwc.player.windowAutosaveName.string
     }
     // Default to the AppKit autosave ID for all other windows.
     return frameAutosaveName

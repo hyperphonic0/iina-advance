@@ -406,7 +406,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     DispatchQueue.main.async { [self] in
       guard !isTerminating else { return }
       Logger.log.verbose("Window did minimize; adding to minimized windows list: \(savedStateName.quoted)")
-      startupHandler.setDoneWithRestore(savedWindowName: savedStateName)
+      if !startupHandler.isDoneLaunching {
+        if let windowAutosaveName = WindowAutosaveName(window.savedStateName) {
+          startupHandler.setDoneWithRestore(savedWindowName: windowAutosaveName)
+        } else {
+          Logger.log.error("Could not create WindowAutosaveName from ready window's savedStateName: \(window.savedStateName.quoted)")
+        }
+      }
       UIState.shared.windowsOpen.remove(savedStateName)
       UIState.shared.windowsMinimized.insert(savedStateName)
       UIState.shared.saveCurrentOpenWindowList()

@@ -193,6 +193,17 @@ enum WindowAutosaveName: Equatable, Hashable {
     return nil
   }
 
+  static func == (lhs: Self, rhs: Self) -> Bool {
+    if case .playerWindow(let idL) = lhs, case .playerWindow(let idR) = rhs {
+      return idL == idR
+    }
+    return lhs.string == rhs.string
+  }
+
+  static func != (lhs: Self, rhs: Self) -> Bool {
+    return !(lhs == rhs)
+  }
+
   var hashValue: Int { return string.hashValue }
 
   func hash(into hasher: inout Hasher) {
