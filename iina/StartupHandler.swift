@@ -599,6 +599,8 @@ final class StartupHandler {
         str = "…"
       } else if let path = stalledWin.pwc?.player.info.currentPlayback?.path {
         str = "\(index+1). \(path.quoted)  [\(stalledWin.saveName)]"
+      } else if let player = playersToRestore[stalledWin.saveName], let path = player.savedState.staticURL?.path {
+        str = "\(index+1). \(path.quoted)  [\(stalledWin.saveName)]"
       } else {
         str = "\(index+1). \(stalledWin.saveName)"
       }
