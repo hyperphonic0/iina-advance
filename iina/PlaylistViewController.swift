@@ -74,6 +74,8 @@ class PlaylistViewController: NSViewController, NSMenuDelegate, SidebarTabGroupV
 
   private(set) var currentTab: Sidebar.Tab = .playlist
 
+  var tabButtons: [NSButton] { [playlistBtn, chaptersBtn] }
+
   /// Similar to the one in `QuickSettingViewController`.
   /// Since IBOutlet is `nil` when the view is not loaded at first time, use this variable to cache which tab it need to switch to when the
   /// view is ready. The value will be handled after loaded.
@@ -128,6 +130,8 @@ class PlaylistViewController: NSViewController, NSMenuDelegate, SidebarTabGroupV
                                                          removeFunc: { [self] rowIndexes in
       player.removePlaylistRows(rowIndexes, .registerUndoRedo)
     })
+
+    setColors(pwc.currentLayout)
 
     for btn in [deleteBtn, loopBtn, shuffleBtn] {
       btn?.image?.isTemplate = true
@@ -213,6 +217,13 @@ class PlaylistViewController: NSViewController, NSMenuDelegate, SidebarTabGroupV
     guard let playlistTableView else { return }
     player.log.verbose("Scrolling playlist table to index \(entryIndex)")
     playlistTableView.scrollRowToVisible(entryIndex)
+  }
+
+  func setColors(_ layout: LayoutState) {
+    player.log.verbose("Setting PlaylistSidebar buttons colorScheme=\(layout.sidebarsColorScheme.description)")
+    for btn in tabButtons {
+      btn.addShadow(layout.sidebarsColorScheme, .text)
+    }
   }
 
   /// Use `animate: false` only for initial load, to avoid seeing a briefly empty table

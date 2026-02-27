@@ -751,6 +751,16 @@ extension PlayerWindowController {
       }
     }
 
+    if transition.isWindowInitialLayout || transition.isOpeningAnySidebar
+        || (transition.inputLayout.sidebarsColorScheme != transition.outputLayout.sidebarsColorScheme) {
+      if quickSettingView.isViewLoaded {
+        quickSettingView.setColors(outputLayout)
+      }
+      if playlistView.isViewLoaded {
+        playlistView.setColors(outputLayout)
+      }
+    }
+
     // - Interactive mode
 
     if transition.isEnteringInteractiveMode || (transition.isWindowInitialLayout && transition.outputLayout.isInteractiveMode) {

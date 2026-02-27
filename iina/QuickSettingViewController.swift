@@ -84,6 +84,8 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
 
   private(set) var currentTab: Sidebar.Tab = .video
 
+  var tabButtons: [NSButton] { [videoTabBtn, audioTabBtn, subTabBtn] }
+
   var observers: [NSObjectProtocol] = []
 
   @IBOutlet weak var tabHeightConstraint: NSLayoutConstraint!
@@ -275,6 +277,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     subTextBorderColorWell.target = self
     subTextBorderColorWell.action = #selector(subTextBorderColorAction(_:))
 
+    setColors(pwc.currentLayout)
 
     if #available(macOS 26, *) {
       speedSlider.neutralValue = 8
@@ -468,6 +471,13 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
       }
     }
     observers = []
+  }
+
+  func setColors(_ layout: LayoutState) {
+    player.log.verbose("Setting QuickSettingsSidebar buttons colorScheme=\(layout.sidebarsColorScheme.description)")
+    for btn in tabButtons {
+      btn.addShadow(layout.sidebarsColorScheme, .text)
+    }
   }
 
   /// Return the slider value that represents the given playback speed.

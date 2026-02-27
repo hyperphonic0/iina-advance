@@ -29,10 +29,10 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
 
   // MARK: - View Controllers
 
-  /** The quick setting sidebar (video, audio, subtitles). */
+  /// The quick setting sidebar (video, audio, subtitles).
   let quickSettingView = QuickSettingViewController()
 
-  /** The playlist and chapter sidebar. */
+  /// The playlist and chapter sidebar.
   let playlistView = PlaylistViewController()
 
   let pluginView = PluginViewController()
