@@ -355,7 +355,7 @@ extension PlayerWindowController {
     /// Do not set `window.appearance`! It causes race conditions which lead to wrong colors of top panel (which we sometimes want to override).
     /// Set `window.contentView.appearance` instead.
     let theme: Preference.Theme = Preference.enum(for: .themeMaterial)
-    // Can be nil, which means dynamic system appearance:
+    // Can be nil, which means dynamic system appearance as set by MacOS (via NSApp)
     let targetWindowAppearance: NSAppearance = NSAppearance(iinaTheme: theme) ?? NSApp.effectiveAppearance
     let topBarAppearance = outputLayout.topBarColorScheme.hasClearBG ? NSAppearance(iinaTheme: .dark)! : targetWindowAppearance
     log.verbose("TopBarAppearance: \(topBarAppearance.isDark ? "DARK" : "LIGHT")")
@@ -456,14 +456,9 @@ extension PlayerWindowController {
     // - Top Bar
 
     topBarAppearance.performAsCurrentDrawingAppearance {
-      if appearanceDidChange {
-        // Workaround for race condition when changing Glass theme (MacOS 26): just rebuild the view
-        topBar.rebuildTopBarView(targetLayout: outputLayout, targetAppearance: topBarAppearance, superview: contentView, log)
-      } else {
-        topBar.rebuildTopBarViewIfNeeded(targetLayout: outputLayout, targetAppearance: topBarAppearance, superview: contentView, log)
-        if topBar.view.superview == nil {
-          contentView.addSubview(topBar.view)
-        }
+      topBar.rebuildTopBarViewIfNeeded(targetLayout: outputLayout, targetAppearance: topBarAppearance, superview: contentView, log)
+      if topBar.view.superview == nil {
+        contentView.addSubview(topBar.view)
       }
     }
 

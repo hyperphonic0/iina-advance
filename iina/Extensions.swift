@@ -2185,8 +2185,8 @@ extension NSView {
         x = 0
         y = 0
       case .tintedGlass:
-        radiusMultiplier = 0.02
-        radiusConstant = 0
+        radiusMultiplier = 0.015
+        radiusConstant = 0.2
         x = 0
         y = 0
       default:
@@ -2206,8 +2206,8 @@ extension NSView {
         x = 0
         y = 0
       case .tintedGlass:
-        radiusMultiplier = 0.02
-        radiusConstant = 0
+        radiusMultiplier = 0.015
+        radiusConstant = 0.2
         x = 0
         y = 0
       default:

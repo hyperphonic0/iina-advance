@@ -131,22 +131,26 @@ final class TopBar {
 
     let topBarColorScheme: Preference.PanelColorScheme = targetLayout.topBarColorScheme
     switch topBarColorScheme {
-    case .clearGlass, .tintedGlass:
-      if let glassView = view as? TopBarGlassEffectView {
-        let targetStyle: NSGlassEffectView.Style = topBarColorScheme == .clearGlass ? .clear : .regular
-        if glassView.style == targetStyle {
-          glassView.update(targetLayout)
-          return
-        }
+    case .clearGlass:
+      if let glassView = view as? TopBarGlassEffectView, glassView.style == .clear, glassView.effectiveAppearance.isDark {
+        // good
+        glassView.update(targetLayout)
+        return
+      }
+    case .tintedGlass:
+      // Workaround for race condition when changing Glass theme (MacOS 26): rebuild the view if appearance is different
+      if let glassView = view as? TopBarGlassEffectView, glassView.style == .regular, view.effectiveAppearance == targetAppearance {
+        glassView.update(targetLayout)
+        return
       }
 
     case .clearGradient:
-      if view as? TopBarGradientView != nil {
+      if view as? TopBarGradientView != nil, view.effectiveAppearance == targetAppearance {
         return
       }
 
     case .visualEffectView, .none:
-      if view as? TopBarVisualEffectView != nil {
+      if view as? TopBarVisualEffectView != nil, view.effectiveAppearance == targetAppearance {
         return
       }
     }
