@@ -575,6 +575,7 @@ extension PlayerWindowController {
     muteButton.target = self
     muteButton.action = #selector(muteButtonAction(_:))
     muteButton.toolTip = "Toggle mute"
+    muteButton.actionSymbolEffectFunc = SymButton.nullEffectFunc
     fragVolumeView.addSubview(muteButton)
     muteButton.translatesAutoresizingMaskIntoConstraints = false
     muteButton.addConstraintsToFillSuperview(leading: 0)

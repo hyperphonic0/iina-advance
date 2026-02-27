@@ -2083,7 +2083,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
 
     let volumeImage = volumeIcon(volume: volume, isMuted: isMuted)
     if let volumeImage, volumeImage != muteButton.image {
-      muteButton.replaceSymbolImage(with: volumeImage, effect: .none)
+      muteButton.replaceSymbolImage(with: volumeImage, effect: nil)
     }
 
     // Avoid race conditions between music mode & regular mode by just setting both sets of controls at the same time.
