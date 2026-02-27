@@ -35,8 +35,7 @@ final class FloatingControlBarGlassEffectView: ClickThroughGlassEffectView, @Mai
 
   init(_ controlBar: FloatingControlBar, style desiredStyle: Style) {
     self.controlBar = controlBar
-    super.init(frame: .zero)
-    setStyle(desiredStyle)
+    super.init(desiredStyle)
   }
 
   required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -90,9 +89,7 @@ final class FloatingControlBar {
         return
       } else {
         let osdGlassView = FloatingControlBarGlassEffectView(self, style: style)
-        let contentView = NSView()
-        osdGlassView.contentView = contentView
-        contentView.subviews = subviews
+        osdGlassView.contentView!.subviews = subviews
         view = osdGlassView
         // MacOS Tahoe's style favors rounder corners. Try to fit in
         view.roundCorners(withRadius: Constants.glassCornerRadius)

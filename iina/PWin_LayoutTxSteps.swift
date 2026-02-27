@@ -13,7 +13,7 @@ import Foundation
 /// but others are expected to always be immediate.
 extension PlayerWindowController {
 
-  /// -------------------------------------------------
+  /// --------------------------------------------------------------------------------------------------
   /// PRE TRANSITION
   /// Setup work. Always immediate (i.e., not animated).
   func doPreTransitionWork(_ transition: LayoutTransition) throws {
@@ -122,7 +122,7 @@ extension PlayerWindowController {
 
   }
 
-  /// -------------------------------------------------
+  /// --------------------------------------------------------------------------------------------------
   /// FADE OUT OLD VIEWS
   /// Expected to be animated.
   func fadeOutOldViews(_ transition: LayoutTransition) {
@@ -227,7 +227,7 @@ extension PlayerWindowController {
     }
   }
 
-  /// -------------------------------------------------
+  /// --------------------------------------------------------------------------------------------------
   /// CLOSE OLD PANELS
   /// This step is not always executed (e.g.: not for initial layout or for full screen toggle).
   /// Expected to be animated.
@@ -329,7 +329,8 @@ extension PlayerWindowController {
     }
   }
 
-  /// -------------------------------------------------
+
+  /// --------------------------------------------------------------------------------------------------
   /// MIDPOINT: MOVE & RESIZE VIDEO FRAME
   /// Only executed for certain transitions (windowed mode <-> either music mode or interactive mode).
   /// All bars are expected to be closed at this point, leaving only the viewportView.
@@ -339,7 +340,8 @@ extension PlayerWindowController {
     rebuildPanelConstraints(transition, stage: .moveAndScale)
   }
 
-  /// -------------------------------------------------
+
+  /// --------------------------------------------------------------------------------------------------
   /// MIDPOINT: UPDATE INVISIBLES
   /// This is needed as its own transaction in case constraints need to be replaced or views need to be added or replaced in the window such that
   /// there is not an appropriate animation which should be seen.
@@ -356,6 +358,7 @@ extension PlayerWindowController {
     // Can be nil, which means dynamic system appearance:
     let targetWindowAppearance: NSAppearance = NSAppearance(iinaTheme: theme) ?? NSApp.effectiveAppearance
     let topBarAppearance = outputLayout.topBarColorScheme.hasClearBG ? NSAppearance(iinaTheme: .dark)! : targetWindowAppearance
+    log.verbose("TopBarAppearance: \(topBarAppearance.isDark ? "DARK" : "LIGHT")")
 
     // Do this here so that (1) BarRenderer regenerates close enough to mid-animation (so bar thickness changes pleasantly),
     // & (2) window.appearance is updated before updating styling of any window views!
@@ -454,7 +457,7 @@ extension PlayerWindowController {
 
     topBarAppearance.performAsCurrentDrawingAppearance {
       if appearanceDidChange {
-        // Workaround for race condition when changing theme
+        // Workaround for race condition when changing Glass theme (MacOS 26): just rebuild the view
         topBar.rebuildTopBarView(targetLayout: outputLayout, targetAppearance: topBarAppearance, superview: contentView, log)
       } else {
         topBar.rebuildTopBarViewIfNeeded(targetLayout: outputLayout, targetAppearance: topBarAppearance, superview: contentView, log)
@@ -857,7 +860,7 @@ extension PlayerWindowController {
   }  /// end `updateHiddenViewsAndConstraints`
 
 
-  /// -------------------------------------------------
+  /// --------------------------------------------------------------------------------------------------
   /// OPEN PANELS & FINALIZE OFFSETS
   func openNewPanelsAndFinalizeOffsets(_ transition: LayoutTransition) {
     let outputLayout = transition.outputLayout
@@ -945,7 +948,7 @@ extension PlayerWindowController {
     log.verbose("Done")
   }
 
-  /// -------------------------------------------------
+  /// --------------------------------------------------------------------------------------------------
   /// FADE IN NEW VIEWS
   /// Expected to be animated.
   func fadeInNewViews(_ transition: LayoutTransition) {
@@ -1025,7 +1028,7 @@ extension PlayerWindowController {
     }
   }
 
-  /// -------------------------------------------------
+  /// --------------------------------------------------------------------------------------------------
   /// POST TRANSITION: UPDATE INVISIBLES
   /// Cleanup & variable state updates. Always instantaneous (not animated).
   func doPostTransitionWork(_ transition: LayoutTransition) {

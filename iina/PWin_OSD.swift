@@ -148,7 +148,7 @@ final class OSDState {
     let colorScheme: Preference.PanelColorScheme = Preference.enum(for: .osdColorScheme)
     if #available(macOS 26, *), colorScheme == .clearGlass || colorScheme == .tintedGlass {
       let style: NSGlassEffectView.Style = colorScheme == .clearGlass ? .clear : .regular
-      let osdGlassView = OSDGlassEffectView(style: style)
+      let osdGlassView = OSDGlassEffectView(style)
       osdView = osdGlassView
       let contentView = NSView()
       osdGlassView.contentView = contentView
@@ -181,7 +181,7 @@ final class OSDState {
     let colorScheme: Preference.PanelColorScheme = LayoutState.effectiveOSDColorSchemeFromPrefs
     if #available(macOS 26, *), colorScheme == .clearGlass || colorScheme == .tintedGlass {
       let style: NSGlassEffectView.Style = colorScheme == .clearGlass ? .clear : .regular
-      let glassView = AdditionalInfoGlassView(style: style)
+      let glassView = AdditionalInfoGlassView(style)
       aiView = glassView
       let contentView = NSView()
       glassView.contentView = contentView
@@ -255,6 +255,7 @@ final class OSDState {
     }
 
     guard needsRebuild else { return }
+
     let osdIsHidden = osdView.isHidden
     log.verbose("Rebuilding OSDView for colorScheme=\(colorScheme.description) hidden=\(osdIsHidden.yn)")
     osdView.removeAllSubviews()
@@ -491,12 +492,6 @@ final class OSDVisualEffectView: ClickThroughVisualEffectView {
 
 @available(macOS 26.0, *)
 final class OSDGlassEffectView: ClickThroughGlassEffectView {
-  init(style desiredStyle: Style) {
-    super.init(frame: .zero)
-    setStyle(desiredStyle)
-  }
-
-  @MainActor required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 }
 
 // MARK: - AdditionalInfoView Classes
@@ -515,12 +510,6 @@ class AdditionalInfoVEView: MouseIgnoringVisualEffectView {
 
 @available(macOS 26.0, *)
 class AdditionalInfoGlassView: MouseIgnoringGlassEffectView {
-  init(style desiredStyle: Style) {
-    super.init(frame: .zero)
-    setStyle(desiredStyle)
-  }
-
-  @MainActor required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 }
 
 /// Simple container for subviews of AdditionalInfo view.

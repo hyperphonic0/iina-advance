@@ -22,16 +22,10 @@ final fileprivate class TopBarVisualEffectView: ClickThroughVisualEffectView {
 /// Top bar root view with Glass
 @available(macOS 26.0, *)
 final fileprivate class TopBarGlassEffectView: ClickThroughGlassEffectView {
-  var customAppearance: NSAppearance? = nil {
-    didSet {
-      contentView?.appearance = customAppearance
-    }
-  }
 
-  init(style desiredStyle: Style) {
-    super.init(frame: .zero)
+  init(style desiredStyle: Style, _ targetAppearance: NSAppearance) {
+    super.init(desiredStyle)
     wantsLayer = true
-    setStyle(desiredStyle)
   }
   required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
@@ -42,20 +36,6 @@ final fileprivate class TopBarGlassEffectView: ClickThroughGlassEffectView {
     } else {
       // try to match window corners
       cornerRadius = Constants.glassButtonCornerRadius
-    }
-  }
-
-  override var appearance: NSAppearance? {
-    get {
-      customAppearance
-    }
-    set {
-      pwc?.log.verbose("Set requested for TopBarGlassEffectViewappearance.appearance: \(newValue?.name.rawValue ?? "nil")")
-    }
-  }
-  override var effectiveAppearance: NSAppearance {
-    get {
-      customAppearance ?? super.effectiveAppearance
     }
   }
 }
@@ -117,7 +97,7 @@ final class TopBar {
     view = NSView()
   }
 
-  fileprivate static func buildView(targetLayout: LayoutState, targetAppearance: NSAppearance?) -> NSView {
+  fileprivate static func buildView(targetLayout: LayoutState, targetAppearance: NSAppearance, subviews: [NSView]) -> NSView {
     let topBarColorScheme: Preference.PanelColorScheme = targetLayout.topBarColorScheme
 
     let view: NSView
@@ -125,18 +105,20 @@ final class TopBar {
     case .clearGlass, .tintedGlass:
       if #available(macOS 26.0, *) {
         let style: NSGlassEffectView.Style = topBarColorScheme == .clearGlass ? .clear : .regular
-        let glassView = TopBarGlassEffectView(style: style)
+        let glassView = TopBarGlassEffectView(style: style, targetAppearance)
+        glassView.contentView!.subviews = subviews
         glassView.update(targetLayout)
-        glassView.customAppearance = targetAppearance
         view = glassView
       } else {
         fallthrough
       }
     case .clearGradient:
       view = TopBarGradientView()
+      view.subviews = subviews
     case .visualEffectView, .none:
       // Default to NSVisualEffectView
       view = TopBarVisualEffectView()
+      view.subviews = subviews
     }
 
     view.appearance = targetAppearance
@@ -144,7 +126,7 @@ final class TopBar {
   }
 
   /// Returns `true` if view needed to be rebuilt
-  func rebuildTopBarViewIfNeeded(targetLayout: LayoutState, targetAppearance: NSAppearance?, superview: NSView, _ log: any Logger.Subsystem) {
+  func rebuildTopBarViewIfNeeded(targetLayout: LayoutState, targetAppearance: NSAppearance, superview: NSView, _ log: any Logger.Subsystem) {
     guard #available(macOS 26.0, *) else { return }
 
     let topBarColorScheme: Preference.PanelColorScheme = targetLayout.topBarColorScheme
@@ -152,12 +134,10 @@ final class TopBar {
     case .clearGlass, .tintedGlass:
       if let glassView = view as? TopBarGlassEffectView {
         let targetStyle: NSGlassEffectView.Style = topBarColorScheme == .clearGlass ? .clear : .regular
-        if glassView.style == targetStyle, targetAppearance == glassView.effectiveAppearance {
+        if glassView.style == targetStyle {
           glassView.update(targetLayout)
           return
         }
-        // As of MacOS 26.0, glass effect views seem to be unreliable at changing between light & dark.
-        // Just rebuild it from scratch to be safe.
       }
 
     case .clearGradient:
@@ -173,10 +153,11 @@ final class TopBar {
     rebuildTopBarView(targetLayout: targetLayout, targetAppearance: targetAppearance, superview: superview, log)
   }
 
-  func rebuildTopBarView(targetLayout: LayoutState, targetAppearance: NSAppearance?, superview: NSView, _ log: any Logger.Subsystem) {
-    log.verbose("[Load] Rebuilding bottomBarView: colorScheme=\(targetLayout.topBarColorScheme)")
+  func rebuildTopBarView(targetLayout: LayoutState, targetAppearance: NSAppearance, superview: NSView, _ log: any Logger.Subsystem) {
+    log.verbose("[Load] Rebuilding bottomBarView: colorScheme=\(targetLayout.topBarColorScheme) appearanceIsDark=\(targetAppearance.isDark.yesno)")
     view.removeFromSuperview()
-    view = TopBar.buildView(targetLayout: targetLayout, targetAppearance: targetAppearance)
+    let subviews = [titleBarView, controlBarTop, bottomBorder]
+    view = TopBar.buildView(targetLayout: targetLayout, targetAppearance: targetAppearance, subviews: subviews)
     superview.addSubview(view)
     configureView()
   }
@@ -189,7 +170,6 @@ final class TopBar {
     /// `titleBarView`
     titleBarView.translatesAutoresizingMaskIntoConstraints = false
     titleBarView.idString = "TitleBarView"
-    view.addSubview(titleBarView)
 
     titleBarView.addConstraintsToFillSuperview(top: 0, leading: 0, trailing: 0)
 
@@ -197,13 +177,12 @@ final class TopBar {
     titleBarHeightConstraint.identifier = "TitleBarView-HeightConstraint"
     titleBarHeightConstraint.isActive = true
 
-    view.addSubviewAndConstraints(controlBarTop, bottom: 0, leading: 0, trailing: 0)
+    controlBarTop.addConstraintsToFillSuperview(bottom: 0, leading: 0, trailing: 0)
 
     let titleBarBottom_ToControlBarTop_Constraint = titleBarView.bottomAnchor.constraint(equalTo: controlBarTop.topAnchor, constant: 0)
     titleBarBottom_ToControlBarTop_Constraint.identifier = "TitleBar-Bottom_ToControlBarTop_Constraint"
     titleBarBottom_ToControlBarTop_Constraint.isActive = true
 
-    view.addSubview(bottomBorder)
     bottomBorder.addConstraintsToFillSuperview(bottom: -0.5, leading: 0, trailing: 0)
 
     // Want to make a 0.5px border. But it seems that in some display modes, that is not only not possible,

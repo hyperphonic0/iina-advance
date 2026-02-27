@@ -21,9 +21,8 @@ final class BottomBarVisualEffectView: NSVisualEffectView {
 /// Bottom bar root view with Glass effect
 @available(macOS 26.0, *)
 final class BottomBarGlassEffectView: ClickThroughGlassEffectView {
-  init(_ desiredStyle: Style) {
-    super.init(frame: .zero)
-    setStyle(desiredStyle)
+  override init(_ desiredStyle: Style) {
+    super.init(desiredStyle)
     // Is rounded by default. Make sharp in case of custom window
     cornerRadius = 0
   }
@@ -67,27 +66,35 @@ final class BottomBar {
     view.removeAllSubviews()
     view.removeFromSuperview()
 
+    let subviews = [topBorder]
+
     let bottomBarView: NSView
+    let contentView: NSView
     switch colorScheme {
     case .clearGradient:
       bottomBarView = BottomBarGradientView()
+      contentView = bottomBarView
+      bottomBarView.subviews = subviews
     case .clearGlass, .tintedGlass:
       if #available(macOS 26.0, *) {
         let desiredStyle: NSGlassEffectView.Style = colorScheme == .clearGlass ? .clear : .regular
-        bottomBarView = BottomBarGlassEffectView(desiredStyle)
+        let glassView = BottomBarGlassEffectView(desiredStyle)
+        contentView = glassView.contentView!
+        bottomBarView = glassView
       } else {
         fallthrough
       }
     default:
       bottomBarView = BottomBarVisualEffectView()
+      contentView = bottomBarView
     }
+    contentView.subviews = subviews
 
     bottomBarView.idString = "BottomBarView"  // helps with debug logging
     bottomBarView.isHidden = true
     bottomBarView.clipsToBounds = true  // for better animations when toggling OSC position/placement
     bottomBarView.translatesAutoresizingMaskIntoConstraints = false
 
-    bottomBarView.addSubview(topBorder)
     topBorder.addConstraintsToFillSuperview(top: 0, leading: 0, trailing: 0)
     // Want to make a 0.5px border. But it seems that in some display modes, that is not only not possible,
     // but it will trigger an auto-layout constraint error. So use defaultHigh and be prepared to accept a 1px border.

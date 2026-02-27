@@ -35,6 +35,15 @@ class MouseIgnoringVisualEffectView: ClickThroughVisualEffectView {
 @available(macOS 26.0, *)
 class ClickThroughGlassEffectView: NSGlassEffectView {
   override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+
+  init(_ desiredStyle: Style) {
+    super.init(frame: .zero)
+    setStyle(desiredStyle)
+    contentView = NSView()
+  }
+  
+  required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
   func setStyle(_ desiredStyle: Style) {
     if desiredStyle == .clear {
       style = .clear

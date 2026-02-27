@@ -277,12 +277,9 @@ extension PlayerWindowController {
     switch colorScheme {
     case .clearGlass, .tintedGlass:
       if #available(macOS 26.0, *) {
-        let glassView = ClickThroughGlassEffectView()
         let desiredStyle: NSGlassEffectView.Style = colorScheme == .clearGlass ? .clear : .regular
-        glassView.setStyle(desiredStyle)
+        let glassView = ClickThroughGlassEffectView(desiredStyle)
         glassView.cornerRadius = 0
-        let contentView = NSView()
-        glassView.contentView = contentView
         leadingSidebarView = glassView
         // No top border in this case; it already provides a border
       } else {
@@ -315,12 +312,9 @@ extension PlayerWindowController {
     switch colorScheme {
     case .clearGlass, .tintedGlass:
       if #available(macOS 26.0, *) {
-        let glassView = ClickThroughGlassEffectView()
         let desiredStyle: NSGlassEffectView.Style = colorScheme == .clearGlass ? .clear : .regular
-        glassView.setStyle(desiredStyle)
+        let glassView = ClickThroughGlassEffectView(desiredStyle)
         glassView.cornerRadius = 0
-        let contentView = NSView()
-        glassView.contentView = contentView
         trailingSidebarView = glassView
         // No top border in this case; it already provides a border
       } else {

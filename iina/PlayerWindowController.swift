@@ -688,7 +688,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
   /// Make sure this is running inside an animation task too!
   @MainActor
   func applyThemeMaterial(using layoutState: LayoutState, _ windowEffectiveAppearance: NSAppearance, _ window: NSWindow, _ screen: NSScreen) {
-    log.verbose("Applying theme material for screen \(screen.screenID.pii.quoted): appearance=\(windowEffectiveAppearance.name.rawValue)")
+    log.verbose("Applying theme material for screen \(screen.screenID.pii.quoted): windowIsDark=\(windowEffectiveAppearance.isDark.yesno)")
     let contentView = window.contentView!
 
     if playlistView.isViewLoaded {
