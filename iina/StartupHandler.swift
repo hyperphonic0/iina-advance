@@ -51,16 +51,16 @@ final class StartupHandler {
     let savedState: PlayerSaveState
     /// Set of volume remount URLs found in player to restore which still need to be processed.
     /// Key = absolute string of URL
-    var volRemountsToProcess: Set<String>
+    var volRemountsNotYetProcessed: Set<String>
     /// Dict of volume remount URLs which have been processed.
     /// Key = absolute string of URL
-    /// Value = `true` if successful; `false` if failed or not processed
+    /// Value = `true` if mounted; `false` if failed or not processed (which should be treated as failed)
     var volRemountsProcessed: [String: Bool] = [:]
 
     init(saveName: String, _ savedState: PlayerSaveState, volumeRemountsToProcess: Set<String>) {
       self.saveName = saveName
       self.savedState = savedState
-      self.volRemountsToProcess = volumeRemountsToProcess
+      self.volRemountsNotYetProcessed = volumeRemountsToProcess
     }
   }
 
@@ -68,10 +68,10 @@ final class StartupHandler {
 
   let launchStartTime = CFAbsoluteTimeGetCurrent()
 
-  private(set) var state: OpenWindowsState = .stillEnqueuing
+  @Atomic private(set) var state: OpenWindowsState = .stillEnqueuing
   var isDoneLaunching: Bool { state == .doneOpening }
 
-  // - Opening Files Manually
+  // - Properties: Opening Files Manually
 
   /// Serves as a queue to store file paths received across multiple invocations of `application(_:openFiles:)` within a short interval.
   private var pendingFilesForApplicationOpenFiles: [URL] = []
@@ -90,7 +90,7 @@ final class StartupHandler {
   var pwcsForOpenFiles: [PlayerWindowController]? = nil
   var pwcsDoneWithFileOpen: [PlayerWindowController] = []
 
-  // - Restore
+  // - Properties: Restore
 
   /// The enqueued list of windows to restore, when restoring at launch.
   ///
@@ -113,13 +113,10 @@ final class StartupHandler {
   fileprivate let restoreTimer = TimeoutTimer(timeout: Constants.TimeInterval.restoreWindowsTimeout)
   fileprivate var restoreTimeoutPromptWindow: ThreeButtonPromptWindow? = nil
 
-  // Command Line
+  // - Properties: Command Line
 
   var commandLineState: CommandLineState? = nil
-
-  var isCommandLine: Bool {
-    commandLineState != nil
-  }
+  var isCommandLine: Bool { commandLineState != nil }
 
   /// If launched from command line, should ignore `application(_, openFiles:)` during launch.
   /// This is because the above will be called redundantly by MacOS after startup has finished, and after the filenames have already
@@ -157,6 +154,8 @@ final class StartupHandler {
     // Callbacks may have already fired before getting here. Check again to make sure we don't "drop the ball":
     showWindowsIfReady()
   }
+
+  // MARK: - Open Files
 
   @MainActor
   func applicationOpenFilesWasReceived(with filePaths: [String]) {
@@ -347,6 +346,8 @@ final class StartupHandler {
     return totalFilesOpened + totalExistingFilesShown
   }
 
+  // MARK: - Restore
+
   /// Returns `true` if any windows were restored; `false` otherwise.
   @MainActor @discardableResult
   private func restoreWindowsFromPreviousLaunch() -> Bool {
@@ -413,6 +414,7 @@ final class StartupHandler {
     log.verbose("Starting restore of \(savedWindowsBackToFront.count) windows")
     Preference.set(true, for: .isRestoreInProgress)
 
+    /// # VOLUME REMOUNT HANDLING: #VolumeRemount
     var volumeRemountsToProcess: [String: [PlayerSaveState.PlaybackItemData]] = [:]
 
     let app = AppDelegate.shared
@@ -469,25 +471,28 @@ final class StartupHandler {
           continue
         }
 
+        // Build these in the loop below
         let pwinToRestore = addWindowToRestore(savedWindow)
-        let remountRelatedDataList = savedState.getAllPlaybackBookmarkData().filter{ $0.hasVolRemountURL }
-        var volumeRemountsForPlayer = Set<String>()
-        for datum in remountRelatedDataList {
-          volumeRemountsForPlayer.insert(datum.volRemountURL)
+        var uniqueVolRemountsForPlayer = Set<String>()
+
+        /// #VolumeRemount
+        /// Prepare data structures needed for processing volume remount URLs
+        let playerItemsWithVolRemount = savedState.getAllPlaybackBookmarkData().filter({ $0.hasVolRemountURL })
+        for remountRelatedData in playerItemsWithVolRemount {
+          var array = volumeRemountsToProcess[remountRelatedData.volRemountURL] ?? []
+          array.append(remountRelatedData)
+          volumeRemountsToProcess[remountRelatedData.volRemountURL] = array
+          uniqueVolRemountsForPlayer.insert(remountRelatedData.volRemountURL)
         }
 
-        let playerToRestore = PlayerToRestore(saveName: pwinToRestore.saveName, savedState, volumeRemountsToProcess: volumeRemountsForPlayer)
-        if remountRelatedDataList.isEmpty {
+        let playerToRestore = PlayerToRestore(saveName: pwinToRestore.saveName, savedState, volumeRemountsToProcess: uniqueVolRemountsForPlayer)
+
+        if uniqueVolRemountsForPlayer.isEmpty {
+          // Player has no volumes to remount: can proceed immediately with restoring it
           restorePlayer(pwinToRestore, playerToRestore)
         } else {
-          // Save player meta, then process volumeRemountURLs asychronously
+          // Save player meta, then process volumeRemountURLs asychronously in background DQ.
           playersToRestore[pwinToRestore.saveName] = playerToRestore
-
-          for remountRelatedData in remountRelatedDataList {
-            var array = volumeRemountsToProcess[remountRelatedData.volRemountURL] ?? []
-            array.append(remountRelatedData)
-            volumeRemountsToProcess[remountRelatedData.volRemountURL] = array
-          }
         }
 
       default:
@@ -497,117 +502,9 @@ final class StartupHandler {
 
     }  // end loop over savedWindowsBackToFront
 
-    PlayerSaveState.saveQueue.async { [self] in
-      log.debug("[Remount] Found \(volumeRemountsToProcess.count) volume remount URLs to process")
-
-      var abort = false
-      for (volRemountURLString, relatedItems) in volumeRemountsToProcess {
-        assert(!volRemountURLString.isEmpty && !relatedItems.isEmpty)
-        guard !abort else {
-          log.debug("[Remount] Aborting processing of remaining remount URLs")
-          return
-        }
-
-        let isValid = processVolRemount(volRemountURLString, relatedItems, log)
-
-        DispatchQueue.main.async { [self] in
-          guard !isDoneLaunching else {
-            log.warn("[Remount] Aborting restore of remaining players; startup was marked as done despite remount URLs not completing")
-            abort = true
-            return
-          }
-          didProcessRemountURLString(volRemountURLString, isValid: isValid, log)
-        }
-      }
-    }
+    processVolRemountsAsync(volumeRemountsToProcess, log)
 
     return !windowsToRestore.isEmpty || restoreOpenFileWindow
-  }
-
-  private func processVolRemount(_ volRemountURLString: String,
-                                 _ relatedItems: [PlayerSaveState.PlaybackItemData],
-                                 _ log: any Logger.Subsystem) -> Bool {
-    assert(DispatchQueue.isExecutingIn(PlayerSaveState.saveQueue))
-
-    if let remountURL = URL(string: volRemountURLString) {
-      let alreadyMounted = self.isMounted(remountURL: remountURL)
-      if alreadyMounted {
-        log.verbose("[Remount] Volume is already mounted: remountURL=\(volRemountURLString.pii.quoted)")
-        return true
-      } else {
-        guard Preference.bool(for: .remountVolumesOnRestore) else {
-          log.verbose("[Remount] Remount on restore disabled; skipping remountURL=\(volRemountURLString.pii.quoted)")
-          return false
-        }
-
-        // Try first bookmark found. The resolution process will trigger remount of the volume, even if the resource
-        // ultimately isn't found on it. This method seems better than using `NSWorkspace.shared.open(remountURL)`,
-        // because the latter always prompts the user with an authentication dialog even if stored credentials exist.
-        log.verbose("[Remount] Trying to load first bookmark from remountURL=\(volRemountURLString.pii.quoted)…")
-        let firstItemBookmark = relatedItems[0].bookmark
-        if PlaybackID.url(fromBookmark: firstItemBookmark, log) != nil {
-          log.verbose("[Remount] Successfully loaded bookmark from remountURL=\(volRemountURLString.pii.quoted)")
-          return true
-        }
-
-        // Bookmark resolution failed for file. But did it mount the volume?
-        if isMounted(remountURL: remountURL) {
-          log.verbose("[Remount] Volume was successful mounted by restoring bookmark: remountURL=\(volRemountURLString.pii.quoted)")
-          return true
-        }
-
-        log.error("[Remount] Failed to remount volume: \(volRemountURLString.pii.quoted)")
-      }
-    } else {
-      log.error("[Remount] Failed to build URL from volume remount string: \(volRemountURLString.pii.quoted)")
-    }
-    return false
-  }
-
-  private func didProcessRemountURLString(_ volRemountURLString: String, isValid: Bool,
-                                          _ log: any Logger.Subsystem) {
-    for playerToRestore in playersToRestore.values {
-      guard let remountProcessed = playerToRestore.volRemountsToProcess.remove(volRemountURLString) else { continue }
-      playerToRestore.volRemountsProcessed[remountProcessed] = isValid
-
-      guard playerToRestore.volRemountsToProcess.isEmpty else { continue }
-      log.verbose("[Remount] Done processing all \(playerToRestore.volRemountsProcessed.count) volRemountURLs for player"
-                  + " \(playerToRestore.saveName.quoted): will begin its restore")
-      let pwinToRestore = windowsToRestore[playerToRestore.saveName]!
-      restorePlayer(pwinToRestore, playerToRestore)
-    }
-  }
-
-  nonisolated
-  private func isMounted(remountURL: URL) -> Bool {
-    let mounted = FileManager.default.mountedVolumeURLs(includingResourceValuesForKeys: nil, options: []) ?? []
-
-    // Normalize for comparison
-    let target = remountURL.standardized
-
-    for vol in mounted {
-      guard let volStd = vol.volumeRemountURL else { continue }
-
-      // For file volumes: path prefix match is typically sufficient
-      if target.isFileURL && volStd.isFileURL {
-        // Either same root volume path or the target is contained under it
-        if target == volStd || target.path.hasPrefix(volStd.path) {
-          return true
-        }
-        continue
-      }
-
-      // For network shares: compare scheme/host and path prefix
-      if target.scheme != "file",
-         volStd.scheme == target.scheme,
-         volStd.host?.localizedCaseInsensitiveCompare(target.host ?? "") == .orderedSame {
-        // Loose path prefix match (e.g., smb://server/share vs smb://server/share/folder)
-        if target.path.hasPrefix(volStd.path) || volStd.path.hasPrefix(target.path) {
-          return true
-        }
-      }
-    }
-    return false
   }
 
   @MainActor
@@ -664,7 +561,8 @@ final class StartupHandler {
     if Preference.bool(for: .isRestoreInProgress) {
       // If this flag is still set, the last restore probably failed. If it keeps failing, launch will be impossible.
       // Let user decide whether to try again or delete saved state.
-      Logger.restore.debug("Looks like there was a previous restore which didn't complete (pref \(Preference.Key.isRestoreInProgress.rawValue)=Y). Asking user whether to retry or skip")
+      Logger.restore.debug("Looks like there was a previous restore which didn't complete (pref "
+                           + "\(Preference.Key.isRestoreInProgress.rawValue)=Y). Asking user whether to retry or skip")
       return Utility.quickAskPanel("restore_prev_error", useCustomButtons: true)
 
     } else if Preference.bool(for: .alwaysAskBeforeRestoreAtLaunch) {
@@ -913,8 +811,7 @@ final class StartupHandler {
 
     if isInteractiveLaunch {
       /// Make sure to do this *after* `state = .doneOpening`
-      /// (note: this does nothing in recent versions of MacOS cuz it is a modal alert
-//      dismissTimeoutAlertPanel()
+      dismissTimeoutAlertPanel()
 
       initAppUI()
 
@@ -994,6 +891,148 @@ final class StartupHandler {
     // Hide Window > "Enter Full Screen" menu item, because this is already present in the Video menu
     UserDefaults.standard.set(false, forKey: "NSFullScreenMenuItemEverywhere")
   }
+
+  // MARK: - Volume Remounts
+
+  /// #VolumeRemount
+  private func processVolRemountsAsync(_ volumeRemountsToProcess: [String: [PlayerSaveState.PlaybackItemData]],
+                                       _ log: any Logger.Subsystem) {
+    // Need to process volume remounts in background DQ because bookmark resolution can block for a long time before timing out
+    PlayerSaveState.saveQueue.async { [self] in
+      log.debug("[Remount] Found \(volumeRemountsToProcess.count) volume remount URLs to process")
+      var mountedSet: Set<String> = []
+
+      // 1st pass: loop over all remoounts & check if each is already mounted. This should be very fast, and will ensure that
+      // any players which do not rely on unmounted volumes can proceed without being blocked by those which do.
+      for (volRemountURLString, dependentItems) in volumeRemountsToProcess {
+        assert(!volRemountURLString.isEmpty && !dependentItems.isEmpty)
+        guard !isDoneLaunching else {
+          return log.debug("[Remount] Aborting processing of remaining remount URLs")
+        }
+
+        if let remountURL = URL(string: volRemountURLString), isMounted(remountURL: remountURL) {
+          log.verbose("[Remount] Volume is already mounted: remountURL=\(volRemountURLString.pii.quoted)")
+          mountedSet.insert(volRemountURLString)
+          didProcessRemountURLString(volRemountURLString, isMounted: true, log)
+        }
+
+      }
+
+      // 2nd pass: check all remount URLs which are not already confirmed as mounted, possibly auto-mounting each.
+      for (volRemountURLString, dependentItems) in volumeRemountsToProcess {
+        guard !mountedSet.contains(volRemountURLString) else { continue }
+        guard !isDoneLaunching else {
+          return log.debug("[Remount] Aborting processing of remaining remount URLs")
+        }
+        let isMounted = processVolRemount(volRemountURLString, dependentItems, log)
+        didProcessRemountURLString(volRemountURLString, isMounted: isMounted, log)
+      }
+    }
+
+  }
+
+  /// Checks the mounted status of the given mountpoint with remount URL `volRemountURLString`.
+  ///
+  /// If this returns `true`, the volume at `volRemountURLString` was successfully mounted.
+  /// If this returns `false`, the volume could not be mounted or will not be tried, which means that all dependent items should not
+  /// try to load from bookmarks, but instead should fall back to loading their static URLs.
+  private func processVolRemount(_ volRemountURLString: String,
+                                 _ dependentItems: [PlayerSaveState.PlaybackItemData],
+                                 _ log: any Logger.Subsystem) -> Bool {
+    assert(DispatchQueue.isExecutingIn(PlayerSaveState.saveQueue))
+
+    guard let remountURL = URL(string: volRemountURLString) else {
+      log.error("[Remount] Failed to build URL from volume remount string: \(volRemountURLString.pii.quoted)")
+      return false
+    }
+
+    // Easy case: if volume already mounted, nothing to worry about
+    if isMounted(remountURL: remountURL) {
+      log.verbose("[Remount] Volume is already mounted: remountURL=\(volRemountURLString.pii.quoted)")
+      return true
+    }
+
+    // Set this pref to false to fail fast for all bookmarks from this mount (will fall back to static URLs),
+    // instead of risking long delays from trying to load unreachable volumes.
+    guard Preference.bool(for: .remountVolumesOnRestore) else {
+      log.debug("[Remount] Remount on restore disabled: giving up on unmounted or nonexistent volume with remountURL="
+                + volRemountURLString.pii.quoted)
+      return false
+    }
+
+    // Try first bookmark found. The resolution process will trigger remount of the volume, even if the resource
+    // ultimately isn't found on it. This method seems better than using `NSWorkspace.shared.open(remountURL)`,
+    // because the latter always prompts the user with an authentication dialog even if stored credentials exist.
+    log.verbose("[Remount] Trying to load first bookmark from remountURL=\(volRemountURLString.pii.quoted)…")
+    let firstItemBookmark = dependentItems[0].bookmark
+    if PlaybackID.url(fromBookmark: firstItemBookmark, log) != nil {
+      log.verbose("[Remount] Successfully loaded bookmark from remountURL=\(volRemountURLString.pii.quoted)")
+      return true
+    }
+
+    // Bookmark resolution failed for file. Maybe file doesn't exist. But did it mount the volume?
+    if isMounted(remountURL: remountURL) {
+      log.verbose("[Remount] Volume was successful mounted by restoring bookmark: remountURL=\(volRemountURLString.pii.quoted)")
+      return true
+    }
+
+    log.error("[Remount] Failed to remount volume: \(volRemountURLString.pii.quoted)")
+    return false
+  }
+
+  private func didProcessRemountURLString(_ volRemountURLString: String, isMounted: Bool, _ log: any Logger.Subsystem) {
+    // Need to go back to main DQ to safely access data structures
+    DispatchQueue.main.async { [self] in
+      guard !isDoneLaunching else {
+        log.warn("[Remount] Aborting restore of remaining players; startup was marked as done despite remount URLs not completing")
+        return
+      }
+
+      for playerToRestore in playersToRestore.values {
+        guard let remountProcessed = playerToRestore.volRemountsNotYetProcessed.remove(volRemountURLString) else { continue }
+        playerToRestore.volRemountsProcessed[remountProcessed] = isMounted
+
+        guard playerToRestore.volRemountsNotYetProcessed.isEmpty else { continue }
+        log.verbose("[Remount] Done processing all \(playerToRestore.volRemountsProcessed.count) volRemountURLs for player "
+                    + "\(playerToRestore.saveName.quoted): will begin its restore")
+        let pwinToRestore = windowsToRestore[playerToRestore.saveName]!
+        restorePlayer(pwinToRestore, playerToRestore)
+      }
+    }
+  }
+
+  nonisolated
+  private func isMounted(remountURL: URL) -> Bool {
+    let mounted = FileManager.default.mountedVolumeURLs(includingResourceValuesForKeys: nil, options: []) ?? []
+
+    // Normalize for comparison
+    let target = remountURL.standardized
+
+    for vol in mounted {
+      guard let volStd = vol.volumeRemountURL else { continue }
+
+      // For file volumes: path prefix match is typically sufficient
+      if target.isFileURL && volStd.isFileURL {
+        // Either same root volume path or the target is contained under it
+        if target == volStd || target.path.hasPrefix(volStd.path) {
+          return true
+        }
+        continue
+      }
+
+      // For network shares: compare scheme/host and path prefix
+      if target.scheme != "file",
+         volStd.scheme == target.scheme,
+         volStd.host?.localizedCaseInsensitiveCompare(target.host ?? "") == .orderedSame {
+        // Loose path prefix match (e.g., smb://server/share vs smb://server/share/folder)
+        if target.path.hasPrefix(volStd.path) || volStd.path.hasPrefix(target.path) {
+          return true
+        }
+      }
+    }
+    return false
+  }
+
 
   // MARK: - Notification Listeners
 
