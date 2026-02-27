@@ -333,6 +333,7 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
   // MARK: - IBActions
 
   @IBAction func volumeBtnAction(_ sender: NSButton) {
+    log.verbose("VolumeButtonAction")
     if volumePopover.isShown {
       volumePopover.performClose(self)
     } else {

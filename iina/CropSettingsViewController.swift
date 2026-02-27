@@ -105,6 +105,9 @@ class CropSettingsViewController: CropBoxViewController {
       return
     }
 
+    // Start drawing again for the sake of animation
+    pwc.videoView.activateForcedRedraws()
+
     let player = pwc.player
     // Remove saved crop (if any)
     player.info.videoFiltersDisabled.removeValue(forKey: Constants.FilterLabel.crop)

@@ -135,6 +135,9 @@ struct GeometryTransform: Sendable {
     /// to cover both cases.
     let prevSessionState = pwc.sessionState
 
+    // In case video is paused...
+    pwc.videoView.activateForcedRedraws()
+
     // MARK: - STAGE 2
     // -- mpv queue -------------------------------------------------------------------------
     // Need to be inside mpv queue to ensure serial access to `vid` & other mpv state
