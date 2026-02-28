@@ -62,7 +62,7 @@ class SymButton: NSImageView, @MainActor NSAccessibilityButton, @MainActor Dragg
   }
 
   /// Similar to `NSButton`'s `init` method.
-  init(id: String? = nil, image: NSImage, target: AnyObject?, action: Selector?) {
+  init(id: String? = nil, image: NSImage, target: AnyObject? = nil, action: Selector? = nil) {
     super.init(frame: .zero)
     if let id {
       self.idString = id

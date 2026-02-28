@@ -183,6 +183,7 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
     toggleAlbumArtButton.setColors(for: colorScheme)
     titleLabel.setColors(colorScheme, .text)
     artistAlbumLabel.setColors(colorScheme, .text)
+    pwc.exitMusicModeButton.setColors(for: .tintedGlass)
   }
 
   func addPlaylistViewIfMissing() {

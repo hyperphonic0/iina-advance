@@ -221,14 +221,6 @@ func displayLinkCallback(
   _ flagsOut: UnsafeMutablePointer<CVOptionFlags>,
   _ context: UnsafeMutableRawPointer?) -> CVReturn {
     let glVideoLayer = unsafeBitCast(context, to: GLVideoLayer.self)
-    glVideoLayer.drawSync(forced: glVideoLayer.isAsynchronous)
-    glVideoLayer.videoView.$isUninited.withLock() { isUninited in
-      guard !isUninited else { return }
-      glVideoLayer.mpvReportSwap()
-    }
-
-    if let player = glVideoLayer.videoView.player {
-      player.syncTimeAndCacheUI()
-    }
+    glVideoLayer.displayLinkDidFire()
     return kCVReturnSuccess
   }

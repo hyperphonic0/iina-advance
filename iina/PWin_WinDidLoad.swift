@@ -254,8 +254,6 @@ extension PlayerWindowController {
 
   private func initExitMusicModeButton(in contentView: NSView) {
     contentView.addSubview(exitMusicModeButton)
-    exitMusicModeButton.idString = "ExitMusicModeBtn"
-    exitMusicModeButton.image = Images.backwardsCircle
     exitMusicModeButton.target = self
     exitMusicModeButton.action = #selector(backBtnAction(_:))
     exitMusicModeButton.toolTip = "Back to video mode"
@@ -263,6 +261,10 @@ extension PlayerWindowController {
     exitMusicModeButton.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 54).isActive = true
     // Center vertically with traffic light buttons
     exitMusicModeButton.centerYAnchor.constraint(equalTo: contentView.topAnchor, constant: Constants.standardTitleBarHeight / 2).isActive = true
+    if let trafficLightBtnFrame = NSWindow.standardWindowButton(.closeButton, for: .titled)?.frame {
+      exitMusicModeButton.widthAnchor.constraint(equalToConstant: trafficLightBtnFrame.width + 2).isActive = true
+      exitMusicModeButton.heightAnchor.constraint(equalTo: exitMusicModeButton.widthAnchor).isActive = true
+    }
   }
 
   private func initSidebars() {

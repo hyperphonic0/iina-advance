@@ -1270,7 +1270,10 @@ extension CGImage {
     context.cgContext.interpolationQuality = .high
     drawingCalls(context.cgContext)
 
-    return compositeImageRep.cgImage!
+    guard let cgImage = compositeImageRep.cgImage else {
+      Logger.fatal("DrawImageInBitmapImageContext: Failed to create final CGImage!")
+    }
+    return cgImage
   }
 
   /// Creates RGB image with alpha channel

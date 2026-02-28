@@ -238,6 +238,24 @@ class GLVideoLayer: CAOpenGLLayer {
     asychronousModeTimer?.tolerance = Constants.TimeInterval.asynchronousModeTimeout * 0.2
   }
 
+  /// This is on the DisplayLink's thread!
+  func displayLinkDidFire() {
+    drawSync(forced: isAsynchronous)
+    videoView.$isUninited.withLock() { isUninited in
+      guard !isUninited else { return }
+      mpvReportSwap()
+    }
+
+    if let player = videoView.player {
+      // This kicks off an asynchronous task on the mpv queue
+      player.syncTimeAndCacheUI()
+    }
+
+    DispatchQueue.main.async { [self] in
+      videoView.pwc?.exitMusicModeButton.needsDisplay = true
+    }
+  }
+
   func drawAsync(forced: Bool = false) {
     mpvGLQueue.async { [self] in
       draw(forced: forced)

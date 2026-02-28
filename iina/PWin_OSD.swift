@@ -1228,7 +1228,7 @@ extension PlayerWindowController {
     let duration = immediately ? 0 : Constants.AnimationDuration.osdAnimation
 
     if osd.animationState != .hidden {
-      log.verbose("[OSD] Will hide")
+      log.trace("[OSD] Will hide")
     }
     osd.animationState = .willHide
     osd.hideOSDTimer.cancel()

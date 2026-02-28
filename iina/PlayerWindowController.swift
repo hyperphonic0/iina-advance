@@ -439,9 +439,9 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
   var volumeSliderWidthConstraint: NSLayoutConstraint!
 
   // - MARK: Views
-
+  
   // MiniPlayer buttons:
-  let exitMusicModeButton = SymButton(id: "ExitMusicModeBtn")
+  let exitMusicModeButton = SymButton(id: "ExitMusicModeBtn", image: Images.backwardsCircle)
 
   /// Contains `videoView` and margins around it
   let viewportView = ViewportView()
