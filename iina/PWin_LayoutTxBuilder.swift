@@ -235,6 +235,11 @@ extension PlayerWindowController {
                                                              forceShow: true, forceShowTopBar: true) {
         tasks.append(fadeAnimation)
       }
+
+      // Since we know what state we're soon going to put the fadeables into, cancel any pending show/hide animations *now*.
+      // This is maybe a little bit dangerous but should improve the user experience because it prevents rapid cycles of showing/hiding.
+      fadeableViews.$showHideTicketCount.withLock { $0 += 1 }
+      fadeableViews.hideTimer.cancel()
     }
 
     // StartingAnimation 2: Fade out views which no longer will be shown but aren't enclosed in a panel.

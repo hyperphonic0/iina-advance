@@ -161,6 +161,7 @@ extension PlayerWindowController {
 
     var fadeables: Set<NSView> = []
     var fadeablesInTopBar: Set<NSView> = []
+    var fadeablesInTopBarNative: Set<NSView> = []
 
     let tasks = [
       IINAAnimation.Task(duration: duration, { [self] in
@@ -173,7 +174,7 @@ extension PlayerWindowController {
             throw IINAError.cancelAnimationTransaction
           }
 
-          guard (currentTicket == fadeableViews.$showHideTicketCount.withLock{ $0 }) else {
+          guard currentTicket == fadeableViews.showHideTicketCount else {
             if forceShowTopBar {
               fadeableViews.pendingShowTopPanel = true
             }
@@ -203,17 +204,22 @@ extension PlayerWindowController {
           }
 
           if targetLayout.titleBar == .showFadeableTopBar {
-            if targetLayout.isLegacyStyle {
-              customTitleBar?.view.alphaValue = 1
-            } else {
+            if !targetLayout.isLegacyStyle {
               if targetLayout.trafficLightButtons == .showFadeableTopBar {
                 for button in trafficLightButtons {
-                  button.alphaValue = 1
+                  fadeablesInTopBarNative.insert(button)
                 }
               }
               if targetLayout.titleIconAndText == .showFadeableTopBar {
-                titleTextField?.alphaValue = 1
-                documentIconButton?.alphaValue = 1
+                if let titleTextField {
+                  fadeablesInTopBarNative.insert(titleTextField)
+                }
+                if let documentIconButton {
+                  fadeablesInTopBarNative.insert(documentIconButton)
+                }
+              }
+              for fadeableView in fadeablesInTopBarNative {
+                fadeableView.alphaValue = 1
               }
             }
           }
@@ -237,22 +243,10 @@ extension PlayerWindowController {
           for v in fadeablesInTopBar {
             v.isHidden = false
           }
-
-          if targetLayout.titleBar == .showFadeableTopBar {
-            if targetLayout.isLegacyStyle {
-              customTitleBar?.view.isHidden = false
-            } else {
-              if targetLayout.trafficLightButtons == .showFadeableTopBar {
-                for button in trafficLightButtons {
-                  button.isHidden = false
-                }
-              }
-              if targetLayout.titleIconAndText == .showFadeableTopBar {
-                titleTextField?.isHidden = false
-                documentIconButton?.isHidden = false
-              }
-            }
+          for fadeableView in fadeablesInTopBarNative {
+            fadeableView.isHidden = false
           }
+
         }  // end top bar
       }  // end Task
 

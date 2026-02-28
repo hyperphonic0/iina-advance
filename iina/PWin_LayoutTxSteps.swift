@@ -129,8 +129,6 @@ extension PlayerWindowController {
     let outputLayout = transition.outputLayout
     log.verbose("[\(transition.name)] FadeOutOldViews")
 
-    fadeableViews.clearFadeableSets()
-
     // Title bar & title bar accessories:
 
     // Hide all title bar items if top bar placement is changing
@@ -178,19 +176,20 @@ extension PlayerWindowController {
       fadeableViews.applyVisibility(outputLayout.controlBarFloating, to: controlBarFloating.view)
     }
 
+    if transition.isTogglingMusicMode || transition.isTogglingInteractiveMode {
+      hideOSD()
+    }
+
+    if !transition.outputGeometry.shouldHaveAdditionalInfo {
+      fadeableViews.applyVisibility(.hidden, to: osd.additionalInfoView)
+    }
+
+
     // Change blending modes
     if transition.isTogglingFullScreen {
       let fsLayout = transition.inputLayout.isFullScreen ? transition.inputLayout : transition.outputLayout
       /// Need to use `.withinWindow` during animation or else panel tint can change in odd ways
       updatePanelBlendingModes(to: fsLayout)
-    }
-
-    if transition.isTogglingMusicMode || transition.isTogglingInteractiveMode {
-      hideOSD()
-    }
-
-    if outputLayout.mode == .fullScreenInteractive {
-      fadeableViews.applyVisibility(.hidden, to: osd.additionalInfoView)
     }
 
     if transition.isExitingInteractiveMode, let cropController = self.cropSettingsView {
@@ -351,6 +350,8 @@ extension PlayerWindowController {
     let outputLayout = transition.outputLayout
     log.verbose("Start")
 
+    fadeableViews.clearFadeableSets()
+
     let oldAppearance = contentView.effectiveAppearance
     /// Do not set `window.appearance`! It causes race conditions which lead to wrong colors of top panel (which we sometimes want to override).
     /// Set `window.contentView.appearance` instead.
@@ -395,6 +396,8 @@ extension PlayerWindowController {
         } else {
           // Native style
           setStyleMaskForNativeWindowed(log)
+          // Hide initially, so they can fade in
+          hideNativeTitleBarViews(andSetAlpha: true)
         }
 
         if transition.outputLayout.isMusicMode {
@@ -980,6 +983,7 @@ extension PlayerWindowController {
               view.alphaValue = 1
               view.isHidden = false
             }
+            fadeableViews.applyVisibility(outputLayout.titleBar, to: customTitleBar.view)
           }
         } else {  // Native windowed or FS
           showNativeTitleBarViews(outputLayout, log)
