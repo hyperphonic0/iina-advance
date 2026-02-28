@@ -31,8 +31,7 @@ class GLVideoLayer: CAOpenGLLayer {
 
   private var needsMPVRender = false
   private var forceDraw = false
-
-  private var asychronousModeTimer: Timer?
+  var asynchronousModeStartTime: TimeInterval?
 
   /// To enable `LOG_VIDEO_LAYER`:
   /// 1. In Xcode, go to `iina` project > select `iina` target > Build Settings > search for `Custom Flags` (under `Swift Compiler`)
@@ -218,7 +217,7 @@ class GLVideoLayer: CAOpenGLLayer {
   /// throw off the timing of each draw.
   @MainActor
   func enterAsynchronousMode() {
-    asychronousModeTimer?.invalidate()
+    asynchronousModeStartTime = Date().timeIntervalSince1970
     if !isAsynchronous {
       videoView.player.log.verbose("Entering asynchronous mode")
     }
@@ -226,16 +225,6 @@ class GLVideoLayer: CAOpenGLLayer {
     /// This fixes a situation where the layer size may not match the size of its superview at each redraw,
     /// which would cause noticable clipping or wobbling during animations.
     isAsynchronous = true
-
-    asychronousModeTimer = Timer.scheduledTimer(
-      timeInterval: Constants.TimeInterval.asynchronousModeTimeout,
-      target: self,
-      selector: #selector(self.exitAsynchronousMode),
-      userInfo: nil,
-      repeats: false
-    )
-    /// Save some CPU by making this less strict, because we don't really care that much
-    asychronousModeTimer?.tolerance = Constants.TimeInterval.asynchronousModeTimeout * 0.2
   }
 
   /// This is on the DisplayLink's thread!
@@ -249,6 +238,13 @@ class GLVideoLayer: CAOpenGLLayer {
     if let player = videoView.player {
       // This kicks off an asynchronous task on the mpv queue
       player.syncTimeAndCacheUI()
+    }
+
+    if isAsynchronous, let asynchronousModeStartTime, Date().timeIntervalSince1970 - asynchronousModeStartTime > Constants.TimeInterval.asynchronousModeTimeout {
+      videoView.player.log.verbose("Exiting asynchronous mode")
+      /// If this is set to `true` while the video is paused, there is some degree of busy-waiting as the
+      /// layer is polled at a high rate about whether it needs to draw. Disable this to save CPU while idle.
+      isAsynchronous = false
     }
 
     DispatchQueue.main.async { [self] in
@@ -266,17 +262,6 @@ class GLVideoLayer: CAOpenGLLayer {
   /// Despite Xcode's declarations, no lockup has yet been observed.
   func drawSync(forced: Bool = false) {
     draw(forced: forced)
-  }
-
-  @MainActor
-  @objc func exitAsynchronousMode() {
-    asychronousModeTimer?.invalidate()
-    if isAsynchronous {
-      videoView.player.log.verbose("Exiting asynchronous mode")
-    }
-    /// If this is set to `true` while the video is paused, there is some degree of busy-waiting as the
-    /// layer is polled at a high rate about whether it needs to draw. Disable this to save CPU while idle.
-    isAsynchronous = false
   }
 
   func draw(forced: Bool = false) {
