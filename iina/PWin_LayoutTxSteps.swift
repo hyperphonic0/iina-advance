@@ -135,7 +135,7 @@ extension PlayerWindowController {
     if transition.needsToHideTopBar {
       // Native & custom title bar components
       fadeableViews.applyVisibility(.hidden, documentIconButton, titleTextField, customTitleBar?.view)
-      exitMusicModeButton.alphaValue = 0
+      miniPlayerTrafficLightsBGView.alphaValue = 0
 
       // native windowed or full screen
       for button in trafficLightButtons {
@@ -520,7 +520,7 @@ extension PlayerWindowController {
     fadeableViews.applyOnlyIfHidden(onTopButtonVisibility, to: onTopButton)
     fadeableViews.applyOnlyIfHidden(outputLayout.titleIconAndText, documentIconButton, titleTextField)
     if outputLayout.mode != .musicMode {
-      exitMusicModeButton.isHidden = true
+      miniPlayerTrafficLightsBGView.isHidden = true
     }
 
     // - Music mode: entering or continuing)

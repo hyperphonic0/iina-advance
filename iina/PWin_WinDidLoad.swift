@@ -253,18 +253,40 @@ extension PlayerWindowController {
   }
 
   private func initExitMusicModeButton(in contentView: NSView) {
-    contentView.addSubview(exitMusicModeButton)
+    miniPlayerTrafficLightsBGView.translatesAutoresizingMaskIntoConstraints = false
+    contentView.addSubview(miniPlayerTrafficLightsBGView)
+    miniPlayerTrafficLightsBGView.addSubview(exitMusicModeButton)
     exitMusicModeButton.target = self
     exitMusicModeButton.action = #selector(backBtnAction(_:))
-    exitMusicModeButton.toolTip = "Back to video mode"
-    // Add to traffic light buttons
-    exitMusicModeButton.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 54).isActive = true
-    // Center vertically with traffic light buttons
-    exitMusicModeButton.centerYAnchor.constraint(equalTo: contentView.topAnchor, constant: Constants.standardTitleBarHeight / 2).isActive = true
-    if let trafficLightBtnFrame = NSWindow.standardWindowButton(.closeButton, for: .titled)?.frame {
-      exitMusicModeButton.widthAnchor.constraint(equalToConstant: trafficLightBtnFrame.width + 2).isActive = true
-      exitMusicModeButton.heightAnchor.constraint(equalTo: exitMusicModeButton.widthAnchor).isActive = true
+
+    let trafficLightBtnSize = NSWindow.standardWindowButton(.closeButton, for: .titled)?.frame.size ?? NSSize(width: 14, height: 14)
+
+    let btnPadding = 1.0
+    let bgPadding = 4.0
+    let bgViewHeight = trafficLightBtnSize.height + ((btnPadding + bgPadding) * 2)
+    let btnWidth = trafficLightBtnSize.width + (btnPadding * 2)
+    let bgViewTopOffset: CGFloat = (Constants.standardTitleBarHeight - bgViewHeight) * 0.5
+    let bgViewLeadingOffset = bgViewTopOffset
+    miniPlayerTrafficLightsBGView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: bgViewTopOffset).isActive = true
+    if window!.styleMask.contains(.titled) {
+      let zoomBtn = trafficLightButtons.last!
+      let zoomBtnOriginLocalCoords = zoomBtn.bounds.origin
+      let zoomBtnOriginInWinX = window!.contentView!.convert(zoomBtnOriginLocalCoords, from: zoomBtn).x
+      miniPlayerTrafficLightsBGView.trailingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: zoomBtnOriginInWinX + btnWidth + bgViewLeadingOffset).isActive = true
+    } else {
+      miniPlayerTrafficLightsBGView.trailingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 75).isActive = true
     }
+    miniPlayerTrafficLightsBGView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: bgViewTopOffset).isActive = true
+    miniPlayerTrafficLightsBGView.bottomAnchor.constraint(equalTo: miniPlayerTrafficLightsBGView.topAnchor, constant: bgViewHeight).isActive = true
+    miniPlayerTrafficLightsBGView.roundCorners(withRadius: bgViewHeight * 0.5)
+
+    // Add Exit Music Mode button to traffic light buttons
+    miniPlayerTrafficLightsBGView.trailingAnchor.constraint(equalTo: exitMusicModeButton.trailingAnchor, constant: bgPadding).isActive = true
+    // Center vertically with traffic light buttons
+    exitMusicModeButton.centerYAnchor.constraint(equalTo: miniPlayerTrafficLightsBGView.centerYAnchor).isActive = true
+
+    exitMusicModeButton.widthAnchor.constraint(equalToConstant: btnWidth).isActive = true
+    exitMusicModeButton.heightAnchor.constraint(equalTo: exitMusicModeButton.widthAnchor).isActive = true
   }
 
   private func initSidebars() {

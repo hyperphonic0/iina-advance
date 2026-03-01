@@ -183,7 +183,7 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
     toggleAlbumArtButton.setColors(for: colorScheme)
     titleLabel.setColors(colorScheme, .text)
     artistAlbumLabel.setColors(colorScheme, .text)
-    pwc.exitMusicModeButton.setColors(for: .tintedGlass)
+    pwc.exitMusicModeButton.setColors(for: .visualEffectView)
   }
 
   func addPlaylistViewIfMissing() {
@@ -237,8 +237,8 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
       }
     }
 
-    pwc.exitMusicModeButton.isHidden = false
-    pwc.exitMusicModeButton.alphaValue = 1
+    pwc.miniPlayerTrafficLightsBGView.isHidden = false
+    pwc.miniPlayerTrafficLightsBGView.alphaValue = 1
 
     controllerButtonsPanelView.alphaValue = 1
     mediaInfoView.alphaValue = 0
@@ -268,8 +268,8 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
       btn.isHidden = true
     }
 
-    pwc.exitMusicModeButton.isHidden = true
-    pwc.exitMusicModeButton.alphaValue = 0
+    pwc.miniPlayerTrafficLightsBGView.isHidden = true
+    pwc.miniPlayerTrafficLightsBGView.alphaValue = 0
 
     controllerButtonsPanelView.alphaValue = 0
     mediaInfoView.alphaValue = 1

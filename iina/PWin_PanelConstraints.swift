@@ -703,12 +703,12 @@ extension PlayerWindowController {
       topBar.view,
       seekPreview.thumbnailPeekView,
       seekPreview.timeLabel,
+      miniPlayerTrafficLightsBGView,
     ]
     if let customTitleBar {  // only for music mode
       possibleSubviews.append(customTitleBar.view)
     }
     possibleSubviews += [
-      exitMusicModeButton,
       customWindowBorderBox,
       customWindowBorderTopHighlightBox,
       hdrWorkaroundView  // this must always be topmost!
