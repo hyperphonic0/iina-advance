@@ -80,6 +80,13 @@ final class TopBar {
   /// The top bar root view. Needs to be rebuilt if the style changes, due each style inheriting from different classes.
   var view: NSView
 
+  var contentView: NSView {
+    if #available(macOS 26.0, *), let glassView = view as? TopBarGlassEffectView {
+      return glassView.contentView!
+    }
+    return view
+  }
+
   /// Reserves space for the title bar components. Can contain CustomTitleBarView *only* if using legacy
   /// windowed mode & topBarPlacement==.insideViewport
   let titleBarView = ClickThroughView()

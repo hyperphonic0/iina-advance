@@ -365,6 +365,7 @@ extension PlayerWindowController {
     // & (2) window.appearance is updated before updating styling of any window views!
     if let screen = window.screen {
       applyThemeMaterial(using: transition.outputLayout, targetWindowAppearance, window, screen)
+      window.display()  // Call this to avoid race condition setting top bar view to "tinted glass" with non-system appearance
     } else {
       // In some rare cases, window might be off screen its frame size is zero (the latter can happen when exiting music mode with no
       // playlist & no video), in which case window.screen will be nil. Just log & continue. In principle, applyThemeMaterial will still
@@ -836,8 +837,10 @@ extension PlayerWindowController {
       let topBarColorScheme = outputLayout.topBarColorScheme
       log.verbose("Updating topBarView appearance to \(topBarColorScheme.description), isDark=\(topBarAppearance.isDark.yesno)")
       topBar.bottomBorder.isHidden = topBarColorScheme != .visualEffectView
+      topBar.view.appearance = topBarAppearance
+      topBar.contentView.appearance = topBarAppearance
       topBar.view.needsDisplay = true
-      topBar.view.needsLayout = true
+      topBar.contentView.needsDisplay = true
 
       // Colors for native controls. Do this after applying theme!
       if outputLayout.leadingSidebarToggleButton.isShowable {
