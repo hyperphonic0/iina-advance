@@ -146,7 +146,8 @@ final class TopBar {
       }
     case .tintedGlass:
       // Workaround for race condition when changing Glass theme (MacOS 26): rebuild the view if appearance is different
-      if let glassView = view as? TopBarGlassEffectView, glassView.style == .regular, view.effectiveAppearance == targetAppearance {
+      if let glassView = view as? TopBarGlassEffectView, glassView.style == .regular,
+         glassView.effectiveAppearance == targetAppearance && glassView.contentView!.appearance == targetAppearance {
         glassView.update(targetLayout)
         return
       }
