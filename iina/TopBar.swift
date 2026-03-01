@@ -166,7 +166,7 @@ final class TopBar {
   }
 
   func rebuildTopBarView(targetLayout: LayoutState, targetAppearance: NSAppearance, superview: NSView, _ log: any Logger.Subsystem) {
-    log.verbose("[Load] Rebuilding bottomBarView: colorScheme=\(targetLayout.topBarColorScheme) appearanceIsDark=\(targetAppearance.isDark.yesno)")
+    log.verbose("[Load] Rebuilding topBarView: colorScheme=\(targetLayout.topBarColorScheme) appearanceIsDark=\(targetAppearance.isDark.yesno)")
     view.removeFromSuperview()
     let subviews = [titleBarView, controlBarTop, bottomBorder]
     view = TopBar.buildView(targetLayout: targetLayout, targetAppearance: targetAppearance, subviews: subviews)

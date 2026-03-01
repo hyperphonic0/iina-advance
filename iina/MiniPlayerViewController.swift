@@ -219,7 +219,7 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
     })
   }
 
-  func showControls() {
+  private func showControls() {
     log.trace("MiniPlayer: showing OSC controls / hiding media info")
 
     if let customTitleBar = pwc.customTitleBar {

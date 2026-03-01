@@ -89,10 +89,10 @@ struct LayoutState {
       mode = .windowedNormal
     }
     self.mode = mode
-    if let oscColorScheme {
-      self.oscColorScheme = oscColorScheme
-    } else if mode == .musicMode {
+    if mode == .musicMode {
       self.oscColorScheme = LayoutState.effectiveColorSchemeForMusicModeBottomBar
+    } else if let oscColorScheme {
+      self.oscColorScheme = oscColorScheme
     } else {
       // When in music mode, bottom bar's color scheme is the same as OSC color scheme
       self.oscColorScheme = LayoutState.effectiveOSCColorSchemeFromPrefs
@@ -287,13 +287,7 @@ struct LayoutState {
   }
 
   static var effectiveColorSchemeForMusicModeBottomBar: Preference.PanelColorScheme {
-    let globalScheme = effectiveGlobalColorSchemeFromPrefs()
-    switch globalScheme {
-    case .clearGlass, .tintedGlass:
-      return .tintedGlass
-    default:
-      return .visualEffectView
-    }
+    .visualEffectView
   }
 
   /// OSC color scheme

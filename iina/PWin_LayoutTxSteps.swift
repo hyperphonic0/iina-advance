@@ -439,7 +439,7 @@ extension PlayerWindowController {
 
     // Unclear why bottomBar.view sometimes fails to update its appearance along with the other views.
     // Workaround: force redraw when appearanceDidChange
-    let needsBottomBarUpdate = transition.isWindowInitialLayout || transition.isBottomBarPlacementOrStyleChanging || appearanceDidChange
+    let needsBottomBarUpdate = transition.isWindowInitialLayout || transition.isBottomBarPlacementOrStyleChanging || (contentView.effectiveAppearance != bottomBar.view.effectiveAppearance)
     if needsBottomBarUpdate {
       bottomBar.rebuildBottomBarView(colorScheme: transition.outputLayout.oscColorScheme, log)
       // Just add the new view now. It will have its Z order corrected in `rebuildPanelConstraints`.
@@ -977,7 +977,7 @@ extension PlayerWindowController {
           customTitleBar.view.alphaValue = 1
           customTitleBar.view.isHidden = false
         }
-        miniPlayer.showControls()
+        miniPlayer.showOrHideControls()
         if trafficLightButtons.count >= 3 {
           let zoomBtn = trafficLightButtons[2]
           zoomBtn.alphaValue = 0
@@ -1084,7 +1084,7 @@ extension PlayerWindowController {
       fadeableViews.applyVisibility(.showFadeableNonTopBar, to: osd.additionalInfoView)
     }
 
-    if !transition.outputLayout.isLegacyStyle {
+    if !transition.outputLayout.isLegacyStyle, !window.styleMask.contains(.titled) {
       setStyleMaskForNativeWindowed(log)
       showNativeTitleBarViews(transition.outputLayout, log)
       addTitleBarAccessoryViews()
