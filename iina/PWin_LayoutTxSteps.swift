@@ -977,7 +977,12 @@ extension PlayerWindowController {
           customTitleBar.view.alphaValue = 1
           customTitleBar.view.isHidden = false
         }
-        miniPlayer.showOrHideControls()
+        miniPlayer.showControls()
+        if trafficLightButtons.count >= 3 {
+          let zoomBtn = trafficLightButtons[2]
+          zoomBtn.alphaValue = 0
+          zoomBtn.isHidden = true
+        }
       } else {
         if outputLayout.isLegacyStyle {
           // Legacy windowed mode

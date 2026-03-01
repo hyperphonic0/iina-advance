@@ -440,8 +440,9 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
 
   // - MARK: Views
 
+  /// Only shown for MiniPlayer
   let miniPlayerTrafficLightsBGView = ClickThroughVisualEffectView()
-  // MiniPlayer buttons:
+  /// Only shown for MiniPlayer, inside `miniPlayerTrafficLightsBGView`.
   let exitMusicModeButton = SymButton(id: "ExitMusicModeBtn", image: Images.backwardsCircle)
 
   /// Contains `videoView` and margins around it
