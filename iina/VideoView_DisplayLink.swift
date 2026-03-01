@@ -45,6 +45,7 @@ extension VideoView {
   @MainActor
   func stopDisplayLink() {
     guard let link = link, CVDisplayLinkIsRunning(link) else { return }
+    displayIdleStartTime = nil
     checkResult(CVDisplayLinkStop(link), "CVDisplayLinkStop")
     log.verbose("DisplayLink stopped")
   }
@@ -98,13 +99,12 @@ extension VideoView {
   func displayActive() {
     let hasTimeout = player.info.isPaused
     log.trace("VideoView displayActive willTimeout=\(hasTimeout.yn)")
-    guard let glLayer else { return }
     if !hasTimeout {
-      glLayer.asynchronousModeStartTime = nil
+      displayIdleStartTime = nil
     }
     startDisplayLink()
     if hasTimeout {
-      glLayer.asynchronousModeStartTime = Date().timeIntervalSince1970
+      displayIdleStartTime = Date().timeIntervalSince1970
     }
   }
 
@@ -128,11 +128,11 @@ extension VideoView {
     // disable shutting down the display link should any problems with this energy saving feature
     // be discovered.
     guard Preference.bool(for: .enableDisplayIdle) else {
-      glLayer?.asynchronousModeStartTime = nil
+      displayIdleStartTime = nil
       return
     }
     log.verbose("VideoView displayIdle")
-    glLayer?.asynchronousModeStartTime = Date().timeIntervalSince1970
+    displayIdleStartTime = Date().timeIntervalSince1970
   }
 
   // MARK: - Error Logging

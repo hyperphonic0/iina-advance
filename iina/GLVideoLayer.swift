@@ -92,6 +92,8 @@ class GLVideoLayer: CAOpenGLLayer {
     videoView = previousLayer.videoView
     super.init()
     isOpaque = true
+    asynchronousModeStartTime = previousLayer.asynchronousModeStartTime
+    isAsynchronous = previousLayer.isAsynchronous
     autoresizingMask = previousLayer.autoresizingMask
     contentsFormat = previousLayer.contentsFormat
   }
@@ -217,22 +219,35 @@ class GLVideoLayer: CAOpenGLLayer {
   /// throw off the timing of each draw.
   @MainActor
   func enterAsynchronousMode() {
-    asynchronousModeStartTime = Date().timeIntervalSince1970
-    if !isAsynchronous {
-      videoView.player.log.verbose("Entering asynchronous mode")
+    videoView.$isUninited.withLock() { isUninited in
+      asynchronousModeStartTime = Date().timeIntervalSince1970
+      if !isAsynchronous {
+        videoView.player.log.verbose("Entering asynchronous mode")
+      }
+      /// Set this to `true` to enable video redraws to match the timing of the view redraw during animations.
+      /// This fixes a situation where the layer size may not match the size of its superview at each redraw,
+      /// which would cause noticable clipping or wobbling during animations.
+      isAsynchronous = true
     }
-    /// Set this to `true` to enable video redraws to match the timing of the view redraw during animations.
-    /// This fixes a situation where the layer size may not match the size of its superview at each redraw,
-    /// which would cause noticable clipping or wobbling during animations.
-    isAsynchronous = true
   }
 
   /// This is on the DisplayLink's thread!
   func displayLinkDidFire() {
     drawSync(forced: isAsynchronous)
+
     videoView.$isUninited.withLock() { isUninited in
       guard !isUninited else { return }
       mpvReportSwap()
+
+      if isAsynchronous, let asynchronousModeStartTime {
+        let nowTime = Date().timeIntervalSince1970
+        if nowTime - asynchronousModeStartTime > Constants.TimeInterval.asynchronousModeTimeout {
+          videoView.player.log.verbose("Exiting asynchronous mode")
+          /// If this is set to `true` while the video is paused, there is some degree of busy-waiting as the
+          /// layer is polled at a high rate about whether it needs to draw. Disable this to save CPU while idle.
+          isAsynchronous = false
+        }
+      }
     }
 
     if let player = videoView.player {
@@ -240,14 +255,14 @@ class GLVideoLayer: CAOpenGLLayer {
       player.syncTimeAndCacheUI()
     }
 
-    if isAsynchronous, let asynchronousModeStartTime, Date().timeIntervalSince1970 - asynchronousModeStartTime > Constants.TimeInterval.asynchronousModeTimeout {
-      videoView.player.log.verbose("Exiting asynchronous mode")
-      /// If this is set to `true` while the video is paused, there is some degree of busy-waiting as the
-      /// layer is polled at a high rate about whether it needs to draw. Disable this to save CPU while idle.
-      isAsynchronous = false
-    }
 
     DispatchQueue.main.async { [self] in
+      if let displayIdleStartTime = videoView.displayIdleStartTime {
+        let nowTime = Date().timeIntervalSince1970
+        if nowTime - displayIdleStartTime > Constants.TimeInterval.displayIdleTimeout {
+          videoView.stopDisplayLink()
+        }
+      }
       videoView.pwc?.exitMusicModeButton.needsDisplay = true
     }
   }

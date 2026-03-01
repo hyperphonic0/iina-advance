@@ -38,6 +38,9 @@ class VideoView: NSView {
   var isVidAlbumArt = false
   var isReadyToRender = false
 
+  @MainActor
+  var displayIdleStartTime: TimeInterval?
+
   var layerColorspace: CGColorSpace? {
 #if USE_GPU_NEXT
     return metalLayer?.colorspace
