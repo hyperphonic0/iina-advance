@@ -7,6 +7,41 @@
 //
 
 extension VideoView {
+  /// This is on the DisplayLink's thread!
+  func displayLinkDidFire() {
+    // We need to run the checks below in the main DQ to prevent data races, but the timing of these checks does not need
+    // to be super precise, and be nice to avoid 60 (or whatever rate of the DisplayLink) async tasks being enqueud per sec,
+    // when most of those tasks are doing a simple check. So here is an extra check which limits tasks launches to a couple times
+    // per sec.
+    if lastDisplayLinkStatusCheckTime > Constants.TimeInterval.dislpayLinkStatusCheckInterval {
+      lastDisplayLinkStatusCheckTime = Date().timeIntervalSince1970
+
+      DispatchQueue.main.async { [self] in
+        // DisplayLink idle timeout check
+        if let displayIdleStartTime {
+          if Date().timeIntervalSince1970 - displayIdleStartTime > Constants.TimeInterval.displayIdleTimeout {
+            stopDisplayLink()
+          }
+        }
+
+        guard let glLayer else { return }
+        if glLayer.isAsynchronous, let asynchronousModeStartTime = glLayer.asynchronousModeStartTime {
+          if Date().timeIntervalSince1970 - asynchronousModeStartTime > Constants.TimeInterval.asynchronousModeTimeout {
+            player.log.verbose("Exiting asynchronous mode")
+            /// If this is set to `true` while the video is paused, there is some degree of busy-waiting as the
+            /// layer is polled at a high rate about whether it needs to draw. Disable this to save CPU while idle.
+            glLayer.isAsynchronous = false
+          }
+        }
+      }
+    }
+
+    if let player = player {
+      // This kicks off an asynchronous task on the mpv queue
+      player.syncTimeAndCacheUI()
+    }
+  }
+
   /// Returns a [Core Video](https://developer.apple.com/documentation/corevideo) display link.
   ///
   /// If a display link has already been created then that link will be returned, otherwise a display link will be created and returned.
@@ -213,6 +248,13 @@ func displayLinkCallback(
   _ flagsOut: UnsafeMutablePointer<CVOptionFlags>,
   _ context: UnsafeMutableRawPointer?) -> CVReturn {
     let glVideoLayer = unsafeBitCast(context, to: GLVideoLayer.self)
-    glVideoLayer.displayLinkDidFire()
+
+    glVideoLayer.drawSync(forced: glVideoLayer.isAsynchronous)
+
+    glVideoLayer.videoView.$isUninited.withLock() { isUninited in
+      guard !isUninited else { return }
+      glVideoLayer.mpvReportSwap()
+    }
+    glVideoLayer.videoView.displayLinkDidFire()
     return kCVReturnSuccess
   }

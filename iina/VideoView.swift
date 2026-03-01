@@ -20,6 +20,8 @@ class VideoView: NSView {
   unowned var player: PlayerCore!
   var link: CVDisplayLink?
 
+  var lastDisplayLinkStatusCheckTime = Date().timeIntervalSince1970
+
   var log: any Logger.Subsystem {
     return player.log
   }

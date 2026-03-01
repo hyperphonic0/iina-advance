@@ -231,42 +231,6 @@ class GLVideoLayer: CAOpenGLLayer {
     }
   }
 
-  /// This is on the DisplayLink's thread!
-  func displayLinkDidFire() {
-    drawSync(forced: isAsynchronous)
-
-    videoView.$isUninited.withLock() { isUninited in
-      guard !isUninited else { return }
-      mpvReportSwap()
-
-      if isAsynchronous, let asynchronousModeStartTime {
-        let nowTime = Date().timeIntervalSince1970
-        if nowTime - asynchronousModeStartTime > Constants.TimeInterval.asynchronousModeTimeout {
-          videoView.player.log.verbose("Exiting asynchronous mode")
-          /// If this is set to `true` while the video is paused, there is some degree of busy-waiting as the
-          /// layer is polled at a high rate about whether it needs to draw. Disable this to save CPU while idle.
-          isAsynchronous = false
-        }
-      }
-    }
-
-    if let player = videoView.player {
-      // This kicks off an asynchronous task on the mpv queue
-      player.syncTimeAndCacheUI()
-    }
-
-
-    DispatchQueue.main.async { [self] in
-      if let displayIdleStartTime = videoView.displayIdleStartTime {
-        let nowTime = Date().timeIntervalSince1970
-        if nowTime - displayIdleStartTime > Constants.TimeInterval.displayIdleTimeout {
-          videoView.stopDisplayLink()
-        }
-      }
-      videoView.pwc?.exitMusicModeButton.needsDisplay = true
-    }
-  }
-
   func drawAsync(forced: Bool = false) {
     mpvGLQueue.async { [self] in
       draw(forced: forced)

@@ -254,6 +254,7 @@ struct Constants {
 
     static let pastLaunchResponseTimeout = 1.0
     static let asynchronousModeTimeout: TimeInt = 2.0
+    static let dislpayLinkStatusCheckInterval: TimeInt = 0.5
 
     // TimeoutTimer timeouts
 
