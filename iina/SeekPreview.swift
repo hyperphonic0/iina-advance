@@ -117,7 +117,7 @@ extension PlayerWindowController {
                      _ currentGeo: PWinGeometry) {
 
       let margins = SeekPreview.minThumbMargins
-      let thumbStore = player.info.currentPlayback?.thumbnails
+      let thumbStore = player.currentMediaThumbnails
       let ffThumbnail = thumbStore?.getThumbnail(forSecond: previewTimeSec)
       let viewportSize = currentGeo.viewportSize
       let currentLayout = pwc.currentLayout

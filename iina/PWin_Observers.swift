@@ -317,7 +317,7 @@ extension PlayerWindowController {
         refreshHidesOnDeactivateStatus()
       })
     case .thumbnailBorderStyle:
-      player.info.currentPlayback?.thumbnails?.invalidateDisplayedThumbnail()
+      player.currentMediaThumbnails?.invalidateDisplayedThumbnail()
 
     case .thumbnailSizeOption,
         .thumbnailFixedLength,

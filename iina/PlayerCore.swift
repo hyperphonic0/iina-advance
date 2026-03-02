@@ -86,6 +86,9 @@ final class PlayerCore: NSObject {
   var undoHelper: PlayerWindowUndoHelper { pwc.undoHelper }
 
   private var subFileMonitor: FileMonitor? = nil
+  let thumbnailsLoader = ThumbnailsLoader()
+  /// Use this to query for thumbnails.
+  @MainActor var currentMediaThumbnails: SingleMediaThumbnailsLoader? = nil
 
   var windowAutosaveName: WindowAutosaveName { WindowAutosaveName.playerWindow(id: label) }
 
@@ -97,11 +100,9 @@ final class PlayerCore: NSObject {
   ///
   /// **See also**: `autoLoadFilesInCurrentFolder(ticket:)`
   @Atomic var postLoadBGQTicket = 0
-  @Atomic var thumbnailQueueTicket = 0
 
   let saveUIStateDebouncer = Debouncer(delay: Constants.TimeInterval.playerStateSaveDelay, queue: PlayerSaveState.saveQueue)
   let sliderSeekDebouncer = Debouncer(delay: Constants.TimeInterval.sliderSeekThrottlingInterval)
-  let thumbReloadDebouncer = Debouncer(delay: Constants.TimeInterval.thumbnailRegenerationDelay, queue: ThumbnailCache.shared.thumbnailQueue)
 
   var uiTimeDebouncer: Debouncer!
 
@@ -1127,11 +1128,10 @@ final class PlayerCore: NSObject {
 
       stopWatchingSubFile()
 
-      thumbReloadDebouncer.invalidate()
       // If the user immediately closes the player window it is possible the background task may still
       // be working to load subtitles. Invalidate the ticket to get that task to abandon the work.
       $postLoadBGQTicket.withLock { $0 += 1 }
-      $thumbnailQueueTicket.withLock { $0 += 1 }
+      shutDownPlayerThumbnails()
 
       pwc.playlistView.clearBackgroundQueue()
 
@@ -3030,102 +3030,6 @@ final class PlayerCore: NSObject {
     pwc.close()
     /// Some doubts about whether `windowWillClose` is always fired. Call manually to ensure things execute:
     AppDelegate.shared.windowWillClose(window)
-  }
-
-  func reloadThumbnails() {
-    mpv.queue.asyncAfter(deadline: .now() + Constants.TimeInterval.thumbnailRegenerationDelay) { [self] in
-      guard !isStopping else { return }
-      guard isInteractivePlayer else {
-        log.verbose("Thumbnails reload stopped: player is non-interactive")
-        return
-      }
-      guard !Preference.bool(for: .integrateWithThumbfast) else {
-        log.verbose("Thumbnails reload stopped: pref key `integrateWithThumbfast` is set")
-        DispatchQueue.main.async { [self] in
-          touchBarSupport.touchBarPlaySlider?.resetCachedThumbnails()
-        }
-        return
-      }
-      guard let currentPlayback = info.currentPlayback else {
-        log.debug("Thumbnails reload stopped ∵ no current playback")
-        DispatchQueue.main.async { [self] in
-          touchBarSupport.touchBarPlaySlider?.resetCachedThumbnails()
-        }
-        return
-      }
-      let videoTrackID = info.vid
-      guard let videoTrackID, videoTrackID > 0 else {
-        log.debug("Thumbnails reload stopped: invalid/missing video track: \(String(videoTrackID))")
-        clearExistingThumbnails(for: currentPlayback)
-        return
-      }
-      guard !currentPlayback.isNetworkResource else {
-        log.verbose("Thumbnails reload stopped: current media is network")
-        clearExistingThumbnails(for: currentPlayback)
-        return
-      }
-      guard Preference.bool(for: .enableThumbnailPreview) else {
-        log.verbose("Thumbnails reload stopped ∵ thumbnails are disabled by user")
-        clearExistingThumbnails(for: currentPlayback)
-        return
-      }
-      if !Preference.bool(for: .enableThumbnailForRemoteFiles) && info.isMediaOnRemoteDrive {
-        log.debug("Thumbnails reload stopped ∵ file is on a mounted remote drive")
-        clearExistingThumbnails(for: currentPlayback)
-        return
-      }
-      if isInMiniPlayer && !Preference.bool(for: .enableThumbnailForMusicMode) {
-        log.verbose("Thumbnails reload stopped ∵ user has disabled for music mode")
-        clearExistingThumbnails(for: currentPlayback)
-        return
-      }
-
-      // Generate thumbnails using video's original dimensions, before aspect ratio correction.
-      // We will adjust aspect ratio & rotation when we display the thumbnail, similar to how mpv works.
-      let videoGeo = videoGeo
-      let videoSizeRaw = videoGeo.videoSizeRaw
-
-      let thumbnailWidth = SingleMediaThumbnailsLoader.determineWidthOfThumbnail(from: videoSizeRaw, log: log)
-
-      if let oldThumbs = currentPlayback.thumbnails {
-        if !oldThumbs.isCancelled, oldThumbs.mediaFilePath == currentPlayback.url.path,
-           oldThumbs.videoTrackID == videoTrackID,
-           thumbnailWidth == oldThumbs.thumbnailWidth {
-          log.debug("Already loaded \(oldThumbs.thumbnails.count) thumbnails (\(oldThumbs.thumbnailsProgress * 100.0)%) for vid\(videoTrackID) @ \(thumbnailWidth)px; nothing to do")
-          return
-        } else {
-          clearExistingThumbnails(for: currentPlayback)
-        }
-      }
-
-      var queueTicket: Int = 0
-      $thumbnailQueueTicket.withLock {
-        $0 += 1  // this will cancel any previous thumbnail loads for this player
-        queueTicket = $0
-      }
-
-      log.verbose("Creating new thumbnails loader")
-      let newMediaThumbnailLoader = SingleMediaThumbnailsLoader(self, queueTicket: queueTicket, mediaFilePath: currentPlayback.url.path, mediaFilePathMD5: currentPlayback.mpvMD5,
-                                                                videoTrackID: videoTrackID, thumbnailWidth: thumbnailWidth)
-      info.currentPlayback = currentPlayback.clone(thumbnails: newMediaThumbnailLoader)
-      // Run the following in the background (`thumbnailQueue`) at lower priority, so the UI is not slowed down.
-      thumbReloadDebouncer.run { [self] in
-        log.trace("Thumbnails reload requested")
-
-        guard queueTicket == thumbnailQueueTicket else { return }
-        newMediaThumbnailLoader.loadThumbnails()
-      }
-    }
-  }
-
-  private func clearExistingThumbnails(for currentPlayback: Playback) {
-    assert(DispatchQueue.isExecutingIn(mpv.queue))
-    if currentPlayback.thumbnails != nil {
-      info.currentPlayback = currentPlayback.clone(clearThumbnails: true)
-    }
-    DispatchQueue.main.async { [self] in
-      touchBarSupport.touchBarPlaySlider?.resetCachedThumbnails()
-    }
   }
 
   @MainActor

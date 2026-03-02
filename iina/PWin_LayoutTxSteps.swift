@@ -1194,6 +1194,9 @@ extension PlayerWindowController {
         // Playlist sidebar is visible: need to scroll to current item again due to size change
         playlistView.scrollPlaylistToCurrentItem()
       }
+
+      // May need to re-evaluate these if video shown or thumbnails enabled in normal mode but not music mode
+      player.reloadThumbnails()
     }
 
     refreshHidesOnDeactivateStatus()

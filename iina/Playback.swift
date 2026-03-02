@@ -53,9 +53,6 @@ struct Playback: CustomStringConvertible, Sendable {
 
   let parentPlaylist: String
 
-  // TODO: refactor to move this outside of Playback object
-  let thumbnails: SingleMediaThumbnailsLoader?
-
   // Properties from PlaybackID
   var url: URL { id.url}
   var mpvMD5: String { id.mpvMD5 }
@@ -69,12 +66,11 @@ struct Playback: CustomStringConvertible, Sendable {
   }
 
   init(_ id: PlaybackID, playlistPos: Int, parentPlaylist: String = "",
-       state: LifecycleState = .notYetStarted, thumbnails: SingleMediaThumbnailsLoader? = nil) {
+       state: LifecycleState = .notYetStarted) {
     self.id = id
     self.playlistPos = playlistPos
     self.parentPlaylist = parentPlaylist
     self.state = state
-    self.thumbnails = thumbnails
   }
 
   /// if `url` is `nil`, assumed to be `stdin`
@@ -92,14 +88,10 @@ struct Playback: CustomStringConvertible, Sendable {
 
   func clone(id: PlaybackID? = nil,
              playlistPos: Int? = nil, parentPlaylist: String? =  nil,
-             state: LifecycleState? = nil,
-             thumbnails: SingleMediaThumbnailsLoader? = nil,
-             clearThumbnails: Bool = false) -> Playback {
-    let thumbnailsOut = clearThumbnails ? nil : thumbnails ?? self.thumbnails
+             state: LifecycleState? = nil) -> Playback {
     return Playback(id ?? self.id, playlistPos: playlistPos ?? self.playlistPos,
                     parentPlaylist: parentPlaylist ?? self.parentPlaylist,
-                    state: state ?? self.state,
-                    thumbnails: thumbnailsOut)
+                    state: state ?? self.state)
   }
 
   func changingState(to newState: LifecycleState) -> Playback {
