@@ -217,6 +217,9 @@ struct GeometryTransform: Sendable {
         log.verbose("[GTF:\(name)] No videoTF given, skipping. Will use: \(outputVideoGeo)")
       }
 
+      // Keep compiler happy
+      let outputVideoGeoReadOnly = outputVideoGeo
+
       // MARK: - STAGE 3
       // -- main queue -------------------------------------------------------------------------
       Task { @MainActor in
@@ -230,7 +233,7 @@ struct GeometryTransform: Sendable {
           log.verbose("[GTF:\(name)] Input geoSet=\(inputGeoSet)")
 
           let ctxStage3 = GeometryTransform.ContextStage3(ctxStage2, gtfSessionState: gtfSessionState,
-                                                          inputGeoSet: inputGeoSet, outputVidGeo: outputVideoGeo,
+                                                          inputGeoSet: inputGeoSet, outputVidGeo: outputVideoGeoReadOnly,
                                                           inputLayout: inputLayout)
 
           doMainQueueWork(ctxStage3)

@@ -916,7 +916,9 @@ final class StartupHandler {
         if let remountURL = URL(string: volRemountURLString), isMounted(remountURL: remountURL) {
           log.verbose("[Remount] Volume is already mounted: remountURL=\(volRemountURLString.pii.quoted)")
           mountedSet.insert(volRemountURLString)
-          didProcessRemountURLString(volRemountURLString, isMounted: true, log)
+          DispatchQueue.main.async { [self] in
+            didProcessRemountURLString(volRemountURLString, isMounted: true, log)
+          }
         }
 
       }
@@ -925,10 +927,12 @@ final class StartupHandler {
       for (volRemountURLString, dependentItems) in volumeRemountsToProcess {
         guard !mountedSet.contains(volRemountURLString) else { continue }
         guard !isDoneLaunching else {
-          return log.debug("[Remount] Aborting processing of remaining remount URLs")
+          return log.debug("[Remount] Aborting restore of remaining players; startup was marked as done despite remount URLs not completing")
         }
         let isMounted = processVolRemount(volRemountURLString, dependentItems, log)
-        didProcessRemountURLString(volRemountURLString, isMounted: isMounted, log)
+        DispatchQueue.main.async { [self] in
+          didProcessRemountURLString(volRemountURLString, isMounted: isMounted, log)
+        }
       }
     }
 
@@ -983,10 +987,9 @@ final class StartupHandler {
     return false
   }
 
-  nonisolated
+  @MainActor
   private func didProcessRemountURLString(_ volRemountURLString: String, isMounted: Bool, _ log: any Logger.Subsystem) {
     // Need to go back to main DQ to safely access data structures
-    DispatchQueue.main.async { [self] in
       guard !isDoneLaunching else {
         log.warn("[Remount] Aborting restore of remaining players; startup was marked as done despite remount URLs not completing")
         return
@@ -1002,7 +1005,6 @@ final class StartupHandler {
         let pwinToRestore = windowsToRestore[playerToRestore.saveName]!
         proceedWithPlayerRestore(pwinToRestore, playerToRestore)
       }
-    }
   }
 
   nonisolated

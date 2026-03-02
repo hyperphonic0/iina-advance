@@ -19,6 +19,7 @@ final class KeyMapping: NSObject, Codable, Sendable {
 
   // If present, holds the action selector & data for a menu item action.
   // May not match the actual menu item which is present in the menus.
+  // FIXME: refactor to put this somewhere more sane
   let menuItem: NSMenuItem?
 
   /// Only used when `menuItem` is non-nil

@@ -204,10 +204,11 @@ extension PlayerCore {
       // check 3d lut files
       if paths.count == 1 && Utility.lut3dExt.contains(paths[0].lowercasedPathExtension) {
         mpv.queue.async { [self] in
-          let result = addVideoFilter(MPVFilter(lavfiName: "lut3d", label: "iina_quickl3d", paramDict: [
+          let filter = MPVFilter(lavfiName: "lut3d", label: "iina_quickl3d", paramDict: [
             "file": paths[0],
             "interp": "nearest"
-          ]))
+          ])
+          let result = addVideoFilter(filter)
           if result {
             sendOSD(.addFilter("3D LUT"))
           }
