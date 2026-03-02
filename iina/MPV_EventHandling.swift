@@ -20,6 +20,7 @@ extension MPVController {
     MPVOption.PlaybackControl.loopFile: MPV_FORMAT_STRING,
     MPVOption.PlaybackControl.abLoopA: MPV_FORMAT_DOUBLE,
     MPVOption.PlaybackControl.abLoopB: MPV_FORMAT_DOUBLE,
+    MPVOption.PlaybackControl.abLoopCount: MPV_FORMAT_STRING,
     MPVOption.OSD.osdLevel: MPV_FORMAT_INT64,
     MPVProperty.chapter: MPV_FORMAT_INT64,
     MPVOption.Video.deinterlace: MPV_FORMAT_FLAG,
@@ -420,6 +421,10 @@ extension MPVController {
       player.syncUI(.loop)
 
     case MPVOption.PlaybackControl.abLoopA, MPVOption.PlaybackControl.abLoopB:
+      player.log.verbose("Δ mpv prop: `\(name)`")
+      player.syncAbLoop()
+
+    case MPVOption.PlaybackControl.abLoopCount:
       player.log.verbose("Δ mpv prop: `\(name)`")
       player.syncAbLoop()
 

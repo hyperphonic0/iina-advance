@@ -448,16 +448,12 @@ class MenuController: NSObject, NSMenuDelegate {
     pause.title = player.info.isPaused ? Constants.String.resume : Constants.String.pause
     let speed = player.info.playSpeed.groupedStringUpTo6Decimals
     speedIndicator.title = String(format: NSLocalizedString("menu.speed", comment: "Speed:"), speed)
-    player.mpv.queue.async { [self] in
-      guard player.isActive else { return }
-      let abLoopActive = player.isABLoopActive
-      let loopMode = player.getLoopMode()
-      DispatchQueue.main.async { [self] in
-        abLoop.state = abLoopActive ? .on : .off
-        fileLoop.state = loopMode == .file ? .on : .off
-        playlistLoop.state = loopMode == .playlist ? .on : .off
-      }
-    }
+    let info = player.info
+    let abLoopActive = info.isABLoopActive
+    let loopMode = info.loopMode
+    abLoop.state = abLoopActive ? .on : .off
+    fileLoop.state = loopMode == .file ? .on : .off
+    playlistLoop.state = loopMode == .playlist ? .on : .off
   }
 
   @MainActor

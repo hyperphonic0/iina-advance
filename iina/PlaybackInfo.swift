@@ -121,10 +121,25 @@ class PlaybackInfo {
   var abLoopStatus: LoopStatus = .cleared
   var abLoopA: Double = 0
   var abLoopB: Double = 0
+  var abLoopCount: String = "0"
+  var isABLoopActive: Bool { abLoopA != 0 && abLoopB != 0 && abLoopCount != "0" }
 
   // mpv properties (cached here for easier use by PlayerSaveState)
   var loopFile: String = Constants.String.mpvNo
   var loopPlaylist: String = Constants.String.mpvNo
+  var loopMode: LoopMode {
+    let loopFileStatus = loopFile
+    let loopPlaylistStatus = loopPlaylist
+    guard loopFileStatus != "inf" else { return .file }
+    if let count = Int(loopFileStatus), count != 0 {
+      return .file
+    }
+    guard loopPlaylistStatus != "inf", loopPlaylistStatus != "force" else { return .playlist }
+    guard let count = Int(loopPlaylistStatus) else {
+      return .off
+    }
+    return count == 0 ? .off : .playlist
+  }
 
   var playSpeed: Double = 1.0
 

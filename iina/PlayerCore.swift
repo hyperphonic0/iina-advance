@@ -271,7 +271,7 @@ final class PlayerCore: NSObject {
     /// - Note: The value of the A loop point is not required by mpv to be before the B loop point.
     /// - Returns:value of the mpv option `ab-loop-a`
     get {
-      mpv.getDouble(MPVOption.PlaybackControl.abLoopA)
+      info.abLoopA
     }
     /// Sets the value of the A loop point as an absolute timestamp in seconds.
     ///
@@ -294,7 +294,7 @@ final class PlayerCore: NSObject {
     /// - Note: The value of the B loop point is not required by mpv to be after the A loop point.
     /// - Returns:value of the mpv option `ab-loop-b`
     get {
-      mpv.getDouble(MPVOption.PlaybackControl.abLoopB)
+      info.abLoopB
     }
     /// Sets the value of the B loop point as an absolute timestamp in seconds.
     ///
@@ -309,10 +309,6 @@ final class PlayerCore: NSObject {
       guard !isStopping else { return }
       mpv.setDouble(MPVOption.PlaybackControl.abLoopB, max(Constants.TimeInterval.minLoopPointTime, newValue))
     }
-  }
-
-  var isABLoopActive: Bool {
-    abLoopA != 0 && abLoopB != 0 && mpv.getString(MPVOption.PlaybackControl.abLoopCount) != "0"
   }
 
   // MARK: - Init
@@ -1463,9 +1459,11 @@ final class PlayerCore: NSObject {
     // Obtain the values of the ab-loop-a and ab-loop-b options representing the A & B loop points.
     let a = mpv.getDouble(MPVOption.PlaybackControl.abLoopA)
     let b = mpv.getDouble(MPVOption.PlaybackControl.abLoopB)
+    let loopCount = mpv.getString(MPVOption.PlaybackControl.abLoopCount)
     let didChange = (info.abLoopA != a) || (info.abLoopB != b)
     info.abLoopA = a
     info.abLoopB = b
+    info.abLoopCount = loopCount ?? "0"
 
     if a == 0 {
       if b == 0 {
@@ -1530,16 +1528,7 @@ final class PlayerCore: NSObject {
     if let loopPlaylistStatus {
       info.loopPlaylist = loopPlaylistStatus
     }
-
-    guard loopFileStatus != "inf" else { return .file }
-    if let loopFileStatus = loopFileStatus, let count = Int(loopFileStatus), count != 0 {
-      return .file
-    }
-    guard loopPlaylistStatus != "inf", loopPlaylistStatus != "force" else { return .playlist }
-    guard let loopPlaylistStatus = loopPlaylistStatus, let count = Int(loopPlaylistStatus) else {
-      return .off
-    }
-    return count == 0 ? .off : .playlist
+    return info.loopMode
   }
 
   private func setLoopMode(_ newMode: LoopMode) {
