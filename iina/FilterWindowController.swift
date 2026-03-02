@@ -106,20 +106,20 @@ class FilterWindowController: WindowController, NSWindowDelegate {
 
   @MainActor
   @objc func reloadTable() {
-    guard let pc = PlayerManager.shared.lastActivePlayer else {
+    guard let player = PlayerManager.shared.lastActivePlayer else {
       // No player. But it's still useful to reload saved filters table
       savedFiltersTableView.reloadData()
       return
     }
-    pc.log.verbose("Reloading \(filterType) table")
+    player.log.verbose("Reloading \(filterType) table")
     let savedFilters = self.savedFilters
-    pc.mpv.queue.async { [self] in
+    player.mpv.queue.async { [self] in
       // When IINA is terminating player windows are closed, which causes the iinaPlayerWindowChanged
       // notification to be posted and that results in the observer established above calling this
       // method. Thus this method may be called after IINA has commanded mpv to shutdown. Once mpv has
       // been told to shutdown mpv APIs must not be called as it can trigger a crash in mpv.
-      guard !pc.isStopping else { return }
-      let latestActiveFilters = (filterType == MPVProperty.af) ? pc.updateAudioFiltersFromMpv() : pc.updateVideoFiltersFromMpv()
+      guard !player.isStopping else { return }
+      let latestActiveFilters = (filterType == MPVProperty.af) ? player.updateAudioFiltersFromMpv() : player.updateVideoFiltersFromMpv()
 
       var filterIsSavedUpdated = [Bool](repeatElement(false, count: latestActiveFilters.count))
 

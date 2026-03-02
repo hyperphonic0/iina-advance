@@ -216,7 +216,7 @@ final class PlayerCore: NSObject {
 
   // Other state
 
-  var info: PlaybackInfo
+  let info: PlaybackInfo
 
   var isUsingMpvOSD = false {
     didSet { log.verbose("Δ isUsingMpvOSD ≔ \(isUsingMpvOSD.yn)") }
@@ -651,23 +651,20 @@ final class PlayerCore: NSObject {
         state = .started
       }
 
-      switch pwc.sessionState {
-      case .restoring, .creatingCLI:
-        break
-      default:
-        resetOptionsForNewSession(reuseExistingWindow: pwc.sessionState.hasOpenSession)
-      }
-
       info.hdrEnabled = Preference.bool(for: .enableHdrSupport)
 
       DispatchQueue.main.async { [self] in
-        if !pwc.sessionState.isRestoring {
+        let sessionState = pwc.sessionState
+
+        switch sessionState {
+        case .restoring, .creatingCLI:
+          break
+        default:
           if isInteractivePlayer {
             pwc.osd.queue.clear()
           }
-          pwc.sessionState = pwc.sessionState.newSession()
+          pwc.sessionState = sessionState.newSession()
         }
-        let sessionState = pwc.sessionState
 
         if isInteractivePlayer {
           pwc.openWindow(nil)
@@ -684,6 +681,13 @@ final class PlayerCore: NSObject {
 
         mpv.queue.async { [self] in
           guard !isStopping else { return }
+
+          switch sessionState {
+          case .restoring, .creatingCLI:
+            break
+          default:
+            resetOptionsForNewSession(reuseExistingWindow: sessionState.hasOpenSession)
+          }
 
           // If this mpv core is being reused icc-profile-auto may have been left set to true. This option
           // MUST be reset to false to avoid a crash that occurs if the mpv OSD is being used. Another way
