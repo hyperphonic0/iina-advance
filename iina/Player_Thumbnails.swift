@@ -18,7 +18,7 @@ struct Thumbnail: Sendable {
 
   /// We want the requested length of thumbnail to correspond to whichever video dimension is longer, and then get the corresponding width.
   /// Example: if video's native size is 600 W x 800 H and requested thumbnail size is 100, then `thumbWidth` should be 75.
-  static func determineWidthOfThumbnail(from videoSizeRaw: NSSize, log: any Logger.Subsystem) -> Int {
+  fileprivate static func determineWidthOfThumbnail(from videoSizeRaw: NSSize, log: any Logger.Subsystem) -> Int {
     let sizeOption: Preference.ThumbnailSizeOption = Preference.enum(for: .thumbnailSizeOption)
     switch sizeOption {
     case .scaleWithViewport:
@@ -58,22 +58,26 @@ struct Thumbnail: Sendable {
 
 final class PlayerThumbnailsLoader {
   /// Do not access this directly from outside this file. Use `PlayerCore.currentMediaThumbnails` instead.
-  fileprivate var currentMediaThumbnails: SingleMediaThumbnailsLoader? = nil {
+  fileprivate var currentMediaThumbnailsLoader: SingleMediaThumbnailsLoader? = nil {
     willSet {
-      if let oldThumbs = currentMediaThumbnails, oldThumbs != newValue {
+      if let oldThumbs = currentMediaThumbnailsLoader, oldThumbs != newValue {
         oldThumbs.$isCancelled.withLock { $0 = true }
       }
     }
   }
 
+  /// Do not access this directly from outside this file. Use `PlayerCore.currentMediaThumbnails` instead.
   fileprivate var thumbnailsEnabled: Bool = false
 }
 
 extension PlayerCore {
+  /// This should be called any time `thumbnailsLoader.currentMediaThumbnails` or `thumbnailsLoader.thumbnailsEnabled` changes.
   private func refreshCurrentMediaThumbnails() {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
-    let thumbnails = thumbnailsLoader.thumbnailsEnabled ? thumbnailsLoader.currentMediaThumbnails : nil
+    let thumbnails = thumbnailsLoader.thumbnailsEnabled ? thumbnailsLoader.currentMediaThumbnailsLoader : nil
+
     DispatchQueue.main.async { [self] in
+      // Copy this object from mpv queue isolation to main queue isolation
       currentMediaThumbnails = thumbnails
       touchBarSupport.touchBarPlaySlider?.resetCachedThumbnails()
     }
@@ -84,7 +88,7 @@ extension PlayerCore {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
 
     log.verbose("Clearing thumbnails & cancelling thumbnail generation")
-    thumbnailsLoader.currentMediaThumbnails = nil
+    thumbnailsLoader.currentMediaThumbnailsLoader = nil
     thumbnailsLoader.thumbnailsEnabled = false
     refreshCurrentMediaThumbnails()
   }
@@ -154,7 +158,7 @@ extension PlayerCore {
 
       let thumbnailWidth = Thumbnail.determineWidthOfThumbnail(from: videoSizeRaw, log: log)
 
-      if let currentMediaThumbnails = thumbnailsLoader.currentMediaThumbnails,
+      if let currentMediaThumbnails = thumbnailsLoader.currentMediaThumbnailsLoader,
          currentMediaThumbnails.mediaFilePath == playback.url.path,
          currentMediaThumbnails.videoTrackID == videoTrackID,
          thumbnailWidth == currentMediaThumbnails.thumbnailWidth {
@@ -166,7 +170,7 @@ extension PlayerCore {
       let newMediaThumbnailLoader = SingleMediaThumbnailsLoader(self, mediaFilePath: playback.url.path, mediaFilePathMD5: playback.mpvMD5,
                                                                 videoTrackID: videoTrackID, thumbnailWidth: thumbnailWidth)
       // This will cancel / discard any previous thumbs for this player:
-      thumbnailsLoader.currentMediaThumbnails = newMediaThumbnailLoader
+      thumbnailsLoader.currentMediaThumbnailsLoader = newMediaThumbnailLoader
       // Run the following in the background (`thumbnailQueue`) at lower priority, so the UI is not slowed down.
       ThumbnailCache.shared.thumbnailQueue.async { [self] in
         log.trace("Thumbnails reload requested")
@@ -178,6 +182,9 @@ extension PlayerCore {
 }
 
 
+/// `SingleMediaThumbnailsLoader`: loads & retains in-memory thumbnails for a single video track of a single media file with a given size
+///  (`thumbnailWidth`). An instance of this class should be discarded as soon as any of the previously listed variables change (after setting
+///  `isCancelled` to `true`).
 final class SingleMediaThumbnailsLoader: NSObject, FFmpegControllerDelegate {
   unowned let player: PlayerCore!
   let mediaFilePath: String
