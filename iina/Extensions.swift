@@ -1320,6 +1320,74 @@ extension CGImage {
     return CGAffineTransformConcat(t, CGAffineTransformMakeTranslation(rect.size.width*0.5, rect.size.height*0.5))
   }
 
+  /// Creates a CGImage from BGR0 format pixel data.
+  /// NOTE: This method was wholly generated via Claude Sonnet 4.5 (original author unknown).
+  ///
+  /// BGR0 is a 32-bit per pixel format where each pixel consists of 4 bytes:
+  /// - Byte 0: Blue component
+  /// - Byte 1: Green component
+  /// - Byte 2: Red component
+  /// - Byte 3: Padding (unused)
+  ///
+  /// - Parameters:
+  ///   - data: Pointer to the raw BGR0 pixel data
+  ///   - width: Width of the image in pixels
+  ///   - height: Height of the image in pixels
+  ///   - stride: Number of bytes per row (may be larger than width * 4 due to alignment)
+  /// - Returns: A CGImage if successful, nil otherwise
+  static func createFromBGR0(data: [UInt8], width: Int, height: Int, stride: Int, _ log: any Logger.Subsystem) -> CGImage? {
+    // BGR0 uses 4 bytes per pixel
+    let bitsPerComponent = 8
+    let bitsPerPixel = 32
+
+    // Create a color space (sRGB is appropriate for video content)
+    guard let colorSpace = CGColorSpace(name: CGColorSpace.sRGB) else {
+      log.error("Failed to create sRGB color space")
+      return nil
+    }
+
+    // BGR0 format: Blue, Green, Red, padding
+    // We need to specify that this is BGR with the first component in the first byte
+    let bitmapInfo = CGBitmapInfo.byteOrder32Little.rawValue | CGImageAlphaInfo.noneSkipFirst.rawValue
+
+    // Copy the data to ensure it stays valid
+    let dataSize = stride * height
+    guard let dataCopy = malloc(dataSize) else {
+      log.error("Failed to allocate memory for image data")
+      return nil
+    }
+    memcpy(dataCopy, data, dataSize)
+
+    // Create a data provider that will free the copied data when done
+    guard let provider = CGDataProvider(dataInfo: dataCopy, data: dataCopy, size: dataSize, releaseData: { info, data, size in
+      free(info)
+    }) else {
+      free(dataCopy)
+      log.error("Failed to create CGDataProvider")
+      return nil
+    }
+
+    // Create the CGImage
+    guard let cgImage = CGImage(
+      width: width,
+      height: height,
+      bitsPerComponent: bitsPerComponent,
+      bitsPerPixel: bitsPerPixel,
+      bytesPerRow: stride,
+      space: colorSpace,
+      bitmapInfo: CGBitmapInfo(rawValue: bitmapInfo),
+      provider: provider,
+      decode: nil,
+      shouldInterpolate: true,
+      intent: .defaultIntent
+    ) else {
+      log.error("Failed to create CGImage")
+      return nil
+    }
+
+    return cgImage
+  }
+
 }
 
 extension NSImage {

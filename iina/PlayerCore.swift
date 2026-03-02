@@ -1311,10 +1311,6 @@ final class PlayerCore: NSObject {
         return false
       }
       isRaw = commandName == MPVCommand.screenshotRaw.rawValue
-      if isRaw {
-        // Cannot yet support screenshot-raw
-        canUseIINAScreenshot = false
-      }
       if action.count > 1 {
         commandFlags = action[1].split(separator: "+").map{String($0)}
 
@@ -1414,6 +1410,29 @@ final class PlayerCore: NSObject {
       screenshotViewController.setImage(screenshotImage,
                                         size: previewImageSize,
                                         fileURL: saveToFile ? lastScreenshotURL : nil)
+
+      sendOSD(.screenshot, accessoryViewController: screenshotViewController)
+    }
+  }
+
+  func screenshotRawCallback(_ screenshotImage: NSImage) {
+    guard Preference.bool(for: .screenshotShowPreview) else {
+      return
+    }
+    DispatchQueue.main.async { [self] in
+      let saveToClipboard = Preference.bool(for: .screenshotCopyToClipboard)
+      if saveToClipboard {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.writeObjects([screenshotImage])
+      }
+
+      let screenshotViewController = ScreenshootOSDView()
+      // Shrink to some fraction of the currently displayed video
+      let relativeSize = pwc.videoView.frame.size * 0.3
+      let previewImageSize = screenshotImage.size.shrink(toSize: relativeSize)
+      screenshotViewController.setImage(screenshotImage,
+                                        size: previewImageSize,
+                                        fileURL: nil)
 
       sendOSD(.screenshot, accessoryViewController: screenshotViewController)
     }

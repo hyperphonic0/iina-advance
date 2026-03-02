@@ -242,6 +242,43 @@ extension MPVController {
           break
         }
 
+        let dataNode = UnsafeMutablePointer<mpv_node>(OpaquePointer(event.pointee.data))?.pointee
+        do {
+          guard let map = try MPVNode.parse(dataNode!) as? [String: Any?] else {
+            player.log.error("Failed to parse MPVNode for screenshot-raw response!")
+            break
+          }
+          guard let wOpt = map["w"] as? Optional<Int64>, let w = wOpt,
+                let hOpt = map["h"] as? Optional<Int64>, let h = hOpt,
+                let strideOpt = map["stride"] as? Optional<Int64>, let stride = strideOpt,
+                let formatOpt = map["format"] as? Optional<String>, let format = formatOpt else {
+            player.log.error("Failed to parse one or more fields of screenshot-raw response!")
+            break
+          }
+          log.verbose("Data for screenshot-raw: W=\(w) H=\(h) stride=\(stride)")
+
+          guard format == "bgr0" else {
+            break
+          }
+          guard let dataOpt = map["data"] as? Optional<[UInt8]>, let data = dataOpt else {
+            player.log.error("Failed to parse data field of screenshot-raw response!")
+            break
+          }
+
+          // Create CGImage from BGR0 data
+          if let cgImage = CGImage.createFromBGR0(data: data, width: Int(w), height: Int(h), stride: Int(stride), player.log) {
+            player.log.verbose("Successfully created CGImage from screenshot-raw data")
+            let screenshotImage = NSImage(cgImage: cgImage, size: cgImage.size())
+            player.screenshotRawCallback(screenshotImage)
+          } else {
+            player.log.error("Failed to create CGImage from BGR0 data")
+          }
+
+        } catch {
+          player.log.error("Failed to parse property data for screenshot-raw: \(error)")
+        }
+
+
       }
 
     default:
