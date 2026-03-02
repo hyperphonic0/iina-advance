@@ -332,7 +332,7 @@
 		D13E807E2C026A2700537954 /* PWin_GeoSet.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13E807D2C026A2700537954 /* PWin_GeoSet.swift */; };
 		D140E81C285A0BEF00067094 /* LinkedList.swift in Sources */ = {isa = PBXBuildFile; fileRef = D140E81B285A0BEF00067094 /* LinkedList.swift */; };
 		D1491F882CEF544400DB0A06 /* SeekPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1491F872CEF543900DB0A06 /* SeekPreview.swift */; };
-		D15CABE62B1EECFD004A8985 /* SingleMediaThumbnailsLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = D15CABE52B1EECFD004A8985 /* SingleMediaThumbnailsLoader.swift */; };
+		D15CABE62B1EECFD004A8985 /* Player_Thumbnails.swift in Sources */ = {isa = PBXBuildFile; fileRef = D15CABE52B1EECFD004A8985 /* Player_Thumbnails.swift */; };
 		D160783B2D140DEE00105001 /* BarRendererUtil.swift in Sources */ = {isa = PBXBuildFile; fileRef = D160783A2D140DDB00105001 /* BarRendererUtil.swift */; };
 		D161A0B42EBA2226006BF42C /* FixedProgressBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = D161A0B32EBA2226006BF42C /* FixedProgressBar.swift */; };
 		D16A434D2CDDB75B0012D66F /* BarRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D16A434C2CDDB7570012D66F /* BarRenderer.swift */; };
@@ -1864,7 +1864,7 @@
 		D13E807D2C026A2700537954 /* PWin_GeoSet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWin_GeoSet.swift; sourceTree = "<group>"; };
 		D140E81B285A0BEF00067094 /* LinkedList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinkedList.swift; sourceTree = "<group>"; };
 		D1491F872CEF543900DB0A06 /* SeekPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeekPreview.swift; sourceTree = "<group>"; };
-		D15CABE52B1EECFD004A8985 /* SingleMediaThumbnailsLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SingleMediaThumbnailsLoader.swift; sourceTree = "<group>"; };
+		D15CABE52B1EECFD004A8985 /* Player_Thumbnails.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Player_Thumbnails.swift; sourceTree = "<group>"; };
 		D160783A2D140DDB00105001 /* BarRendererUtil.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BarRendererUtil.swift; sourceTree = "<group>"; };
 		D161A0B32EBA2226006BF42C /* FixedProgressBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FixedProgressBar.swift; sourceTree = "<group>"; };
 		D16A434C2CDDB7570012D66F /* BarRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BarRenderer.swift; sourceTree = "<group>"; };
@@ -2425,7 +2425,6 @@
 				D1FA42E228E4323E00DF49DD /* InputSectionStack.swift */,
 				D1FA42E428E5E54700DF49DD /* AppInputConfig.swift */,
 				D12C073F28EAEA4400FA9958 /* AppInputConfigBuilder.swift */,
-				D15CABE52B1EECFD004A8985 /* SingleMediaThumbnailsLoader.swift */,
 				D1EF40EC2C3BD10B00921252 /* StateEnum.swift */,
 				5125117C2E89B2ED00CDAE9F /* Display.swift */,
 			);
@@ -2988,6 +2987,7 @@
 			isa = PBXGroup;
 			children = (
 				84A0BA961D2FA1CE00BC8DA1 /* PlayerCore.swift */,
+				D15CABE52B1EECFD004A8985 /* Player_Thumbnails.swift */,
 				D1AC43972DE7C9BD00189782 /* Player_Filters.swift */,
 				D1AC43952DE523EE00189782 /* Player_PlaylistOps.swift */,
 				D19247FC2BC634D3003BEEE8 /* Player_Crop.swift */,
@@ -3538,7 +3538,7 @@
 				D1D4C7442B10B7D2003B09C2 /* ViewportView.swift in Sources */,
 				84A0BA901D2F8D4100BC8DA1 /* IINAError.swift in Sources */,
 				D1FD2DDC28533EE700CF7B35 /* InputSection.swift in Sources */,
-				D15CABE62B1EECFD004A8985 /* SingleMediaThumbnailsLoader.swift in Sources */,
+				D15CABE62B1EECFD004A8985 /* Player_Thumbnails.swift in Sources */,
 				D1FF15752A7E072200C0CE86 /* PlayerManager.swift in Sources */,
 				D1D87E042932086000737886 /* TableUIChangeBuilder.swift in Sources */,
 				D192C7D82E8CF2BD00CC537A /* OptionalConstraint.swift in Sources */,

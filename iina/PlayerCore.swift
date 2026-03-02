@@ -86,7 +86,7 @@ final class PlayerCore: NSObject {
   var undoHelper: PlayerWindowUndoHelper { pwc.undoHelper }
 
   private var subFileMonitor: FileMonitor? = nil
-  let thumbnailsLoader = ThumbnailsLoader()
+  let thumbnailsLoader = PlayerThumbnailsLoader()
   /// Use this to query for thumbnails.
   @MainActor var currentMediaThumbnails: SingleMediaThumbnailsLoader? = nil
 

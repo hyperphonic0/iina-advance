@@ -1,5 +1,5 @@
 //
-//  CurrentMediaThumbnails.swift
+//  Player_Thumbnails.swift
 //  iina
 //
 //  Created by Matt Svoboda on 12/4/23.
@@ -56,7 +56,7 @@ struct Thumbnail: Sendable {
 
 }
 
-final class ThumbnailsLoader {
+final class PlayerThumbnailsLoader {
   /// Do not access this directly from outside this file. Use `PlayerCore.currentMediaThumbnails` instead.
   fileprivate var currentMediaThumbnails: SingleMediaThumbnailsLoader? = nil {
     willSet {
