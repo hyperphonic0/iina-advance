@@ -13,7 +13,6 @@ import OrderedCollections
 /// Encapsulates code for opening/restoring windows at application startup...and, um, also opening windows when files or URLs
 /// are opened manually.
 /// See also: `AppDelegate`
-@MainActor
 final class StartupHandler {
 
   enum OpenWindowsState: Int {
@@ -66,7 +65,7 @@ final class StartupHandler {
 
   // MARK: Properties
 
-  let launchStartTime = CFAbsoluteTimeGetCurrent()
+  @MainActor let launchStartTime = CFAbsoluteTimeGetCurrent()
 
   @Atomic private(set) var state: OpenWindowsState = .stillEnqueuing
   var isDoneLaunching: Bool { state == .doneOpening }
@@ -74,9 +73,9 @@ final class StartupHandler {
   // - Properties: Opening Files Manually
 
   /// Serves as a queue to store file paths received across multiple invocations of `application(_:openFiles:)` within a short interval.
-  private var pendingFilesForApplicationOpenFiles: [URL] = []
+  @MainActor private var pendingFilesForApplicationOpenFiles: [URL] = []
   /// The timer for `OpenFileRepeatTime` and `application(_:openFiles:)`.
-  private let openFilesTimer = TimeoutTimer(timeout: Constants.TimeInterval.applicationOpenFilesRepeatTimeout)
+  @MainActor private let openFilesTimer = TimeoutTimer(timeout: Constants.TimeInterval.applicationOpenFilesRepeatTimeout)
 
   // TODO: clean up messy & confusing logic for `isAwaitingNewWindowsForOpenedFile` & `pwcsForOpenFiles`
   /// When launching, this variable indicates that the UI needs to wait for opened file(s) to finish loading before showing all windows.
@@ -86,9 +85,9 @@ final class StartupHandler {
   /// If needing to abort the wait for new windows for any reason, this variable should be reset to `false`.
   ///
   /// This variable has evolved from its original incarnation in upstream IINA, where it is still named `openFileCalled`.
-  var isAwaitingNewWindowsForOpenedFile = false
-  var pwcsForOpenFiles: [PlayerWindowController]? = nil
-  var pwcsDoneWithFileOpen: [PlayerWindowController] = []
+  @MainActor var isAwaitingNewWindowsForOpenedFile = false
+  @MainActor var pwcsForOpenFiles: [PlayerWindowController]? = nil
+  @MainActor var pwcsDoneWithFileOpen: [PlayerWindowController] = []
 
   // - Properties: Restore
 
@@ -99,33 +98,33 @@ final class StartupHandler {
   /// Try to wait until all windows are ready so that we can show all of them at once (when `done` & `!cancelled`).
   /// - Make sure order of `windowsToRestore` is from back to front to restore the order properly.
   /// - Dict key: saved window name
-  fileprivate var windowsToRestore: OrderedDictionary<WindowAutosaveName, WindowToRestore> = [:]
-  fileprivate var windowsToRestoreDoneCount: Int { windowsToRestore.values.reduce(0, { $0 + ($1.done ? 1 : 0) }) }
-  fileprivate var windowsToRestoreCancelCount: Int { windowsToRestore.values.reduce(0, { $0 + ($1.cancelled ? 1 : 0) }) }
-  fileprivate var windowsToRestoreCount: Int { windowsToRestore.count - windowsToRestoreCancelCount }
+  @MainActor fileprivate var windowsToRestore: OrderedDictionary<WindowAutosaveName, WindowToRestore> = [:]
+  @MainActor fileprivate var windowsToRestoreDoneCount: Int { windowsToRestore.values.reduce(0, { $0 + ($1.done ? 1 : 0) }) }
+  @MainActor fileprivate var windowsToRestoreCancelCount: Int { windowsToRestore.values.reduce(0, { $0 + ($1.cancelled ? 1 : 0) }) }
+  @MainActor fileprivate var windowsToRestoreCount: Int { windowsToRestore.count - windowsToRestoreCancelCount }
   /// Special case for Open File window when restoring. Because it is a panel, not a window, it will not have
   /// an `NSWindowController`.
-  fileprivate var restoreOpenFileWindow = false
+  @MainActor fileprivate var restoreOpenFileWindow = false
 
   /// Dictionary of all pending players to restore.
   /// Dict key: player's saved window name (same as `windowsToRestore`)
-  var playersToRestore: [WindowAutosaveName: PlayerToRestore] = [:]
+  @MainActor var playersToRestore: [WindowAutosaveName: PlayerToRestore] = [:]
 
   /// Calls `self.restoreDidTimeOut` on timeout, which displays `restoreTimeoutPromptWindow`.
-  fileprivate let restoreTimer = TimeoutTimer(timeout: Constants.TimeInterval.restoreWindowsTimeout)
-  fileprivate var restoreTimeoutPromptWindow: ThreeButtonPromptWindow? = nil
+  @MainActor fileprivate let restoreTimer = TimeoutTimer(timeout: Constants.TimeInterval.restoreWindowsTimeout)
+  @MainActor fileprivate var restoreTimeoutPromptWindow: ThreeButtonPromptWindow? = nil
 
   // - Properties: Command Line
 
-  var commandLineState: CommandLineState? = nil
-  var isCommandLine: Bool { commandLineState != nil }
+  @MainActor var commandLineState: CommandLineState? = nil
+  @MainActor var isCommandLine: Bool { commandLineState != nil }
 
   /// If launched from command line, should ignore `application(_, openFiles:)` during launch.
   /// This is because the above will be called redundantly by MacOS after startup has finished, and after the filenames have already
   /// been parsed from the command line args and we've already handled them. So we need a way to know to ignore these.
   /// However, the system may also call the same API later via various other sources, and we don't want to ignore those.
   /// So we need to set this back to `false` after we receive the call(s) we want to ignore (when the `openFilesTimer` action fires).
-  var shouldIgnoreOpenFile = false
+  @MainActor var shouldIgnoreOpenFile = false
 
   // MARK: Init
 
@@ -984,6 +983,7 @@ final class StartupHandler {
     return false
   }
 
+  nonisolated
   private func didProcessRemountURLString(_ volRemountURLString: String, isMounted: Bool, _ log: any Logger.Subsystem) {
     // Need to go back to main DQ to safely access data structures
     DispatchQueue.main.async { [self] in
