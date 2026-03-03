@@ -1384,8 +1384,9 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     }
   }
 
+  @MainActor
   func showSubChooseMenu(forView view: NSView, showLoadedSubs: Bool = false) {
-    let activeSubs = player.info.trackList(.sub) + player.info.trackList(.secondSub)
+    let activeSubs = player.info.subTracks
     let menu = NSMenu()
     menu.autoenablesItems = false
     // loaded subtitles
@@ -1417,16 +1418,18 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
                    stateOn: isActive ? true : false)
 
     }
-    if player.info.currentSubsInfo.isEmpty {
+    let subsInfo = player.info.currentSubsInfo
+    if subsInfo.isEmpty {
       menu.addItem(withTitle: NSLocalizedString("subtrack.no_external", comment: "No external subtitles found"),
                    enabled: false)
     } else {
-      if let videoInfo = player.info.currentVideosInfo.first(where: { $0.url == player.info.currentURL }),
+      let videosInfo = player.info.currentVideosInfo
+      if let videoInfo = videosInfo.first(where: { $0.url == player.info.currentURL }),
         !videoInfo.relatedSubs.isEmpty {
         videoInfo.relatedSubs.forEach(addMenuItem)
         menu.addItem(NSMenuItem.separator())
       }
-      player.info.currentSubsInfo.sorted { (f1, f2) in
+      subsInfo.sorted { (f1, f2) in
         return f1.filename.localizedStandardCompare(f2.filename) == .orderedAscending
       }.forEach(addMenuItem)
     }

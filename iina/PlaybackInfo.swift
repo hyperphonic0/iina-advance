@@ -253,9 +253,33 @@ class PlaybackInfo {
   var chapter = 0
   var chapters: [MPVChapter] = []
 
-  var audioTracks: [MPVTrack] = []
-  var videoTracks: [MPVTrack] = []
-  var subTracks: [MPVTrack] = []
+  private var _audioTracks: [MPVTrack] = []
+  private var _videoTracks: [MPVTrack] = []
+  private var _subTracks: [MPVTrack] = []
+  var audioTracks: [MPVTrack] {
+    get {
+      infoLock.withLock { _audioTracks }
+    }
+    set {
+      infoLock.withLock { _audioTracks = newValue }
+    }
+  }
+  var videoTracks: [MPVTrack] {
+    get {
+      infoLock.withLock { _videoTracks }
+    }
+    set {
+      infoLock.withLock { _videoTracks = newValue }
+    }
+  }
+  var subTracks: [MPVTrack] {
+    get {
+      infoLock.withLock { _subTracks }
+    }
+    set {
+      infoLock.withLock { _subTracks = newValue }
+    }
+  }
 
   var selectedSub: MPVTrack? {
     infoLock.withLock {
@@ -275,9 +299,9 @@ class PlaybackInfo {
 
   func replaceTracks(audio: [MPVTrack], video: [MPVTrack], sub: [MPVTrack]) {
     infoLock.withLock {
-      audioTracks = audio
-      videoTracks = video
-      subTracks = sub
+      _audioTracks = audio
+      _videoTracks = video
+      _subTracks = sub
     }
   }
 
@@ -305,33 +329,31 @@ class PlaybackInfo {
   /// `id` is the index into the tracklist for the given type.
   /// Or if `id: nil` is supplied, will look up the current track for the given type.
   func track(_ type: MPVTrack.TrackType, id idGiven: Int?) -> MPVTrack? {
-    infoLock.withLock {
-      let id: Int?, list: [MPVTrack]
-      switch type {
-      case .video:
-        id = idGiven ?? vid
-        list = videoTracks
-      case .audio:
-        id = idGiven ?? aid
-        list = audioTracks
-      case .sub:
-        id = idGiven ?? sid
-        list = subTracks
-      case .secondSub:
-        id = idGiven ?? secondSid
-        list = subTracks
-      }
-      if let id {
-        return list.first { $0.id == id }
-      } else {
-        return nil
-      }
+    let id: Int?, list: [MPVTrack]
+    switch type {
+    case .video:
+      id = idGiven ?? vid
+      list = videoTracks
+    case .audio:
+      id = idGiven ?? aid
+      list = audioTracks
+    case .sub:
+      id = idGiven ?? sid
+      list = subTracks
+    case .secondSub:
+      id = idGiven ?? secondSid
+      list = subTracks
+    }
+    if let id {
+      return list.first { $0.id == id }
+    } else {
+      return nil
     }
   }
 
   // Playlist metadata:
-  var currentVideosInfo: [FileInfo] = []
-  var currentSubsInfo: [FileInfo] = []
+  @Atomic var currentVideosInfo: [FileInfo] = []
+  @Atomic var currentSubsInfo: [FileInfo] = []
   /// Map: { video `path` for each `info` of `currentVideosInfo` -> `url` for each of `info.relatedSubs` }
   @Atomic var matchedSubs: [String: [URL]] = [:]
 
@@ -356,9 +378,7 @@ class PlaybackInfo {
   /// ```
   var cursorAutoHideFullScreenOnly: Bool = false
   /// Use these instead: `player.canHideCursor`, `player.shouldAlwaysHideCursor`
-  var enableCursorAutoHide: Bool {
-    return cursorAutoHideTimeoutMs >= 0
-  }
+  var enableCursorAutoHide: Bool { cursorAutoHideTimeoutMs >= 0 }
 
   var playbackTime = PlaybackTimeInfo.nullTime
   var cacheState: CacheState = CacheState(pausedForCache: false, cacheUsed: 0, cacheSpeed: 0, bufferingState: 0, isBufferUnderrun: false, cachedRanges: [])
