@@ -313,7 +313,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
 
     customSpeedTextField.formatter = speedFormatter
 
-    let videoGeo = player.videoGeo
+    let videoGeo = pwc.geo.video
     updateSegmentLabelsForVideoTab(using: videoGeo)
 
     // EQs
@@ -335,7 +335,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     // Do not even listen to `iinaTracklistChanged`! The following listeners are finer-grained.
     observe(.iinaVIDChanged) { [self] _ in
       pwc.animationPipeline.submitInstantTask{ [self] in
-        reloadVideoTabIfShown(using: player.videoGeo)
+        reloadVideoTabIfShown(using: pwc.geo.video)
       }
     }
     observe(.iinaAIDChanged) { [self] _ in
@@ -741,7 +741,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
       reloadAudioTabIfShown()
 
     case .video:
-      reloadVideoTabIfShown(using: player.videoGeo)
+      reloadVideoTabIfShown(using: player.pwc.geo.video)
 
     case .sub:
       guard pwc.isOpen(sidebarTab: .sub) else { return }
@@ -1091,10 +1091,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     }
     player.log.verbose("Setting aspect from segmented control: \(aspect.quoted)")
     startRefreshDenialPeriod()
-
-    player.mpv.queue.async { [self] in
-      player.setVideoAspectOverride(aspect)
-    }
+    player.setVideoAspectOverride(aspect)
   }
 
   @IBAction func cropChangedAction(_ sender: NSSegmentedControl) {
@@ -1125,9 +1122,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     let aspectString = customAspectTextField.stringValue
     guard aspectString != "" else { return }
     player.log.verbose("Setting aspect from text field: \(aspectString.quoted)")
-    player.mpv.queue.async { [self] in
-      player.setVideoAspectOverride(aspectString)
-    }
+    player.setVideoAspectOverride(aspectString)
   }
 
   @IBAction func hardwareDecodingAction(_ sender: NSSwitch) {

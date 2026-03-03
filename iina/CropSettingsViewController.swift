@@ -116,12 +116,13 @@ class CropSettingsViewController: CropBoxViewController {
     // Use <=, >= to account for imprecision
     let isAllSelected = cropBox.origin.x <= 0 && cropBox.origin.y <= 0 && cropBox.width >= videoSizeRaw.width && cropBox.height >= videoSizeRaw.height
     let isNoSelection = cropBox.width <= 0 || cropBox.height <= 0
+    let vidGeo = player.pwc.geo.video
 
     player.mpv.queue.async { [self] in
       let newVidGeo: VideoGeometry
       if isAllSelected || isNoSelection {
         player.log.verbose("Interactive mode submit: isAllSelected=\(isAllSelected.yn) isNoSelection=\(isNoSelection.yn) → setting crop to None")
-        newVidGeo = player.videoGeo.clone(selectedCropLabel: Constants.String.noneCropIdentifier, videoSizeDisplayOverride: nil)
+        newVidGeo = vidGeo.clone(selectedCropLabel: Constants.String.noneCropIdentifier, videoSizeDisplayOverride: nil)
       } else {
         // FIXME: account for codec rotation
         let newCropFilter = MPVFilter.crop(w: cropBox.widthInt, h: cropBox.heightInt, x: cropBox.xInt, y: cropBox.yInt)
@@ -131,7 +132,7 @@ class CropSettingsViewController: CropBoxViewController {
           player.log.error("Could not generate crop label from the newly created filter!")
           return
         }
-        newVidGeo = player.videoGeo.clone(selectedCropLabel: newCropLabel, videoSizeDisplayOverride: nil)
+        newVidGeo = vidGeo.clone(selectedCropLabel: newCropLabel, videoSizeDisplayOverride: nil)
       }
       pwc.exitInteractiveMode(newVidGeo: newVidGeo)
     }

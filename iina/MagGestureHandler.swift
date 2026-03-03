@@ -217,6 +217,7 @@ final class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
   }
 
   /// Adjusts the window size as needed to scale the video as specified by `recognizer`.
+  @MainActor
   fileprivate func zoomVideoFromPinchGesture(_ recognizer: NSMagnificationGestureRecognizer, currentMode: PlayerWindowMode) {
     guard let window = pwc.window else { return }
 
@@ -255,12 +256,13 @@ final class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
     }
   }
 
+  @MainActor
   private func clampedVideoPoint(fromWindowPoint point: NSPoint) -> NSPoint {
     let viewPoint = pwc.videoView.convert(point, from: pwc.window?.contentView)
     let bounds = pwc.videoView.bounds
     guard bounds.width > 0, bounds.height > 0 else { return .zero }
 
-    let videoSize = pwc.player.videoGeo.videoSizeDisplay
+    let videoSize = pwc.geo.video.videoSizeDisplay
     let fitSize = videoSize.shrink(toSize: bounds.size)
     let videoRect = fitSize.centeredRect(in: bounds)
 
@@ -272,6 +274,7 @@ final class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
     return NSPoint(x: clampedX - videoRect.minX, y: clampedY - videoRect.minY)
   }
 
+  @MainActor
   private func normalizedVideoPoint(fromWindowPoint point: NSPoint) -> NSPoint? {
     guard let rect = videoRectInView() else { return nil }
     let clamped = clampedVideoPoint(fromWindowPoint: point)
@@ -279,10 +282,11 @@ final class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
     return NSPoint(x: clamped.x / rect.width, y: clamped.y / rect.height)
   }
 
+  @MainActor
   private func videoRectInView() -> NSRect? {
     let bounds = pwc.videoView.bounds
     guard bounds.width > 0, bounds.height > 0 else { return nil }
-    let videoSize = pwc.player.videoGeo.videoSizeDisplay
+    let videoSize = pwc.geo.video.videoSizeDisplay
     let fitSize = videoSize.shrink(toSize: bounds.size)
     return fitSize.centeredRect(in: bounds)
   }

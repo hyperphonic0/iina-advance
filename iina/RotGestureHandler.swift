@@ -32,7 +32,7 @@ class RotationGestureHandler {
     case .began, .changed:
       // The NSView will always start with a CoreGraphics rotation of 0° and will be rotated by `recognizer.rotationInDegrees`.
       // This is independent of mpv's internal rotation, even when userRotation is something unusual, such as 45°.
-      let existingRotation = CGFloat(player.videoGeo.userRotation)
+      let existingRotation = CGFloat(pwc.geo.video.userRotation)
       mpvRotationAtStart = existingRotation
       let cgNewRotationDegrees = recognizer.rotationInDegrees
       IINAAnimation.disableAnimation {

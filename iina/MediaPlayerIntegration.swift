@@ -149,7 +149,7 @@ final class MediaPlayerIntegration {
 
     let artwork: MPMediaItemArtwork?
     if activePlayer.info.isVideoTrackSelected, (activePlayer.currentMediaThumbnails?.thumbnails.count ?? 0) > 0 {
-      artwork = MPMediaItemArtwork(boundsSize: activePlayer.videoGeo.videoSizeCAR, requestHandler: { displaySize in
+      artwork = MPMediaItemArtwork(boundsSize: activePlayer.pwc.geo.video.videoSizeCAR, requestHandler: { displaySize in
         // TODO: figure out a way to use screenshot-raw from mpv instead!
         // Use thumbnail if available
         if let positionSec, activePlayer.info.isVideoTrackSelected,

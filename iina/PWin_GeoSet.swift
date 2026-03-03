@@ -95,8 +95,8 @@ struct GeometrySet: Sendable {
 }
 
 extension PlayerWindowController {
+  @MainActor
   func getLatestWindowFrameAndScreenID(force: Bool = false) -> (NSRect, String)? {
-    assert(DispatchQueue.isExecutingIn(.main))
     guard let window else { return nil }
     if !force {
       // Need to check state of current playback to avoid race conditions
@@ -121,11 +121,10 @@ extension PlayerWindowController {
   /// it will be used in the new `GeometrySet` without being modified.
   /// 2. For each of `windowed` & `musicMode`: if an object is not specified in the params (see 1), an updated object will be built
   /// using the updated `video` param (if given), and possibly using the latest windowFrame. (See code below for more details, bleh).
+  @MainActor
   func buildGeoSet(windowed: PWinGeometry? = nil, musicMode: PWinGeometry? = nil,
                    video: VideoGeometry? = nil, layoutMode: PlayerWindowMode? = nil,
                    baseGeoSet: GeometrySet? = nil, forceWinFrameUpdate: Bool = false) -> GeometrySet {
-    assert(DispatchQueue.isExecutingIn(.main))
-
     let mode: PlayerWindowMode
     if let layoutMode {
       guard layoutMode == currentLayout.mode else {
@@ -177,9 +176,8 @@ extension PlayerWindowController {
   }
 
   /// If `force=true`, then skip validation checks for latest frame & always use current frame
+  @MainActor
   func windowedGeoForCurrentFrame(newVidGeo: VideoGeometry? = nil, force: Bool = false) -> PWinGeometry {
-    assert(DispatchQueue.isExecutingIn(.main))
-
     let geo = geo
     if currentLayout.mode.isWindowed, let (latestWindowFrame, latestScreenID) = getLatestWindowFrameAndScreenID(force: force) {
       log.trace("Cloning windowed geometry with current windowFrame=\(latestWindowFrame), screenID=\(latestScreenID.quoted)")
@@ -193,9 +191,8 @@ extension PlayerWindowController {
 
 
   /// See also `windowedGeoForCurrentFrame`
+  @MainActor
   func musicModeGeoForCurrentFrame(newVidGeo: VideoGeometry? = nil, force: Bool = false) -> PWinGeometry {
-    assert(DispatchQueue.isExecutingIn(.main))
-
     let geo = geo
     if currentLayout.mode == .musicMode, let (latestWindowFrame, latestScreenID) = getLatestWindowFrameAndScreenID(force: force) {
       log.trace("Cloning musicMode geometry with current windowFrame=\(latestWindowFrame) screenID=\(latestScreenID.quoted)")

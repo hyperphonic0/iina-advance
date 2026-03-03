@@ -269,10 +269,9 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
   var isInInteractiveMode: Bool { currentLayout.isInteractiveMode }
 
   // MARK: - Vars: Window Geometry
+  @MainActor var geo: GeometrySet
 
-  var geo: GeometrySet
-
-  var windowedModeGeo: PWinGeometry {
+  @MainActor var windowedModeGeo: PWinGeometry {
     get {
       return geo.windowed
     } set {
@@ -283,7 +282,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
     }
   }
 
-  var musicModeGeo: PWinGeometry {
+  @MainActor var musicModeGeo: PWinGeometry {
     get {
       return geo.musicMode
     } set {

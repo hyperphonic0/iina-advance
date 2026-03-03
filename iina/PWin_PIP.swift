@@ -195,7 +195,7 @@ extension PlayerWindowController: @MainActor PIPViewControllerDelegate {
       pipController.delegate = self
       pipController.playing = player.info.isPlaying
       pipController.title = window.title
-      let aspectRatioSize = player.videoGeo.videoSizeCAR
+      let aspectRatioSize = geo.video.videoSizeCAR
       log.verbose("Setting PiP aspect to \(aspectRatioSize.aspect)")
       pipController.aspectRatio = aspectRatioSize
       pip.controller = pipController

@@ -386,8 +386,10 @@ extension PlayerWindowController {
         updateOSDViews()
       }
     case .aspectRatioPanelPresets, .cropPanelPresets:
-      let videoGeo = player.videoGeo
-      quickSettingView.updateSegmentLabelsForVideoTab(using: videoGeo)
+      animationPipeline.submitInstantTask { [self] in
+        let videoGeo = geo.video
+        quickSettingView.updateSegmentLabelsForVideoTab(using: videoGeo)
+      }
     default:
       return
     }

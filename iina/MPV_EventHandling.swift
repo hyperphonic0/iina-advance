@@ -624,7 +624,9 @@ extension MPVController {
       guard player.pwc.loaded, !player.isShuttingDown else { break }
       guard let aspect = getString(MPVOption.Video.videoAspectOverride) else { break }
       player.log.verbose("Δ mpv prop: 'video-aspect-override' = \(aspect.quoted)")
-      player.setVideoAspectOverride(aspect)
+      DispatchQueue.main.async { [self] in
+        player.setVideoAspectOverride(aspect)
+      }
 
     case MPVProperty.videoParamsAspect:
       guard player.isActive else { break }

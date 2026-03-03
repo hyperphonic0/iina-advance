@@ -311,7 +311,8 @@ fileprivate class WindowAPI: JavascriptAPI, CoreSubAPIExportable {
 
 // MARK: Status
 
-fileprivate class StatusAPI: JavascriptAPI, CoreSubAPIExportable {
+fileprivate class StatusAPI: JavascriptAPI, @MainActor CoreSubAPIExportable {
+  @MainActor
   func __proxyGet(_ prop: String) -> Any? {
     switch prop {
     case "paused":
@@ -325,11 +326,11 @@ fileprivate class StatusAPI: JavascriptAPI, CoreSubAPIExportable {
     case "speed":
       return player!.info.playSpeed
     case "videoWidth":
-      let vw = player!.videoGeo.rawWidth
+      let vw = player!.pwc.geo.video.rawWidth
       guard vw > 0 else { return NSNull() }
       return Int32(vw)
     case "videoHeight":
-      let vh = player!.videoGeo.rawHeight
+      let vh = player!.pwc.geo.video.rawHeight
       guard vh > 0 else { return NSNull() }
       return Int32(vh)
     case "isNetworkResource":

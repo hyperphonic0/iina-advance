@@ -153,7 +153,7 @@ extension PlayerCore {
 
       // Generate thumbnails using video's original dimensions, before aspect ratio correction.
       // We will adjust aspect ratio & rotation when we display the thumbnail, similar to how mpv works.
-      let videoGeo = videoGeo
+      let videoGeo = pwc.geo.video
       let videoSizeRaw = videoGeo.videoSizeRaw
 
       let thumbnailWidth = Thumbnail.determineWidthOfThumbnail(from: videoSizeRaw, log: log)

@@ -69,8 +69,9 @@ extension PlayerCore {
     return deriveCropLabel(x: x, y: y, w: w, h: h, rawVideoSize: rawVideoSize)
   }
 
+  @MainActor
   func setCrop(fromLabel newCropLabel: String) {
-    let videoGeo = videoGeo
+    let videoGeo = pwc.geo.video
 
     mpv.queue.async { [self] in
       if newCropLabel == Constants.String.noneCropIdentifier {

@@ -340,6 +340,7 @@ final class FloatingControlBar {
 
   // MARK: - Coordinates in Viewport
 
+  @MainActor
   fileprivate func buildFloatingGeometry() -> FloatingControlBarGeometry? {
     guard let pwc else { return nil }
     let currentLayout = pwc.currentLayout

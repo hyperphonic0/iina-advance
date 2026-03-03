@@ -191,9 +191,6 @@ final class PlayerCore: NSObject {
   var isFullScreen: Bool { pwc.isFullScreen }
   var isInInteractiveMode: Bool { pwc.isInInteractiveMode }
 
-  /// Exists to avoid refactoring legacy code
-  var videoGeo: VideoGeometry { pwc.geo.video }
-
   // - Music mode
 
   /// For explicit request via command line
@@ -1672,14 +1669,16 @@ final class PlayerCore: NSObject {
   /// 3. Quick Settings controls & menu item checkmarks
   ///
   /// To hopefully avoid precision problems, `mpvAspectString` is used for comparisons across data sources.
+  @MainActor
   func setVideoAspectOverride(_ aspectString: String) {
-    assert(DispatchQueue.isExecutingIn(mpv.queue))
     guard !isRestoring else { return }
 
     let aspectLabel: String = Aspect.bestLabelFor(aspectString)
-    guard videoGeo.userAspectLabel != aspectLabel else { return }
+    guard pwc.geo.video.userAspectLabel != aspectLabel else { return }
 
-    sendVideoAspectOverrideToMpv(aspectLabel: aspectLabel)
+    mpv.queue.async { [self] in
+      sendVideoAspectOverrideToMpv(aspectLabel: aspectLabel)
+    }
   }
 
   func sendVideoAspectOverrideToMpv(aspectLabel: String) {
