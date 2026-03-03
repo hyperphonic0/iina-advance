@@ -1603,10 +1603,9 @@ extension LayoutState {
 extension PlayerCore {
 
   /// Generates a Dictionary of properties for storage into a Preference entry
-  fileprivate func generatePropDict(_ geo: GeometrySet) -> [String: Any] {
-    var props: [String: Any] = [:]
-    /// Must *not* access `window`: this is not the main thread
-    let layout = pwc.currentLayout
+  fileprivate func fillOutPropDict(_ geo: GeometrySet, _ currentLayout: LayoutState,
+                                   _ pwcProps: [String: Any]) -> [String: Any] {
+    var props = pwcProps
 
     let buildNumber: Int = priorStateBuildNumber
     props[PropName.buildNumber.rawValue] = String(buildNumber)
@@ -1615,7 +1614,7 @@ extension PlayerCore {
     // - Window Layout & Geometry
 
     /// `layoutSpec`
-    props[PropName.layoutState.rawValue] = layout.toCSV(buildNumber: buildNumber)
+    props[PropName.layoutState.rawValue] = currentLayout.toCSV(buildNumber: buildNumber)
 
     /// `windowedModeGeo`: use supplied GeometrySet for most up-to-date window frame
     props[PropName.windowedModeGeo.rawValue] = geo.windowed.toCSV()
@@ -1629,10 +1628,6 @@ extension PlayerCore {
     let screenMetaCSVList: [String] = UIState.shared.cachedScreens.values.map{$0.toCSV()}
     props[PropName.screens.rawValue] = screenMetaCSVList
 
-    if pwc.isOnTop {
-      props[PropName.isOnTop.rawValue] = true.yn
-    }
-
     // - Misc window state
 
     if Preference.bool(for: .autoSwitchToMusicMode) {
@@ -1645,15 +1640,6 @@ extension PlayerCore {
       }
       props[PropName.overrideAutoMusicMode.rawValue] = overrideAutoMusicMode.yn
     }
-
-    props[PropName.miscWindowBools.rawValue] = [
-      pwc.isWindowMiniturized.yn,
-      pwc.isWindowHidden.yn,
-      layout.isInPiP.yn,  // stored here for historical reasons. MOved into LayoutState in v1.4
-      pwc.isWindowMiniaturizedDueToPip.yn,
-      pwc.isPausedPriorToInteractiveMode.yn,
-      pwc.isZoomedViaGesture.yn,
-    ].joined(separator: ",")
 
     // - Playback State
 
@@ -1835,20 +1821,22 @@ extension PlayerCore {
             /// The transition itself will call `save` when it is done. Just return
             return
           }
-          // Retrieve appropriate geometry values, updating to latest window frame if needed:
-          let geo = pwc.buildGeoSet(layoutMode: pwc.currentLayout.mode)
+          // Get PWC vars while on main thread
+          let (geo, currentLayout, pwcProps) = pwc.generatePropDictForPWC()
 
           let player = pwc.player
           guard !player.isShuttingDown else { return }
+          let log = player.log
+          let playerLabel = player.label
 
-          PlayerSaveState.saveQueue.async {
+          PlayerSaveState.saveQueue.async { [self] in
             let sw = Utility.Stopwatch()
-            let properties = player.generatePropDict(geo)
+            let properties = fillOutPropDict(geo, currentLayout, pwcProps)
             if Preference.bool(for: .logPlayerSave) {
-              player.log.trace("Saving player state: \(properties)")
+              log.trace("Saving player state: \(properties)")
             }
-            UIState.shared.saveState(forPlayerID: player.label, properties: properties)
-            player.log.verbose("Saved player state in \(sw.secElapsedString)")
+            UIState.shared.saveState(forPlayerID: playerLabel, properties: properties)
+            log.verbose("Saved player state in \(sw.secElapsedString)")
           }
         }
       }
@@ -1864,18 +1852,11 @@ extension PlayerCore {
       return
     }
     log.debug("Saving player state synchronously")
-
-    // Retrieve appropriate geometry values, updating to latest window frame if needed:
-    let geo: GeometrySet
-    if pwc.isAnimatingLayoutTransition {
-      geo = pwc.geo
-    } else {
-      geo = pwc.buildGeoSet(layoutMode: pwc.currentLayout.mode)
-    }
+    let (geo, currentLayout, pwcProps) = pwc.generatePropDictForPWC()
 
     /// Using `sync` here should delay shutdown & makes sure any existing async saves aren't killed mid-write!
     PlayerSaveState.saveQueue.sync {
-      let properties = generatePropDict(geo)
+      let properties = fillOutPropDict(geo, currentLayout, pwcProps)
       log.trace("Saving player state: \(properties)")
       UIState.shared.saveState(forPlayerID: label, properties: properties)
       log.debug("Done saving player state synchronously")
@@ -1888,3 +1869,35 @@ extension PlayerCore {
   }
 }
 
+extension PlayerWindowController {
+  @MainActor
+  fileprivate func generatePropDictForPWC() -> (GeometrySet, LayoutState, [String: Any]) {
+    // Retrieve appropriate geometry values, updating to latest window frame if needed:
+    let currentLayout = currentLayout
+    let geo: GeometrySet
+    if isAnimatingLayoutTransition {
+      geo = self.geo
+    } else {
+      geo = buildGeoSet(layoutMode: currentLayout.mode)
+    }
+
+    var props: [String: Any] = [:]
+    /// Must *not* access `window`: this is not the main thread
+
+    if isOnTop {
+      props[PropName.isOnTop.rawValue] = true.yn
+    }
+
+    props[PropName.miscWindowBools.rawValue] = [
+      isWindowMiniturized.yn,
+      isWindowHidden.yn,
+      currentLayout.isInPiP.yn,  // stored here for historical reasons. MOved into LayoutState in v1.4
+      isWindowMiniaturizedDueToPip.yn,
+      isPausedPriorToInteractiveMode.yn,
+      isZoomedViaGesture.yn,
+    ].joined(separator: ",")
+
+    return (geo, currentLayout, props)
+  }
+
+}
