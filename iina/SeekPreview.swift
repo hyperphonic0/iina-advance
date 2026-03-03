@@ -336,6 +336,8 @@ extension PlayerWindowController {
         if usingThumbfast {
           // Experiment with Thumbfast Lua script as an alternative (https://github.com/po5/thumbfast)
           guard player.isActive else { return }
+          // Need DisplayLink running to draw the thumbnails over the video 
+          player.videoView.displayActive()
           let osdWidth = player.mpv.getDouble(MPVProperty.osdWidth)
 
           let viewportSize = currentGeo.viewportSize
@@ -437,9 +439,8 @@ extension PlayerWindowController {
   }
 
   /// Called by `seekPreview.hideTimer`.
+  @MainActor
   func seekPreviewTimeout() {
-    assert(DispatchQueue.isExecutingIn(.main))
-    
     let pointInWindow = window!.convertPoint(fromScreen: NSEvent.mouseLocation)
     log.trace("SeekPreview timed out: current mouseLoc=\(pointInWindow)")
     guard !isScrollingOrDraggingPlaySlider else {
