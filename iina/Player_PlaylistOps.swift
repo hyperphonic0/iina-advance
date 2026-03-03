@@ -668,13 +668,13 @@ extension PlayerCore {
           log.debug("[Playlist] After reload, currentPlayback.playlistPos (\(currentPlayback.playlistPos)) no longer matches that item in playlist. Updating it to \(bestCandidateIndex)")
           info.currentPlayback = currentPlayback.clone(playlistPos: bestCandidateIndex)
           DispatchQueue.main.async { [self] in
-            pwc.playlistView.refreshNowPlayingIndex()
+            pwc?.playlistView.refreshNowPlayingIndex()
           }
         }
       }
     }
 
-    if thenPostNotification {
+    if thenPostNotification, isInteractivePlayer {
       postNotification(.iinaPlaylistChanged)
     }
 
