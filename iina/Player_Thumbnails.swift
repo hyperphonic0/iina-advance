@@ -132,53 +132,57 @@ extension PlayerCore {
   }
 
   func reloadThumbnails() {
-    mpv.queue.asyncAfter(deadline: .now() + Constants.TimeInterval.thumbnailRegenerationDelay) { [self] in
-      defer {
-        // Always run this
-        refreshCurrentMediaThumbnails()
-      }
-
-      let currentPlayback = info.currentPlayback
-      let vid = info.vid
-      let enabled = checkThumbnailEnablement(currentPlayback, vid: vid)
-      thumbnailsLoader.thumbnailsEnabled = enabled
-      guard enabled else {
-        /// This means `thumbnailsLoader.thumbnailsEnabled = false`, which will cause thumbnail queries to return `nil`.
-        /// Do not clear/cancel existing thumbnails (`thumbnailsLoader.currentMediaThumbnails`) here.
-        /// Sometimes `info.vid` can be momentarily set to 0, which might otherwise create nasty race problems.
-        return
-      }
-      let videoTrackID = vid!
-      let playback = currentPlayback!
-
-      // Generate thumbnails using video's original dimensions, before aspect ratio correction.
-      // We will adjust aspect ratio & rotation when we display the thumbnail, similar to how mpv works.
+    DispatchQueue.main.asyncAfter(deadline: .now() + Constants.TimeInterval.thumbnailRegenerationDelay) { [self] in
       let videoGeo = pwc.geo.video
-      let videoSizeRaw = videoGeo.videoSizeRaw
 
-      let thumbnailWidth = Thumbnail.determineWidthOfThumbnail(from: videoSizeRaw, log: log)
+      mpv.queue.async { [self] in
+        defer {
+          // Always run this
+          refreshCurrentMediaThumbnails()
+        }
 
-      if let currentMediaThumbnails = thumbnailsLoader.currentMediaThumbnailsLoader,
-         currentMediaThumbnails.mediaFilePath == playback.url.path,
-         currentMediaThumbnails.videoTrackID == videoTrackID,
-         thumbnailWidth == currentMediaThumbnails.thumbnailWidth {
-        log.debug("Already loaded thumbnails for vid\(videoTrackID) @ \(thumbnailWidth)px; nothing to do")
-        return
-      }
+        let currentPlayback = info.currentPlayback
+        let vid = info.vid
+        let enabled = checkThumbnailEnablement(currentPlayback, vid: vid)
+        thumbnailsLoader.thumbnailsEnabled = enabled
+        guard enabled else {
+          /// This means `thumbnailsLoader.thumbnailsEnabled = false`, which will cause thumbnail queries to return `nil`.
+          /// Do not clear/cancel existing thumbnails (`thumbnailsLoader.currentMediaThumbnails`) here.
+          /// Sometimes `info.vid` can be momentarily set to 0, which might otherwise create nasty race problems.
+          return
+        }
+        let videoTrackID = vid!
+        let playback = currentPlayback!
 
-      log.verbose("Creating new thumbnails loader")
-      let newMediaThumbnailLoader = SingleMediaThumbnailsLoader(self, mediaFilePath: playback.url.path, mediaFilePathMD5: playback.mpvMD5,
-                                                                videoTrackID: videoTrackID, thumbnailWidth: thumbnailWidth)
-      // This will cancel / discard any previous thumbs for this player:
-      thumbnailsLoader.currentMediaThumbnailsLoader = newMediaThumbnailLoader
-      // Run the following in the background (`thumbnailQueue`) at lower priority, so the UI is not slowed down.
-      ThumbnailCache.shared.thumbnailQueue.async { [self] in
-        log.trace("Thumbnails reload requested")
-        newMediaThumbnailLoader.loadThumbnails()
+        // Generate thumbnails using video's original dimensions, before aspect ratio correction.
+        // We will adjust aspect ratio & rotation when we display the thumbnail, similar to how mpv works.
+        let videoSizeRaw = videoGeo.videoSizeRaw
+
+        let thumbnailWidth = Thumbnail.determineWidthOfThumbnail(from: videoSizeRaw, log: log)
+
+        if let currentMediaThumbnails = thumbnailsLoader.currentMediaThumbnailsLoader,
+           currentMediaThumbnails.mediaFilePath == playback.url.path,
+           currentMediaThumbnails.videoTrackID == videoTrackID,
+           thumbnailWidth == currentMediaThumbnails.thumbnailWidth {
+          log.debug("Already loaded thumbnails for vid\(videoTrackID) @ \(thumbnailWidth)px; nothing to do")
+          return
+        }
+
+        log.verbose("Creating new thumbnails loader")
+        let newMediaThumbnailLoader = SingleMediaThumbnailsLoader(self, mediaFilePath: playback.url.path,
+                                                                  mediaFilePathMD5: playback.mpvMD5,
+                                                                  videoTrackID: videoTrackID, thumbnailWidth: thumbnailWidth)
+        // This will cancel / discard any previous thumbs for this player:
+        thumbnailsLoader.currentMediaThumbnailsLoader = newMediaThumbnailLoader
+        // Run the following in the background (`thumbnailQueue`) at lower priority, so the UI is not slowed down.
+        ThumbnailCache.shared.thumbnailQueue.async { [self] in
+          log.trace("Thumbnails reload requested")
+          newMediaThumbnailLoader.loadThumbnails()
+        }
       }
     }
-  }
 
+  }
 }
 
 
