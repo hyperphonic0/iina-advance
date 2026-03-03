@@ -853,9 +853,7 @@ class MenuController: NSObject, NSMenuDelegate {
   /// bindings which haven't already been accounted for.
   func refreshStaticMenuItemBindings() {
     let actionBlacklist = sectionMappingItemPairs.filter({ $0.key != MPVInputSection.Shared.STATIC_MENU_ITEMS_SECTION_NAME }).flatMap({$0.value}).compactMap({ $0.1.action })
-
     var staticMenuItemBindings: [KeyMapping] = []
-    var staticMenuItemMappingPairs: [(KeyMapping, NSMenuItem)] = []
 
     for rootMenu in NSApp.mainMenu!.items {
       guard rootMenu.hasSubmenu, let subMenu = rootMenu.submenu else { continue }
@@ -874,7 +872,6 @@ class MenuController: NSObject, NSMenuDelegate {
           let actionDesc = menuItem.menuPathDescription
           let keyMapping = KeyMapping(rawKey: rawKey, rawAction: nil, isIINACommand: true, comment: actionDesc, sourceName: "built-in")
           staticMenuItemBindings.append(keyMapping)
-          staticMenuItemMappingPairs.append((keyMapping, menuItem))
         })
       }
     }
