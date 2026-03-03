@@ -330,12 +330,10 @@ extension PlayerCore {
           })
 
         }, redo: { [self] in
-          mpv.queue.async { [self] in
-            // Make sure this is an exact same redo! Need to run this in mpv queue to avoid data loss due to races
-            guard syncAndValidatePlaylist(expectedPlaylist: allItemsOld) else { return }
-
+          // Make sure this is an exact same redo! Need to run this in mpv queue to avoid data loss due to races
+          reloadPlaylist(validateAgainst: allItemsOld, thenPostNotification: false, savePlayerState: false, onSuccess: { [self] in
             movePlaylistRows(from: rowIndexes, to: insertIndex, .ignoreUndoRedo)
-          }
+          })
         })
       }
 
@@ -602,9 +600,11 @@ extension PlayerCore {
   // MARK: - Reload
 
   /// Reloads playlist from mpv, then enqueues state save & sends `iinaPlaylistChanged` notification.
-  func reloadPlaylist(thenPostNotification: Bool = true, savePlayerState: Bool = true) {
+  func reloadPlaylist(validateAgainst expectedPlaylist: [PlaybackID]? = nil,
+                      thenPostNotification: Bool = true, savePlayerState: Bool = true,
+                      onSuccess: Callback? = nil) {
     mpv.queue.async { [self] in
-      _reloadPlaylist(thenPostNotification: thenPostNotification, savePlayerState: savePlayerState)
+      _reloadPlaylist(thenPostNotification: thenPostNotification, savePlayerState: savePlayerState, onSuccess: onSuccess)
     }
   }
 
@@ -620,7 +620,8 @@ extension PlayerCore {
   @discardableResult
   func _reloadPlaylist(validateAgainst expectedPlaylist: [PlaybackID]? = nil,
                        thenPostNotification: Bool = true,
-                       savePlayerState: Bool = true) -> Bool {
+                       savePlayerState: Bool = true,
+                       onSuccess: Callback? = nil) -> Bool {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
     guard !isStopping else { return false }
     var actualPlaylist: [PlaybackID] = []
@@ -680,6 +681,9 @@ extension PlayerCore {
 
     if savePlayerState {
       saveState()  // save playlist URLs to prefs
+    }
+    if passedValidation, let onSuccess {
+      onSuccess()
     }
     return passedValidation
   }
