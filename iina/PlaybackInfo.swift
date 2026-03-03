@@ -376,7 +376,7 @@ class PlaybackInfo {
   /// If this option is given, the cursor is always visible in windowed mode. In fullscreen mode, the cursor is shown
   /// or hidden according to --cursor-autohide.
   /// ```
-  var cursorAutoHideFullScreenOnly: Bool = false
+  @MainActor var cursorAutoHideFullScreenOnly: Bool = false
   /// Use these instead: `player.canHideCursor`, `player.shouldAlwaysHideCursor`
   var enableCursorAutoHide: Bool { cursorAutoHideTimeoutMs >= 0 }
 

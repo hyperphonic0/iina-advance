@@ -9,11 +9,9 @@ import Foundation
 import MediaPlayer
 
 final class MediaPlayerIntegration {
-  @MainActor
-  static let shared = MediaPlayerIntegration()
+  @MainActor static let shared = MediaPlayerIntegration()
 
   private var enabled = false
-  private let remoteCommand = MPRemoteCommandCenter.shared()
   private var lastActivePlayer: PlayerCore? = nil
 
   @MainActor
@@ -43,12 +41,13 @@ final class MediaPlayerIntegration {
     updateEnablement(to: false)
   }
 
+  @MainActor
   private func buildCmdHandler(forKey normalizedMpvKey: String,
                                fallbackAction: @escaping (PlayerCore, MPRemoteCommandEvent) -> Void) -> (MPRemoteCommandEvent) -> MPRemoteCommandHandlerStatus {
     { [self] event in
       guard let player = lastActivePlayer else { return .commandFailed }
       player.pwc.executeActionForKey(normalizedMpvKey: normalizedMpvKey, fallbackAction: { player in fallbackAction(player, event) })
-      updateCommandEnablements(for: player)
+      MediaPlayerIntegration.updateCommandEnablements(for: player)
       return .success
     }
   }
@@ -57,13 +56,15 @@ final class MediaPlayerIntegration {
     { [self] event in
       guard let player = lastActivePlayer else { return .commandFailed }
       commandFunc(player, event)
-      updateCommandEnablements(for: player)
+      MediaPlayerIntegration.updateCommandEnablements(for: player)
       return .success
     }
   }
 
+  @MainActor
   private func attachRemoteCommands() {
     Logger.log.trace("Attaching MediaPlayer remote commands")
+    let remoteCommand = MPRemoteCommandCenter.shared()
     remoteCommand.playCommand.addTarget(handler: buildCmdHandler(forKey: "PLAY", fallbackAction: { p, _ in p.resume() }))
     remoteCommand.pauseCommand.addTarget(handler: buildCmdHandler(forKey: "PAUSE", fallbackAction: { p, _ in p.pause() }))
     remoteCommand.togglePlayPauseCommand.addTarget(handler: buildCmdHandler(forKey: "PLAYPAUSE", fallbackAction: { p, _ in p.togglePause() }))
@@ -92,6 +93,7 @@ final class MediaPlayerIntegration {
 
   private func detachAllCommands() {
     Logger.log.trace("Detaching MediaPlayer remote commands")
+    let remoteCommand = MPRemoteCommandCenter.shared()
     remoteCommand.playCommand.removeTarget(nil)
     remoteCommand.pauseCommand.removeTarget(nil)
     remoteCommand.togglePlayPauseCommand.removeTarget(nil)
@@ -124,72 +126,81 @@ final class MediaPlayerIntegration {
     let center = MPNowPlayingInfoCenter.default()
     var info = center.nowPlayingInfo ?? [String: Any]()
 
-    guard let activePlayer = PlayerManager.shared.lastActivePlayer, !activePlayer.isStopping else {
+    guard let activePlayer = PlayerManager.shared.lastActivePlayer else {
       center.playbackState = .unknown
       center.nowPlayingInfo = nil
       updateEnablement(to: false)
       return
     }
+
     self.lastActivePlayer = activePlayer
 
-    if activePlayer.info.currentMediaAudioStatus.isAudio {
-      info[MPNowPlayingInfoPropertyMediaType] = MPNowPlayingInfoMediaType.audio.rawValue
-      let (title, album, artist) = activePlayer.getMusicMetadata()
-      info[MPMediaItemPropertyTitle] = title
-      info[MPMediaItemPropertyAlbumTitle] = album
-      info[MPMediaItemPropertyArtist] = artist
-    } else {
-      info[MPNowPlayingInfoPropertyMediaType] = MPNowPlayingInfoMediaType.video.rawValue
-      info[MPMediaItemPropertyTitle] = activePlayer.getMediaTitle(withExtension: false)
-      info[MPMediaItemPropertyAlbumTitle] = ""
-      info[MPMediaItemPropertyArtist] = ""
-    }
+    activePlayer.mpv.queue.async {
+      guard !activePlayer.isStopping else { return }
 
-    let positionSec = activePlayer.info.playbackTime.positionSec
+      if activePlayer.info.currentMediaAudioStatus.isAudio {
+        info[MPNowPlayingInfoPropertyMediaType] = MPNowPlayingInfoMediaType.audio.rawValue
+        let (title, album, artist) = activePlayer.getMusicMetadata()
+        info[MPMediaItemPropertyTitle] = title
+        info[MPMediaItemPropertyAlbumTitle] = album
+        info[MPMediaItemPropertyArtist] = artist
+      } else {
+        info[MPNowPlayingInfoPropertyMediaType] = MPNowPlayingInfoMediaType.video.rawValue
+        info[MPMediaItemPropertyTitle] = activePlayer.getMediaTitle(withExtension: false)
+        info[MPMediaItemPropertyAlbumTitle] = ""
+        info[MPMediaItemPropertyArtist] = ""
+      }
 
-    let artwork: MPMediaItemArtwork?
-    if activePlayer.info.isVideoTrackSelected, (activePlayer.currentMediaThumbnails?.thumbnails.count ?? 0) > 0 {
-      artwork = MPMediaItemArtwork(boundsSize: activePlayer.pwc.geo.video.videoSizeCAR, requestHandler: { displaySize in
-        // TODO: figure out a way to use screenshot-raw from mpv instead!
-        // Use thumbnail if available
-        if let positionSec, activePlayer.info.isVideoTrackSelected,
-           let thumbImg = activePlayer.currentMediaThumbnails?.getThumbnail(forSecond: positionSec)?.image {
-          // Crop to aspect ratio of requested size, rather than stretching/squeezing. Then resize
-          let cropRect = thumbImg.size().getCropRect(withAspect: displaySize.aspect)
-          if let previewImg = thumbImg.cropping(to: cropRect)?.resized(newWidth: displaySize.widthInt, newHeight: displaySize.heightInt).toNSImage() {
-            return previewImg
-          }
+      let positionSec = activePlayer.info.playbackTime.positionSec
+
+      DispatchQueue.main.async {
+        let artwork: MPMediaItemArtwork?
+        if activePlayer.info.isVideoTrackSelected, (activePlayer.currentMediaThumbnails?.thumbnails.count ?? 0) > 0 {
+          artwork = MPMediaItemArtwork(boundsSize: activePlayer.pwc.geo.video.videoSizeCAR, requestHandler: { displaySize in
+            // TODO: figure out a way to use screenshot-raw from mpv instead!
+            // Use thumbnail if available
+            if let positionSec, activePlayer.info.isVideoTrackSelected,
+               let thumbImg = activePlayer.currentMediaThumbnails?.getThumbnail(forSecond: positionSec)?.image {
+              // Crop to aspect ratio of requested size, rather than stretching/squeezing. Then resize
+              let cropRect = thumbImg.size().getCropRect(withAspect: displaySize.aspect)
+              if let previewImg = thumbImg.cropping(to: cropRect)?.resized(newWidth: displaySize.widthInt, newHeight: displaySize.heightInt).toNSImage() {
+                return previewImg
+              }
+            }
+            // Default album art
+            return #imageLiteral(resourceName: "default-album-art").resized(newWidth: displaySize.widthInt, newHeight: displaySize.heightInt)
+          })
+        } else {
+          artwork = nil
         }
-        // Default album art
-        return #imageLiteral(resourceName: "default-album-art").resized(newWidth: displaySize.widthInt, newHeight: displaySize.heightInt)
-      })
-    } else {
-      artwork = nil
+        info[MPMediaItemPropertyArtwork] = artwork
+
+        let duration = activePlayer.info.playbackTime.durationSec ?? 0
+        let time = positionSec ?? 0
+        let speed = activePlayer.info.playSpeed
+
+        info[MPMediaItemPropertyPlaybackDuration] = duration
+        info[MPNowPlayingInfoPropertyElapsedPlaybackTime] = time
+        info[MPNowPlayingInfoPropertyPlaybackRate] = speed
+        info[MPNowPlayingInfoPropertyDefaultPlaybackRate] = 1
+        info[MPNowPlayingInfoPropertyAssetURL] = activePlayer.info.currentPlayback?.url
+
+        let center = MPNowPlayingInfoCenter.default()
+        center.nowPlayingInfo = info
+
+        if activePlayer.info.isFileLoaded {
+          center.playbackState = activePlayer.info.isPaused ? .paused : .playing
+        } else {
+          center.playbackState = .unknown
+        }
+
+        MediaPlayerIntegration.updateCommandEnablements(for: activePlayer)
+      }
     }
-    info[MPMediaItemPropertyArtwork] = artwork
-
-    let duration = activePlayer.info.playbackTime.durationSec ?? 0
-    let time = positionSec ?? 0
-    let speed = activePlayer.info.playSpeed
-
-    info[MPMediaItemPropertyPlaybackDuration] = duration
-    info[MPNowPlayingInfoPropertyElapsedPlaybackTime] = time
-    info[MPNowPlayingInfoPropertyPlaybackRate] = speed
-    info[MPNowPlayingInfoPropertyDefaultPlaybackRate] = 1
-    info[MPNowPlayingInfoPropertyAssetURL] = activePlayer.info.currentPlayback?.url
-
-    center.nowPlayingInfo = info
-
-    if activePlayer.info.isFileLoaded {
-      center.playbackState = activePlayer.info.isPaused ? .paused : .playing
-    } else {
-      center.playbackState = .unknown
-    }
-
-    updateCommandEnablements(for: activePlayer)
   }
 
-  private func updateCommandEnablements(for player: PlayerCore) {
+  private static func updateCommandEnablements(for player: PlayerCore) {
+    let remoteCommand = MPRemoteCommandCenter.shared()
     remoteCommand.skipBackwardCommand.isEnabled = player.canSkipBackward
     remoteCommand.skipForwardCommand.isEnabled = player.canSkipForward
     remoteCommand.previousTrackCommand.isEnabled = player.canPlayPrevTrack

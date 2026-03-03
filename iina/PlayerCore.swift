@@ -1694,6 +1694,7 @@ final class PlayerCore: NSObject {
     mpv.setString(MPVOption.Video.videoAspectOverride, mpvValue)
   }
 
+  @MainActor
   var shouldAlwaysHideCursor: Bool {
     if info.cursorAutoHideFullScreenOnly && !isFullScreen {
       return false
@@ -1701,6 +1702,7 @@ final class PlayerCore: NSObject {
     return info.cursorAutoHideTimeoutMs == 0
   }
 
+  @MainActor
   var canHideCursor: Bool {
     if info.cursorAutoHideFullScreenOnly && !isFullScreen {
       return false
@@ -1718,7 +1720,11 @@ final class PlayerCore: NSObject {
         info.cursorAutoHideTimeoutMs = autoHideMs
       }
     }
-    info.cursorAutoHideFullScreenOnly = mpv.getFlag(MPVOption.Window.cursorAutohideFsOnly)
+
+    let cursorAutoHideFullScreenOnly = mpv.getFlag(MPVOption.Window.cursorAutohideFsOnly)
+    SwiftTask { @MainActor [self] in
+      info.cursorAutoHideFullScreenOnly = cursorAutoHideFullScreenOnly
+    }
   }
 
   func syncVideoParamsFromMpv() {
@@ -3092,6 +3098,7 @@ final class PlayerCore: NSObject {
   // MARK: - Track Meta
 
   func getMediaTitle(withExtension: Bool = true) -> String {
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
     if let mediaTitle = mpv.getString(MPVProperty.mediaTitle) {
       if !mediaTitle.isEmpty, let path = mpv.getString(MPVProperty.path), let id = PlaybackID(path: path) {
         MediaMetaCache.shared.updateCachedMeta(id, mpvTitle: mediaTitle,
@@ -3106,6 +3113,7 @@ final class PlayerCore: NSObject {
   }
 
   func getMusicMetadata() -> (title: String, album: String, artist: String) {
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
     if mpv.getInt(MPVProperty.chapters) > 0 {
       let chapter = mpv.getInt(MPVProperty.chapter)
       let chapterTitle = mpv.getString(MPVProperty.chapterListNTitle(chapter))

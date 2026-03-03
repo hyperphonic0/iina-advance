@@ -331,7 +331,9 @@ class GLVideoLayer: CAOpenGLLayer {
 
     func mpvUpdateCallback(_ ctx: UnsafeMutableRawPointer?) {
       let layer = bridge(ptr: ctx!) as GLVideoLayer
-      layer.videoView.isReadyToRender = true
+      layer.videoView.$isUninited.withLock { isUninited in
+        layer.videoView.isReadyToRender = true
+      }
     }
 
     var openGLInitParams = mpv_opengl_init_params(get_proc_address: mpvGetOpenGLFunc,
@@ -368,7 +370,6 @@ class GLVideoLayer: CAOpenGLLayer {
 
   func shouldRenderUpdateFrame() -> Bool {
     guard let mpvRenderContext = mpvRenderContext else { return false }
-    guard !player.isStopping else { return false }
     let flags: UInt64 = mpv_render_context_update(mpvRenderContext)
     return flags & UInt64(MPV_RENDER_UPDATE_FRAME.rawValue) > 0
   }

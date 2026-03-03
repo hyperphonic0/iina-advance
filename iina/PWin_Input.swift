@@ -25,12 +25,15 @@ extension PlayerWindowController {
 
   /// Returns true if handled (or ignored), false if not.
   /// If `fallbackAction` is given, always returns true.
-  @discardableResult
+  @discardableResult @MainActor
   func executeActionForKey(normalizedMpvKey: String, fallbackAction: ((PlayerCore) -> Void)? = nil) -> Bool {
     if let keyBinding = player.keyBindingContext.matchActiveKeyBinding(endingWith: normalizedMpvKey) {
       if keyBinding.normalizedMpvKey == Constants.String.anyUnicodeKey {
-        // Matched ANY_UNICODE: just pass the key through to mpv. It will know what to do with it.
-        player.mpv.command(MPVCommand.keypress, args: [normalizedMpvKey], checkError: false)
+        player.mpv.queue.async { [self] in
+          guard player.isActive else { return }
+          // Matched ANY_UNICODE: just pass the key through to mpv. It will know what to do with it.
+          player.mpv.command(MPVCommand.keypress, args: [normalizedMpvKey], checkError: false)
+        }
         return true
       }
       // Matched regular key binding
@@ -55,10 +58,8 @@ extension PlayerWindowController {
   }
 
   /// Returns true if handled
-  @discardableResult
+  @discardableResult @MainActor
   func handleKeyBinding(_ keyBinding: KeyMapping) -> Bool {
-    assert(DispatchQueue.isExecutingIn(.main))
-
     if keyBinding.isIgnored {
       // if "ignore", just swallow the event. Do not forward; do not beep
       log.verbose("Binding is ignored for key: \(keyBinding.normalizedMpvKey.quoted)")
