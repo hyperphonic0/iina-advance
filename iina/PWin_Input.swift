@@ -65,13 +65,6 @@ extension PlayerWindowController {
       return true
     }
 
-    if let menuItem = keyBinding.menuItem, let action = menuItem.action {
-      log.verbose("Key binding is attached to menu item: \(menuItem.title.quoted) but was not handled by MenuController. Calling it manually")
-      // Send to nil to allow for greatest search scope
-      NSApp.sendAction(action, to: nil, from: menuItem)
-      return true
-    }
-
     guard let rawAction = keyBinding.rawAction, let action = keyBinding.action else {
       log.error("Expected key binding to have an mpv action, aborting: \(keyBinding)")
       return false

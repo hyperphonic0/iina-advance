@@ -194,7 +194,7 @@ extension BindingTableViewController: NSTableViewDelegate {
             imageView.image = NSImage(systemSymbolName: "menubar.rectangle", accessibilityDescription: nil)!
             imageView.contentTintColor = builtinMenuItemIconColor
           default:
-            if bindingRow.menuItem != nil {
+            if bindingRow.hasMenuItem {
               imageView.image = NSImage(systemSymbolName: "menubar.rectangle", accessibilityDescription: nil)!
             } else {
               imageView.image = nil

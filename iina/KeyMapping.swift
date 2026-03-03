@@ -17,23 +17,14 @@ final class KeyMapping: NSObject, Codable, Sendable {
   // The MPV comment
   let comment: String?
 
-  // If present, holds the action selector & data for a menu item action.
-  // May not match the actual menu item which is present in the menus.
-  // FIXME: refactor to put this somewhere more sane
-  let menuItem: NSMenuItem?
-
-  /// Only used when `menuItem` is non-nil
+  /// Only non-empty for items with menu items.
   let sourceName: String
 
   // MARK: Key
 
   let rawKey: String
-
   let normalizedMpvKey: String
-
-  var normalizedMacKey: String? {
-    KeyCodeHelper.normalizedMacKeySequence(from: normalizedMpvKey)
-  }
+  var normalizedMacKey: String? { KeyCodeHelper.normalizedMacKeySequence(from: normalizedMpvKey) }
 
   // For UI
   var prettyKey: String {
@@ -82,7 +73,7 @@ final class KeyMapping: NSObject, Codable, Sendable {
     return ""
   }
 
-  // This is a rare occurrence. The section, if it exists, will be the first element in `action` and will be surrounded by curly braces.
+  // This is a rare occurrence. The section, if it exists, will be the first element in `action` & surrounded by curly braces.
   // Leave it inside `rawAction` and `action` so that it will be easy to edit in the UI.
   var destinationSection: String? {
     if let action, action.count > 1 {
@@ -96,20 +87,7 @@ final class KeyMapping: NSObject, Codable, Sendable {
 
   // Convenience method. Returns true if action is "ignore"
   var isIgnored: Bool {
-    return rawAction == MPVCommand.ignore.rawValue
-  }
-
-  // Serialized form, suitable for writing to a single line of mpv's input.conf
-  var confFileFormat: String {
-    let iinaPrefix = isIINACommand ? "\(KeyMapping.IINA_PREFIX) " : ""
-    let commentString = (comment == nil || comment!.isEmpty) ? "" : "   #\(comment!)"
-    let rawAction = rawAction ?? ""
-    return "\(iinaPrefix)\(rawKey) \(rawAction)\(commentString)"
-  }
-
-  // Whitelist: serialize only these fields to clipboard
-  private enum CodingKeys: String, CodingKey {
-    case rawKey, rawAction, isIINACommand, comment
+    rawAction == MPVCommand.ignore.rawValue
   }
 
   required init(from decoder: Decoder) throws {
@@ -118,24 +96,16 @@ final class KeyMapping: NSObject, Codable, Sendable {
     rawAction = try container.decode(String.self, forKey: .rawAction)
     isIINACommand = try container.decode(Bool.self, forKey: .isIINACommand)
     comment = try container.decodeIfPresent(String.self, forKey: .comment)
-    menuItem = nil
     sourceName = ""
     normalizedMpvKey = KeyCodeHelper.normalizeMpv(rawKey)
-  }
-
-  func encode(to encoder: Encoder) throws {
-    var container = encoder.container(keyedBy: CodingKeys.self)
-    try container.encode(rawKey, forKey: .rawKey)
-    try container.encode(rawAction, forKey: .rawAction)
-    try container.encode(isIINACommand, forKey: .isIINACommand)
-    try container.encode(comment, forKey: .comment)
   }
 
 
   // Note: neither `rawKey` nor `rawAction` paranms should start with `KeyMapping.IINA_PREFIX`.
   // (If this is an IINA command, use `isIINACommand: true`)
-  init(rawKey: String, rawAction: String?, isIINACommand: Bool, comment: String? = nil, menuItem: NSMenuItem? = nil, sourceName: String? = nil) {
-    assert(!rawKey.hasPrefix(KeyMapping.IINA_PREFIX) && (rawAction == nil || !rawAction!.hasPrefix(KeyMapping.IINA_PREFIX)), "Bad input to KeyMapping init")
+  init(rawKey: String, rawAction: String?, isIINACommand: Bool, comment: String? = nil, sourceName: String? = nil) {
+    assert(!rawKey.hasPrefix(KeyMapping.IINA_PREFIX) && (rawAction == nil || !rawAction!.hasPrefix(KeyMapping.IINA_PREFIX)),
+           "Bad input to KeyMapping init")
 
     self.rawKey = rawKey
     self.normalizedMpvKey = KeyCodeHelper.normalizeMpv(rawKey)
@@ -143,7 +113,6 @@ final class KeyMapping: NSObject, Codable, Sendable {
     self.rawAction = rawAction
     self.sourceName = sourceName ?? ""
     self.comment = comment
-    self.menuItem = menuItem
   }
 
   required convenience init?(pasteboardPropertyList propertyList: Any, ofType type: NSPasteboard.PasteboardType) {
@@ -160,29 +129,66 @@ final class KeyMapping: NSObject, Codable, Sendable {
     }
   }
 
-  static func addIINAPrefix(to string: String) -> String {
-    "\(KeyMapping.IINA_PREFIX) \(string)"
+  static func addIINAPrefix(to string: String) -> String { KeyMapping.IINA_PREFIX + " " + string }
+
+  // Serialized form, suitable for writing to a single line of mpv's input.conf
+  var confFileFormat: String {
+    let iinaPrefix = isIINACommand ? "\(KeyMapping.IINA_PREFIX) " : ""
+    let commentString = (comment == nil || comment!.isEmpty) ? "" : "   #\(comment!)"
+    let rawAction = rawAction ?? ""
+    return "\(iinaPrefix)\(rawKey) \(rawAction)\(commentString)"
   }
 
-  public override var description: String {
-    if let menuItem {
-      return "\(rawKey.quoted) → src=\(sourceName.quoted) menuItem=\(menuItem.title.quoted) comment=\(comment?.quoted ?? "nil")"
-    }
-    return "\(rawKey.quoted) → \(isIINACommand ? "@IINA" : "") \(rawAction?.quoted ?? "nil")"
+  override var description: String {
+    "\(rawKey.quoted) → \(isIINACommand ? "@IINA" : "") \(rawAction?.quoted ?? "nil") comment=\(comment?.quoted ?? "nil")"
+    + (sourceName.isEmpty ? "" : " source=\(sourceName.quoted)")
   }
 
   func rawEquals(_ other: KeyMapping) -> Bool {
-    return rawKey == other.rawKey && rawAction == other.rawAction
+    rawKey == other.rawKey && rawAction == other.rawAction
+  }
+
+  /// Hashable protocol conformance, to enable diffing
+  override var hash: Int {
+    var hasher = Hasher()
+    hasher.combine(rawKey)
+    hasher.combine(rawAction)
+    return hasher.finalize()
+  }
+
+  /// Equatable protocol conformance, to enable diffing
+  override func isEqual(_ object: Any?) -> Bool {
+    guard let other = object as? KeyMapping else {
+      return false
+    }
+    return self == other
+  }
+
+  static func == (lhs: KeyMapping, rhs: KeyMapping) -> Bool {
+    lhs.confFileFormat == rhs.confFileFormat
   }
 
   /// Makes a duplicate of this object, but will also override any non-nil parameter
-  /// #DOES NOT COPY MENU ITEM!#
   func clone(rawKey: String? = nil, rawAction: String? = nil, isIINACommand: Bool? = nil) -> KeyMapping {
-    return KeyMapping(rawKey: rawKey ?? self.rawKey,
-                      rawAction: rawAction ?? self.rawAction,
-                      isIINACommand: isIINACommand ?? self.isIINACommand,
-                      comment: self.comment)
+    KeyMapping(rawKey: rawKey ?? self.rawKey,
+               rawAction: rawAction ?? self.rawAction,
+               isIINACommand: isIINACommand ?? self.isIINACommand,
+               comment: self.comment)
   }
+
+  // Whitelist: serialize only these fields to clipboard
+  private enum CodingKeys: String, CodingKey {
+    case rawKey, rawAction, isIINACommand, comment
+  }
+
+  func encode(to encoder: Encoder) throws {
+    var container = encoder.container(keyedBy: CodingKeys.self)
+    try container.encode(rawKey, forKey: .rawKey)
+    try container.encode(rawAction, forKey: .rawAction)
+    try container.encode(isIINACommand, forKey: .isIINACommand)
+    try container.encode(comment, forKey: .comment)
+  }
+
 }
 
 // Register custom pasteboard type for KeyBinding (for drag&drop, and possibly eventually copy&paste)

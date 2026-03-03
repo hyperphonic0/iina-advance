@@ -139,7 +139,9 @@ extension MenuController {
 
   @MainActor
   private func updateKeyEquivalent(from binding: InputBinding) -> InputBinding {
-    guard let menuItem = binding.menuItem else { return binding }
+    guard let sectionMenuItems = sectionMappingItemPairs[binding.srcSectionName] else { return binding }
+    guard let matchingPair = sectionMenuItems.first(where: { $0.0 == binding.keyMapping }) else { return binding }
+    let menuItem = matchingPair.1
 
     if binding.isEnabled {
       let mpvKey = binding.keyMapping.normalizedMpvKey
@@ -168,6 +170,7 @@ extension MenuController {
   @MainActor
   private func matchKeyEquivalents(with userBindingIndexes: [Int], into bindingList: inout [InputBinding]) {
     var otherActionsMenuItems: [NSMenuItem] = []
+    var mappingItemPairs: [(KeyMapping, NSMenuItem)] = []
 
     /// Loop over all the list of menu items which can be matched with one or more `KeyMapping`s
     for bmi in bindableMenuItems {
@@ -195,11 +198,15 @@ extension MenuController {
           kbMenuItem = bmi.menuItem
           didBindMenuItem = true
         }
+        // #MenuItemKeyBinding
         bmi.updateMenuItem(kbMenuItem, keyEquiv: keyEquivalent, keyModifierMask, value: value, extraData: extraData)
         /// Make sure this is executed after `updateMenuItem()` to ensure it contains the accurate menu item title:
         let displayMessage = "This key binding will activate the menu item:\n\(kbMenuItem.menuPathDescription)"
 
-        let kbUpdated = KeyMapping(rawKey: kb.rawKey, rawAction: kb.rawAction, isIINACommand: kb.isIINACommand, comment: kb.comment, menuItem: kbMenuItem, sourceName: kb.sourceName)
+        // [kludge] use non-empty sourceName field (not otherwise used for user conf bindings) to indicate has menu item
+        let kbUpdated = KeyMapping(rawKey: kb.rawKey, rawAction: kb.rawAction, isIINACommand: kb.isIINACommand,
+                                   comment: kb.comment, sourceName: kb.sourceName.isEmpty ? "XXX" : kb.sourceName)
+        mappingItemPairs.append((kbUpdated, kbMenuItem))
         bindingList[bindingIndex] = binding.shallowClone(keyMapping: kbUpdated, displayMessage: displayMessage)
       }
 
@@ -218,6 +225,8 @@ extension MenuController {
 
     // Update hidden menu
     updateOtherKeyBindings(replacingAllWith: otherActionsMenuItems)
+
+    sectionMappingItemPairs[MPVInputSection.Shared.USER_CONF_SECTION_NAME] = mappingItemPairs
   }
 
 

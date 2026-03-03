@@ -13,6 +13,8 @@ class MenuController: NSObject, NSMenuDelegate {
   /** For convenient bindings. see `bind(...)` below. [menu: check state block] */
   private var menuBindingList: [NSMenu: @MainActor (NSMenuItem) -> Bool] = [:]
 
+  var sectionMappingItemPairs: [String: [(KeyMapping, NSMenuItem)]] = [:]
+
   private var stringForOpen: String!
   private var stringForOpenAlternative: String!
   private var stringForOpenURL: String!
@@ -344,7 +346,8 @@ class MenuController: NSObject, NSMenuDelegate {
     // encoding
     let encodingTitles = AppData.encodings.map { $0.title }
     let encodingObjects = AppData.encodings.map { $0.code }
-    bind(menu: encodingMenu, withOptions: encodingTitles, objects: encodingObjects, objectMap: nil, action: #selector(PlayerWindowController.menuSetSubEncoding(_:))) {
+    let action = #selector(PlayerWindowController.menuSetSubEncoding(_:))
+    bind(menu: encodingMenu, withOptions: encodingTitles, objects: encodingObjects, objectMap: nil, action: action) {
       PlayerManager.shared.activePlayer?.info.subEncoding == $0.representedObject as? String
     }
     subFont.action = #selector(PlayerWindowController.menuSubFont(_:))
@@ -416,7 +419,8 @@ class MenuController: NSObject, NSMenuDelegate {
       let menuItem = NSMenuItem(title: menuTitle, action: #selector(PlayerWindowController.menuChapterSwitch(_:)), keyEquivalent: "")
       menuItem.tag = index
       menuItem.state = isPlaying ? .on : .off
-      menuItem.attributedTitle = NSAttributedString(string: menuTitle, attributes: [.font: NSFont.monospacedDigitSystemFont(ofSize: 0, weight: .regular)])
+      let font = NSFont.monospacedDigitSystemFont(ofSize: 0, weight: .regular)
+      menuItem.attributedTitle = NSAttributedString(string: menuTitle, attributes: [.font: font])
       chapterMenu.addItem(menuItem)
     }
   }
@@ -426,7 +430,8 @@ class MenuController: NSObject, NSMenuDelegate {
     guard let player = PlayerManager.shared.activePlayer else { return }
     let info = player.info
     menu.removeAllItems()
-    let noTrackMenuItem = NSMenuItem(title: Constants.String.trackNone, action: #selector(PlayerWindowController.menuChangeTrack(_:)), keyEquivalent: "")
+    let action = #selector(PlayerWindowController.menuChangeTrack(_:))
+    let noTrackMenuItem = NSMenuItem(title: Constants.String.trackNone, action: action, keyEquivalent: "")
     noTrackMenuItem.representedObject = MPVTrack.emptyTrack(for: type)
     if info.trackId(type) == 0 {  // no track
       noTrackMenuItem.state = .on
@@ -434,7 +439,7 @@ class MenuController: NSObject, NSMenuDelegate {
     menu.addItem(noTrackMenuItem)
     for track in info.trackList(type) {
       menu.addItem(withTitle: track.readableTitle, action: #selector(PlayerWindowController.menuChangeTrack(_:)),
-                             tag: nil, obj: (track, type), stateOn: track.id == info.trackId(type))
+                   tag: nil, obj: (track, type), stateOn: track.id == info.trackId(type))
     }
   }
 
@@ -460,8 +465,7 @@ class MenuController: NSObject, NSMenuDelegate {
   private func updateVideoMenu() {
     guard let player = PlayerManager.shared.activePlayer else { return }
     let isDisplayingSettings = player.pwc.isOpen(sidebarTab: .video)
-    quickSettingsVideo?.title = isDisplayingSettings ? Constants.String.hideVideoPanel :
-        Constants.String.videoPanel
+    quickSettingsVideo?.title = isDisplayingSettings ? Constants.String.hideVideoPanel : Constants.String.videoPanel
     let isInFullScreen = player.pwc.isFullScreen
     let isInPIP = player.pwc.currentLayout.isInPiP
     let isOnTop = player.pwc.isOnTop
@@ -500,7 +504,7 @@ class MenuController: NSObject, NSMenuDelegate {
     let devices = player.getAudioDevices()
     let currAudioDevice = player.mpv.getString(MPVProperty.audioDevice)
     audioDeviceMenu.removeAllItems()
-    devices.forEach { device in
+    for device in devices {
       audioDeviceMenu.addItem(withTitle: String(describing: device),
                               action: #selector(AppDelegate.menuSelectAudioDevice(_:)), tag: nil,
                               obj: device.name, stateOn: device.name == currAudioDevice)
@@ -519,11 +523,11 @@ class MenuController: NSObject, NSMenuDelegate {
     guard let player = PlayerManager.shared.activePlayer else { return }
     let isDisplayingSettings = player.pwc.isOpen(sidebarTab: .sub)
     quickSettingsSub?.title = isDisplayingSettings ? Constants.String.hideSubtitlesPanel :
-        Constants.String.subtitlesPanel
+    Constants.String.subtitlesPanel
     hideSubtitles.title = player.info.isSubVisible ? Constants.String.hideSubtitles :
-        Constants.String.showSubtitles
+    Constants.String.showSubtitles
     hideSecondSubtitles.title = player.info.isSecondSubVisible ? Constants.String.hideSecondSubtitles :
-        Constants.String.showSecondSubtitles
+    Constants.String.showSecondSubtitles
     let subDelayString = player.info.subDelay.groupedStringUpTo6Decimals
     subDelayIndicator.title = String(format: NSLocalizedString("menu.sub_delay", comment: "Subtitle Delay:"), subDelayString)
 
@@ -550,7 +554,7 @@ class MenuController: NSObject, NSMenuDelegate {
     let filters = type == MPVProperty.vf ? player.info.videoFilters : player.info.audioFilters
     let menu: NSMenu! = type == MPVProperty.vf ? savedVideoFiltersMenu : savedAudioFiltersMenu
     for item in menu.items {
-      if let string = (item.representedObject as? String), let asObject = MPVFilter(rawString: string) {
+      if let string = item.representedObject as? String, let asObject = MPVFilter(rawString: string) {
         // Filters that support multiple parameters have more than one valid string representation.
         // Must compare filters using their object representation.
         item.state = filters.contains { $0 == asObject } ? .on : .off
@@ -562,12 +566,16 @@ class MenuController: NSObject, NSMenuDelegate {
   func updatePluginMenu() {
     guard AppDelegate.iinaPluginSystemEnabled else { return }
     Logger.log.trace("Updating Plugin menu")
-    var keyMappings: [KeyMapping] = []
-    let activePlayer = PlayerManager.shared.activePlayer
     pluginMenu.removeAllItems()
+
     pluginMenu.addItem(withTitle: Constants.String.managePlugins, action: #selector(AppDelegate.showPluginPreferences(_:)), keyEquivalent: "")
+
+    let activePlayer = PlayerManager.shared.activePlayer
     if let isDisplayingPluginsPanel = activePlayer?.pwc.isTabGroupVisible(.plugins) {
-      pluginMenu.addItem(withTitle: isDisplayingPluginsPanel ? Constants.String.hidePluginsPanel : Constants.String.showPluginsPanel, action: #selector(PlayerWindowController.showPluginsPanel(_:)), keyEquivalent: "")
+      let itemTitle = isDisplayingPluginsPanel ? Constants.String.hidePluginsPanel : Constants.String.showPluginsPanel
+      let itemAction = #selector(PlayerWindowController.showPluginsPanel(_:))
+      pluginMenu.addItem(withTitle: itemTitle, action: itemAction, keyEquivalent: "")
+
       pluginMenu.addItem(.separator())
     }
 
@@ -575,19 +583,22 @@ class MenuController: NSObject, NSMenuDelegate {
     developerTool.title = NSLocalizedString("menu.developer_tool", comment: "Developer Tool")
     developerTool.submenu = NSMenu()
 
-    guard let player = PlayerManager.shared.activePlayer else { return }
-    let plugins = player.plugins
+    var mappingItemPairs: [(KeyMapping, NSMenuItem)] = []
+
+    guard let activePlayer else { return }
+
+    let plugins = activePlayer.plugins
     for instance in plugins {
       var counter = 0
       var rootMenu: NSMenu! = pluginMenu
       let menuItems = (instance.plugin.globalInstance?.menuItems ?? []) + instance.menuItems
       if menuItems.isEmpty { continue }
 
-        if #available(macOS 14.0, *) {
-          pluginMenu.addItem(.sectionHeader(title: instance.plugin.name))
-        } else {
-          pluginMenu.addItem(withTitle: instance.plugin.name, enabled: false)
-        }
+      if #available(macOS 14.0, *) {
+        pluginMenu.addItem(.sectionHeader(title: instance.plugin.name))
+      } else {
+        pluginMenu.addItem(withTitle: instance.plugin.name, enabled: false)
+      }
 
       for item in menuItems {
         if counter == 5 {
@@ -598,7 +609,7 @@ class MenuController: NSObject, NSMenuDelegate {
           moreItem.submenu = rootMenu
           pluginMenu.addItem(moreItem)
         }
-        add(menuItemDef: item, to: rootMenu, for: instance, keyMappings: &keyMappings)
+        add(menuItemDef: item, to: rootMenu, for: instance, mappingItemPairs: &mappingItemPairs)
         counter += 1
       }
 
@@ -619,15 +630,18 @@ class MenuController: NSObject, NSMenuDelegate {
     if #available(macOS 12.0, *) {
       pluginMenu.addItem(developerTool)
     }
-    pluginMenu.addItem(withTitle: NSLocalizedString("menu.reload_plugins", comment: "Reload All Plugins"), action: #selector(PlayerWindowController.reloadAllPlugins(_:)), keyEquivalent: "")
+    pluginMenu.addItem(withTitle: NSLocalizedString("menu.reload_plugins", comment: "Reload All Plugins"),
+                       action: #selector(PlayerWindowController.reloadAllPlugins(_:)), keyEquivalent: "")
+
+    sectionMappingItemPairs[MPVInputSection.Shared.PLUGINS_SECTION_NAME] = mappingItemPairs
   }
 
   @discardableResult
   private func add(menuItemDef item: JavascriptPluginMenuItem,
                    to menu: NSMenu,
                    for plugin: JavascriptPluginInstance,
-                   keyMappings: inout [KeyMapping]) -> NSMenuItem {
-    if (item.isSeparator) {
+                   mappingItemPairs: inout [(KeyMapping, NSMenuItem)]) -> NSMenuItem {
+    if item.isSeparator {
       let item = NSMenuItem.separator()
       menu.addItem(item)
       return item
@@ -651,12 +665,13 @@ class MenuController: NSObject, NSMenuDelegate {
       // Store the item with its pair - the PlayerInputContext will set the binding & deal with conflicts
       let actionDescription = "\(plugin.plugin.name) → \(menuItem.title)"
       // #MenuItemKeyBinding
-      keyMappings.append(KeyMapping(rawKey: rawKey, rawAction: nil, isIINACommand: true, comment: actionDescription, menuItem: menuItem, sourceName: plugin.plugin.name))
+      let keyMapping = KeyMapping(rawKey: rawKey, rawAction: nil, isIINACommand: true, comment: actionDescription, sourceName: plugin.plugin.name)
+      mappingItemPairs.append((keyMapping, menuItem))
     }
     if !item.items.isEmpty {
       menuItem.submenu = NSMenu()
       for submenuItem in item.items {
-        add(menuItemDef: submenuItem, to: menuItem.submenu!, for: plugin, keyMappings: &keyMappings)
+        add(menuItemDef: submenuItem, to: menuItem.submenu!, for: plugin, mappingItemPairs: &mappingItemPairs)
       }
     }
     item.nsMenuItem = menuItem
@@ -788,6 +803,7 @@ class MenuController: NSObject, NSMenuDelegate {
   func updateSavedFilters(forType type: String, from filters: [SavedFilter]) {
     let isVideo = type == MPVProperty.vf
     var keyMappings: [KeyMapping] = []
+    var mappingItemPairs: [(KeyMapping, NSMenuItem)] = []
 
     let sectionName: String
     let filterTypeString: String
@@ -804,7 +820,11 @@ class MenuController: NSObject, NSMenuDelegate {
     for filter in filters {
       let menuItem = NSMenuItem()
       menuItem.title = filter.name
-      menuItem.action = isVideo ? #selector(PlayerWindowController.menuToggleVideoFilterString(_:)) : #selector(PlayerWindowController.menuToggleAudioFilterString(_:))
+      if isVideo {
+        menuItem.action = #selector(PlayerWindowController.menuToggleVideoFilterString(_:))
+      } else {
+        menuItem.action = #selector(PlayerWindowController.menuToggleAudioFilterString(_:))
+      }
       menuItem.keyEquivalent = ""
       menuItem.representedObject = filter.filterString
       menu.addItem(menuItem)
@@ -816,12 +836,15 @@ class MenuController: NSObject, NSMenuDelegate {
 
       let rawKey = KeyCodeHelper.macOSToMpv(key: filter.shortcutKey, modifiers: filter.shortcutKeyModifiers)
       if !rawKey.isEmpty {
-        let description = "\(filterTypeString): \(filter.name.quoted)"
         // #MenuItemKeyBinding
-        keyMappings.append(KeyMapping(rawKey: rawKey, rawAction: nil, isIINACommand: true, comment: description, menuItem: menuItem, sourceName: filter.name))
+        let description = "\(filterTypeString): \(filter.name.quoted)"
+        let keyMapping = KeyMapping(rawKey: rawKey, rawAction: nil, isIINACommand: true, comment: description, sourceName: filter.name)
+        keyMappings.append(keyMapping)
+        mappingItemPairs.append((keyMapping, menuItem))
       }
     }
 
+    sectionMappingItemPairs[sectionName] = mappingItemPairs
     AppInputConfig.replaceMappings(forSharedSectionName: sectionName, with: keyMappings)
   }
 
@@ -829,43 +852,34 @@ class MenuController: NSObject, NSMenuDelegate {
   /// Instead of trying to keep track of them manually, just recurse through all the menus and find all the menu item
   /// bindings which haven't already been accounted for.
   func refreshStaticMenuItemBindings() {
-    let aic = AppInputConfig.current
-    let filterDict = aic.resolverDict.mapValues{aic.bindingCandidateList[$0]}.filter{$0.value.origin != .staticMenuItem}
-    let staticMenuItemBindings: [KeyMapping] = self.findStaticMenuItems(filterOut: filterDict)
-    AppInputConfig.replaceMappings(forSharedSectionName: MPVInputSection.Shared.STATIC_MENU_ITEMS_SECTION_NAME, with: staticMenuItemBindings, onlyIfDifferent: true)
-  }
+    let actionBlacklist = sectionMappingItemPairs.filter({ $0.key != MPVInputSection.Shared.STATIC_MENU_ITEMS_SECTION_NAME }).flatMap({$0.value}).compactMap({ $0.1.action })
 
-  private func findStaticMenuItems(filterOut filterDict: [String: InputBinding]) -> [KeyMapping] {
-    var menuItemMappings: [KeyMapping] = []
+    var staticMenuItemBindings: [KeyMapping] = []
+    var staticMenuItemMappingPairs: [(KeyMapping, NSMenuItem)] = []
 
-    for menu in NSApp.mainMenu!.items {
-      if menu.hasSubmenu, let subMenu = menu.submenu {
-        for subMenuItem in subMenu.items {
-          forMenuItemAndAllDescendents(subMenuItem, do: { menuItem in
-            guard !menuItem.keyEquivalent.isEmpty else { return }
-            // filter out media keys; they can't be bound anyway
-            guard KeyCodeHelper.isPrintable(menuItem.keyEquivalent) else { return }
-            let rawKey = KeyCodeHelper.macOSToMpv(key: menuItem.keyEquivalent, modifiers: menuItem.keyEquivalentModifierMask)
-            guard !rawKey.isEmpty else {
-              return
-            }
+    for rootMenu in NSApp.mainMenu!.items {
+      guard rootMenu.hasSubmenu, let subMenu = rootMenu.submenu else { continue }
+      for rootMenuItem in subMenu.items {
+        forMenuItemAndAllDescendents(rootMenuItem, do: { menuItem in
+          guard !menuItem.keyEquivalent.isEmpty else { return }
+          // filter out media keys; they can't be bound anyway
+          guard KeyCodeHelper.isPrintable(menuItem.keyEquivalent) else { return }
+          let rawKey = KeyCodeHelper.macOSToMpv(key: menuItem.keyEquivalent, modifiers: menuItem.keyEquivalentModifierMask)
+          guard !rawKey.isEmpty else { return }
 
-            if let binding = filterDict[rawKey], binding.menuItem?.action == menuItem.action {
-              return
-            }
-            if menuItem.action == #selector(AppDelegate.menuNewWindow(_:)) && menuItem.isHidden {
-              /// Exclude `File` > `New Window` if it is not enabled
-              return
-            }
-            let actionDesc = "This key binding will activate the menu item:\n\(menuItem.menuPathDescription)"
-            // #MenuItemKeyBinding
-            menuItemMappings.append(KeyMapping(rawKey: rawKey, rawAction: nil, isIINACommand: true, comment: actionDesc, menuItem: menuItem, sourceName: "built-in"))
-          })
-        }
+          if let menuItemAction = menuItem.action, actionBlacklist.contains(menuItemAction) { return }
+          /// Exclude `File` > `New Window` if it is not enabled
+          if menuItem.action == #selector(AppDelegate.menuNewWindow(_:)) && menuItem.isHidden { return }
+          // #MenuItemKeyBinding
+          let actionDesc = menuItem.menuPathDescription
+          let keyMapping = KeyMapping(rawKey: rawKey, rawAction: nil, isIINACommand: true, comment: actionDesc, sourceName: "built-in")
+          staticMenuItemBindings.append(keyMapping)
+          staticMenuItemMappingPairs.append((keyMapping, menuItem))
+        })
       }
     }
 
-    return menuItemMappings
+    AppInputConfig.replaceMappings(forSharedSectionName: MPVInputSection.Shared.STATIC_MENU_ITEMS_SECTION_NAME, with: staticMenuItemBindings, onlyIfDifferent: true)
   }
 
   private func forMenuItemAndAllDescendents(_ menuItem: NSMenuItem, do callback: (NSMenuItem) -> Void) {

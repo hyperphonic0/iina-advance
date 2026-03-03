@@ -18,19 +18,17 @@
 
  An instance of this class encapsulates all the data needed to display a single row/line in the Key Bindings table.
  */
-final class InputBinding: NSObject, Sendable {
+struct InputBinding: Sendable, Equatable, Hashable, CustomStringConvertible {
   /// Will be `nil` for plugin bindings.
   let keyMapping: KeyMapping
 
   let origin: InputBindingOrigin
 
-  /*
-   Will be one of:
-   - "default", if origin == .confFile
-   - The input section name, if origin == .libmpv
-   - The Plugins section name, if origin == .iinaPlugin
-   - The Video or Audio Filters section name, if origin == .savedFilter
-   */
+  /// Will be one of:
+  /// - "default", if origin == .confFile
+  /// - The input section name, if origin == .libmpv
+  /// - The Plugins section name, if origin == .iinaPlugin
+  /// - The Video or Audio Filters section name, if origin == .savedFilter
   let srcSectionName: String
   
   let isEnabled: Bool
@@ -38,7 +36,7 @@ final class InputBinding: NSObject, Sendable {
   /// for use in UI only
   let displayMessage: String
 
-  init(_ keyMapping: KeyMapping, origin: InputBindingOrigin, srcSectionName: String, menuItem: NSMenuItem? = nil, isEnabled: Bool = true,
+  init(_ keyMapping: KeyMapping, origin: InputBindingOrigin, srcSectionName: String, isEnabled: Bool = true,
        displayMessage: String = "") {
     self.keyMapping = keyMapping
     self.origin = origin
@@ -50,58 +48,44 @@ final class InputBinding: NSObject, Sendable {
   /// Clones this `InputBinding`, but using the given fields if provided.
   func shallowClone(keyMapping: KeyMapping? = nil, isEnabled: Bool? = nil, displayMessage: String? = nil) -> InputBinding {
     InputBinding(keyMapping ?? self.keyMapping,
-                 origin: self.origin, srcSectionName: self.srcSectionName, menuItem: self.menuItem,
+                 origin: self.origin, srcSectionName: self.srcSectionName,
                  isEnabled: isEnabled ?? self.isEnabled, displayMessage: displayMessage ?? "")
   }
 
   /// Only mpv bindings in the "default" section can be modified or deleted
-  var canBeModified: Bool {
-    get {
-      self.origin == .confFile
-    }
-  }
+  var canBeModified: Bool { origin == .confFile }
+
+  var hasMenuItem: Bool { !keyMapping.sourceName.isEmpty }
 
   /// Only mpv bindings can be copied
-  var canBeCopied: Bool {
-    get {
-      self.origin == .confFile || self.origin == .libmpv
-    }
-  }
+  var canBeCopied: Bool { origin == .confFile || origin == .libmpv }
 
-  /// Will be non-nil for all origin == `.iinaPlugin`, `.savedFilter`, and some `.conf`
-  var menuItem: NSMenuItem? {
-    get {
-      return self.keyMapping.menuItem
-    }
-  }
-
-  override var description: String {
-    return "{\(srcSectionName)} \(keyMapping)"
-  }
+  var description: String { "{\(srcSectionName)} \(keyMapping)" }
 
   /// Hashable protocol conformance, to enable diffing
-  override var hash: Int {
+  var hash: Int {
     var hasher = Hasher()
-    hasher.combine(keyMapping.rawKey)
-    hasher.combine(keyMapping.rawAction)
+    hasher.combine(keyMapping)
     return hasher.finalize()
   }
 
   /// Equatable protocol conformance, to enable diffing
-  override func isEqual(_ object: Any?) -> Bool {
+  func isEqual(_ object: Any?) -> Bool {
     guard let other = object as? InputBinding else {
       return false
     }
-    return other.origin == self.origin
-      && other.srcSectionName == self.srcSectionName
-      && other.keyMapping.confFileFormat == self.keyMapping.confFileFormat
+    return self == other
+  }
+
+  static func == (lhs: InputBinding, rhs: InputBinding) -> Bool {
+    lhs.origin == rhs.origin && lhs.srcSectionName == rhs.srcSectionName && lhs.keyMapping == rhs.keyMapping
   }
 
   func getKeyColumnDisplay(raw: Bool) -> String {
-    return raw ? keyMapping.rawKey : keyMapping.prettyKey
+    raw ? keyMapping.rawKey : keyMapping.prettyKey
   }
 
   func getActionColumnDisplay(raw: Bool) -> String {
-    return keyMapping.actionDescription(preferRaw: raw)
+    keyMapping.actionDescription(preferRaw: raw)
   }
 }
