@@ -45,7 +45,9 @@ class PlaybackInfo {
   var shouldAutoLoadFiles: Bool = false
   var isMatchingSubtitles = false
 
+  /// Returns the current pause state (if on the main queue!)
   @MainActor private(set) var isPaused: Bool = true
+  /// Returns the current pause state (if on the mpv queue!)
   var _isPaused: Bool { isPausedLocally ?? isPausedRemotely }
   /// Set this while waiting for remote to respond
   var isPausedLocally: Bool? = nil {

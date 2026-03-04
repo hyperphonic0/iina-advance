@@ -1616,6 +1616,7 @@ final class PlayerCore: NSObject {
       }
     }
 
+    guard let pwc, pwc.loaded else { return }
     DispatchQueue.main.async { [self] in
       pwc.updatePlayButtonAndSpeedUI(isPaused: paused)
       if paused {
@@ -1653,6 +1654,7 @@ final class PlayerCore: NSObject {
   /// Called when `MPVOption.Video.videoRotate` changed
   func userRotationDidChange(to userRotation: Int) {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
+    guard let pwc, pwc.loaded else { return }
 
     let gtf = GeometryTransform("UserRotation", self)
     gtf.submit()
@@ -1733,7 +1735,7 @@ final class PlayerCore: NSObject {
   }
 
   func syncVideoParamsFromMpv() {
-    guard pwc.loaded else { return }
+    guard let pwc, pwc.loaded else { return }
     guard !isRestoring else {
       log.trace("Ignoring SyncVidGeo request: isRestoring=Y")
       return
@@ -2259,7 +2261,7 @@ final class PlayerCore: NSObject {
     let chapter = Int(mpv.getInt(MPVProperty.chapter))
     info.chapter = chapter
     log.verbose("Δ mpv prop: 'chapter' = \(info.chapter)")
-    syncUI(.chapterList)
+    syncUIChapterList()
     mediaTitleChanged()
   }
 
@@ -2297,7 +2299,7 @@ final class PlayerCore: NSObject {
   func mediaTitleChanged() {
     guard isActive else { return }
     DispatchQueue.main.async { [self] in
-      guard pwc.isOpen else { return }
+      guard let pwc, pwc.isOpen else { return }
       MediaPlayerIntegration.shared.update()
       postNotification(.iinaMediaTitleChanged)
     }
@@ -2371,14 +2373,15 @@ final class PlayerCore: NSObject {
   }
 
   func refreshEdrMode() {
+    guard let pwc, pwc.loaded else { return }
     pwc.animationPipeline.submitInstantTask { [self] in
-      guard pwc.loaded else { return }
       videoView.refreshEdrMode()
     }
   }
 
   /// *Enqueues*
   func setQuickSettingsViewNeedsUpdate() {
+    guard let pwc, pwc.loaded else { return }
     pwc.animationPipeline.doAfterGTFs{ [self] in
       reloadQuickSettingsViewNow()
     }
@@ -2709,6 +2712,7 @@ final class PlayerCore: NSObject {
 
   func subCodepageDidChange(to encoding: String) {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
+    guard let pwc, pwc.loaded else { return }
     guard encoding != info.subEncoding else { return }
     log.verbose("Δ mpv prop: `sub-codepage` = \(encoding)")
     info.subEncoding = encoding
@@ -2717,7 +2721,7 @@ final class PlayerCore: NSObject {
 
   func sidChanged(to sid: Int? = nil, silent: Bool = false, reloadTracksIfNotFound: Bool = false) {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
-    guard !pwc.sessionState.isRestoring, !isStopping else { return }
+    guard let pwc, pwc.loaded, !pwc.sessionState.isRestoring, !isStopping else { return }
     let sid = sid ?? Int(mpv.getInt(MPVOption.TrackSelection.sid))
     guard info.isFileLoaded else {
       log.verbose("SID changed to \(sid) but file is not loaded; ignoring")
@@ -2744,7 +2748,7 @@ final class PlayerCore: NSObject {
 
   func secondarySidChanged(to ssid: Int? =  nil, silent: Bool = false, reloadTracksIfNotFound: Bool = false) {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
-    guard !isRestoring, !isStopping else { return }
+    guard let pwc, pwc.loaded, !isRestoring, !isStopping else { return }
     let ssid = ssid ?? Int(mpv.getInt(MPVOption.Subtitles.secondarySid))
     guard info.isFileLoaded else {
       log.verbose("SSID changed to \(ssid) but file is not loaded; ignoring")
@@ -2879,12 +2883,12 @@ final class PlayerCore: NSObject {
 
   func syncOntopState() {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
-    guard pwc.loaded, isActive else { return }
+    guard let pwc, pwc.loaded, isActive else { return }
 
     let ontop = mpv.getFlag(MPVOption.Window.ontop)
     if ontop != pwc.isOnTop {
       log.verbose("IINA OnTop state (\(pwc.isOnTop.yn)) does not match mpv (\(ontop.yn)); will change to match mpv state")
-      DispatchQueue.main.async { [self] in
+      DispatchQueue.main.async {
         pwc.setWindowFloatingOnTop(ontop, from: pwc.currentLayout, updateOnTopStatus: false)
       }
     }
@@ -2892,7 +2896,7 @@ final class PlayerCore: NSObject {
 
   func syncFullScreenState() {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
-    guard pwc.loaded else { return }
+    guard let pwc, pwc.loaded else { return }
 
     let mpvFS = mpv.getFlag(MPVOption.Window.fullscreen)
     DispatchQueue.main.async { [self] in
@@ -2909,7 +2913,7 @@ final class PlayerCore: NSObject {
         }
       } else {
         log.debug("IINA full screen state does not match mpv (FS=\(mpvFS.yesno)); will change to match mpv state")
-        DispatchQueue.main.async { [self] in
+        DispatchQueue.main.async {
           if mpvFS {
             pwc.enterFullScreen()
           } else {
@@ -2973,35 +2977,23 @@ final class PlayerCore: NSObject {
     return (timeInfo, cacheState, rangesDidChange)
   }
 
-  // difficult to use option set
-  enum SyncUIOption {
-    case chapterList
-  }
-
-  func syncUI(_ option: SyncUIOption) {
+  func syncUIChapterList() {
     // if window not loaded, ignore
-    guard pwc.loaded else { return }
-    log.verbose("Syncing UI \(option)")
+    guard let pwc, pwc.loaded else { return }
+    log.verbose("Syncing UI chapter list")
 
-    switch option {
-      
-    case .chapterList:
-      DispatchQueue.main.async { [self] in
-        // this should avoid sending reload when table view is not ready
-        if isInMiniPlayer {
-          guard pwc.miniPlayer.playlistShown else { return }
-          pwc.miniPlayer.loadIfNeeded()
-        } else {
-          guard pwc.isOpen(sidebarTab: .chapters) else { return }
-        }
-        
-        guard pwc.playlistView.isViewLoaded else { return }
-        pwc.playlistView.chapterTableView.reloadData()
+    DispatchQueue.main.async { [self] in
+      // this should avoid sending reload when table view is not ready
+      if isInMiniPlayer {
+        guard pwc.miniPlayer.playlistShown else { return }
+        pwc.miniPlayer.loadIfNeeded()
+      } else {
+        guard pwc.isOpen(sidebarTab: .chapters) else { return }
       }
-    }
 
-    // All of the above reflect a state change. Save it:
-    saveState()
+      guard pwc.playlistView.isViewLoaded else { return }
+      pwc.playlistView.chapterTableView.reloadData()
+    }
   }
 
   func closeWindow() {
@@ -3044,7 +3036,7 @@ final class PlayerCore: NSObject {
     mpv.queue.async { [self] in
       _reloadChapters()
     }
-    syncUI(.chapterList)
+    syncUIChapterList()
   }
 
   func _reloadChapters() {
@@ -3063,7 +3055,7 @@ final class PlayerCore: NSObject {
     // This will avoid concurrent modification crashes
     info.chapters = chapters
 
-    syncUI(.chapterList)
+    syncUIChapterList()
   }
 
   // MARK: - Notifications
@@ -3198,7 +3190,7 @@ final class PlayerCore: NSObject {
 
   func aidChanged(to aid: Int? = nil, silent: Bool = false) {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
-    guard !isRestoring, !isStopping else { return }
+    guard let pwc, pwc.loaded, !isRestoring, !isStopping else { return }
     let aid = aid ?? Int(mpv.getInt(MPVOption.TrackSelection.aid))
     guard aid != info.aid else { return }
     guard info.isFileLoaded else {
@@ -3246,7 +3238,7 @@ final class PlayerCore: NSObject {
 
   func vidChanged(silent: Bool = false) {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
-    guard !isRestoring, !isStopping else { return }
+    guard let pwc, pwc.loaded, !isRestoring, !isStopping else { return }
 
     /// Grab & reset `isShowViewportPendingInMiniPlayer` in mpv queue right away to avoid race
     let pendingAction = pendingActionOnVidChange

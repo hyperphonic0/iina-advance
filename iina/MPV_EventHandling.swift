@@ -336,6 +336,7 @@ extension MPVController {
       guard let zoom = property.doubleData(log) else { break }
       player.log.verbose("Δ mpv prop: 'video-zoom' = \(zoom)")
       player.info.videoZoom = zoom
+      guard let pwc = player.pwc, pwc.loaded else { return }
       player.sendOSD(.videoZoom(zoom))
       DispatchQueue.main.async { [self] in
         player.videoView.activateForcedRedraws()
@@ -344,6 +345,7 @@ extension MPVController {
     case MPVOption.Video.videoPanX:
       guard let panX = property.doubleData(log) else { break }
       player.info.videoPanX = panX
+      guard let pwc = player.pwc, pwc.loaded else { return }
       DispatchQueue.main.async { [self] in
         player.videoView.activateForcedRedraws()
       }
@@ -351,6 +353,7 @@ extension MPVController {
     case MPVOption.Video.videoPanY:
       guard let panY = property.doubleData(log) else { break }
       player.info.videoPanY = panY
+      guard let pwc = player.pwc, pwc.loaded else { return }
       DispatchQueue.main.async { [self] in
         player.videoView.activateForcedRedraws()
       }
@@ -399,12 +402,14 @@ extension MPVController {
       player.chapterChanged()
 
     case MPVOption.PlaybackControl.speed:
+      guard let pwc = player.pwc, pwc.loaded else { break }
       guard let speed = property.doubleData(log) else { break }
       player.log.verbose("Δ mpv prop: `speed` = \(speed)")
       player.speedDidChange(to: speed)
       player.setQuickSettingsViewNeedsUpdate()
 
     case MPVOption.PlaybackControl.loopPlaylist, MPVOption.PlaybackControl.loopFile:
+      guard let pwc = player.pwc, pwc.loaded else { break }
       let loopMode = player.getLoopMode()
       switch loopMode {
       case .file:
@@ -414,17 +419,20 @@ extension MPVController {
       default:
         player.sendOSD(.noLoop)
       }
-      player.pwc.playlistView.updateLoopBtnStatus(loopMode: loopMode)
+      pwc.playlistView.updateLoopBtnStatus(loopMode: loopMode)
 
     case MPVOption.PlaybackControl.abLoopA, MPVOption.PlaybackControl.abLoopB:
+      guard let pwc = player.pwc, pwc.loaded else { break }
       player.log.verbose("Δ mpv prop: `\(name)`")
       player.syncAbLoop()
 
     case MPVOption.PlaybackControl.abLoopCount:
+      guard let pwc = player.pwc, pwc.loaded else { break }
       player.log.verbose("Δ mpv prop: `\(name)`")
       player.syncAbLoop()
 
     case MPVOption.OSD.osdLevel:
+      guard let pwc = player.pwc, pwc.loaded else { break }
       guard let level = property.intData(log) else { break }
       player.log.verbose("Δ mpv prop: `osdLevel` = \(level)")
       let isUsingMpvOSD: Bool = level != 0
@@ -457,7 +465,8 @@ extension MPVController {
       guard let isMuted = property.boolData(log) else { break }
       guard player.info.isMuted != isMuted else { break }
       player.info.isMuted = isMuted
-      player.pwc.updateVolumeUI()
+      guard let pwc = player.pwc, pwc.loaded else { break }
+      pwc.updateVolumeUI()
       let volume = Int(player.info.volume)
       player.sendOSD(isMuted ? OSDMessage.mute(volume) : OSDMessage.unMute(volume))
 
@@ -465,7 +474,8 @@ extension MPVController {
       guard let volume = property.doubleData(log) else { break }
       guard player.info.volume != volume else { break }
       player.info.volume = volume
-      player.pwc.updateVolumeUI()
+      guard let pwc = player.pwc, pwc.loaded else { break }
+      pwc.updateVolumeUI()
       player.sendOSD(.volume(volume))
 
     case MPVOption.Audio.audioDelay:
@@ -617,7 +627,7 @@ extension MPVController {
       player.afChanged()
 
     case MPVOption.Video.videoAspectOverride:
-      guard player.pwc.loaded, !player.isShuttingDown else { break }
+      guard let pwc = player.pwc, pwc.loaded, !player.isShuttingDown else { break }
       guard let aspect = getString(MPVOption.Video.videoAspectOverride) else { break }
       player.log.verbose("Δ mpv prop: 'video-aspect-override' = \(aspect.quoted)")
       DispatchQueue.main.async { [self] in
@@ -642,23 +652,26 @@ extension MPVController {
       player.syncOntopState()
 
     case MPVOption.Window.cursorAutohide:
+      guard let pwc = player.pwc, pwc.loaded else { break }
       guard let cursorAutohide = getString(MPVOption.Window.cursorAutohide) else { break }
       log.verbose("Δ mpv prop: 'cursor-autohide' ≔ \(cursorAutohide)")
       player.updateCursorAutohideState()
       player.pwc.hideCursorTimer.restart()
 
     case MPVOption.Window.cursorAutohideFsOnly:
+      guard let pwc = player.pwc, pwc.loaded else { break }
       let cursorAutohideFS = getFlag(MPVOption.Window.cursorAutohideFsOnly)
       log.verbose("Δ mpv prop: 'cursor-autohide-fs-only' ≔ \(cursorAutohideFS.yn)")
       player.updateCursorAutohideState()
       player.pwc.hideCursorTimer.restart()
 
     case MPVProperty.windowScale:
+      guard let pwc = player.pwc, pwc.loaded else { break }
       guard let windowScaleRaw = property.doubleData(log) else { break }
       let windowScale = windowScaleRaw.roundedTo6()
       if let nextScaleExpected = windowScalesExpected.first, windowScale == nextScaleExpected {
-        log.trace("[mpv-window-scale] Received expected 'window-scale'=\(windowScale); discarding")
         windowScalesExpected.removeFirst()
+        log.verbose("[mpv-window-scale] Received expected 'window-scale'=\(windowScale), discarded from list (now size=\(windowScalesExpected.count))")
         return
       }
 

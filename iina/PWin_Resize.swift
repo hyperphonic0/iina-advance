@@ -336,8 +336,8 @@ extension PlayerWindowController {
         return
       }
 
-      player.mpv.windowScalesExpected.append(scaleFromGeo)
-      log.trace("[mpv-window-scale] SendWindowScaleToMPV: windowScalesExpected.count = \(player.mpv.windowScalesExpected.count)")
+      player.mpv.windowScalesExpected.prepend(scaleFromGeo)
+      log.trace("[mpv-window-scale] SendWindowScaleToMPV: appended to list \(scaleFromGeo); windowScalesExpected.count=\(player.mpv.windowScalesExpected.count)")
       player.mpv.setDouble(MPVProperty.windowScale, scaleFromGeo)
     }
   }

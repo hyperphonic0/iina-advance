@@ -1254,6 +1254,7 @@ extension PlayerWindowController {
 extension PlayerCore {
 
   func sendOSD(_ msg: OSDMessage, autoHide: Bool = true, accessoryViewController: NSViewController? = nil) {
+    guard let pwc, pwc.loaded else { return }
     pwc.enqueueOSDForDisplay(msg, autoHide: autoHide, accessoryViewController: accessoryViewController)
   }
 
