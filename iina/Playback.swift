@@ -109,7 +109,7 @@ struct PlaybackID: Sendable, Equatable, Hashable {
 
   /// If `url` is `nil`, assumed to be `stdin`.
   init(_ url: URL?, bookmark: Data? = nil) {
-    let url = url ?? URL(string: "stdin")!
+    let url = url ?? Constants.stdinURL
     self.staticURL = url
     mpvMD5 = Utility.mpvWatchLaterMd5(url.path)
     self.bookmark = bookmark
@@ -123,10 +123,7 @@ struct PlaybackID: Sendable, Equatable, Hashable {
   }
 
   var url: URL { staticURL }
-
-  var path: String {
-    return PlaybackID.path(from: url)
-  }
+  var path: String { PlaybackID.path(from: url) }
 
   var filePath: String? {
     let urlPath = url.path
@@ -134,17 +131,12 @@ struct PlaybackID: Sendable, Equatable, Hashable {
   }
 
   var networkPath: String? { isNetworkResource ? path : nil }
-
+  var isStdin: Bool { url == Constants.stdinURL }
   var isFile: Bool { url.isFileURL }
-
   var isNetworkResource: Bool { url.isNetworkResource }
-
   var isMediaOnRemoteDrive: Bool { url.isMediaOnRemoteDrive }
-
   var pathExtension: String { url.pathExtension }
-
   var displayName: String { PlaybackID.displayName(from: url) }
-
   var needsBookmark: Bool { !isNetworkResource && bookmark == nil }
 
   /// Hashable protocol conformance, to enable diffing
@@ -168,7 +160,7 @@ struct PlaybackID: Sendable, Equatable, Hashable {
 
   /// Returns the name of this resource as it should be displayed in the UI. Does not account for its `title` or other metadata.
   static func displayName(from url: URL?) -> String {
-    guard let url else { return "-" }
+    guard let url else { return Constants.stdinPath }
     let urlPath = PlaybackID.path(from: url)
     let isNetworkResource = !url.isFileURL
     return isNetworkResource ? urlPath : NSString(string: urlPath).lastPathComponent
@@ -177,9 +169,9 @@ struct PlaybackID: Sendable, Equatable, Hashable {
   /// Do not use `url.path` for a playback URL of unknown origin. Use this instead. It will handle both files and network URLs,
   /// and notably IINA's nonstandard use of the string "stdin" to represent a `stdin` socket stream.
   static func path(from url: URL?) -> String {
-    let url = url ?? URL(string: "stdin")!
+    let url = url ?? Constants.stdinURL
     if url.absoluteString == "stdin" {
-      return "-"
+      return Constants.stdinPath
     } else {
       return url.isFileURL ? url.path : url.absoluteString
     }

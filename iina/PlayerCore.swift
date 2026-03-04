@@ -535,8 +535,9 @@ final class PlayerCore: NSObject {
 
     // Handle folder URL (to support mpv shuffle, etc), BD folders and m3u / m3u8 files first.
     // For these cases, mpv will load/build the playlist and notify IINA when it can be retrieved.
-    if urls.count == 1,
-       isBDFolder(urls[0])
+    if ids.count == 1,
+       ids[0].isStdin
+        || isBDFolder(urls[0])
         || Utility.playlistFileExt.contains(urls[0].absoluteString.lowercasedPathExtension) {
 
       info.shouldAutoLoadFiles = false
@@ -573,9 +574,8 @@ final class PlayerCore: NSObject {
   @discardableResult
   func openURLString(_ str: String) -> Int {
     let url: URL?
-    if str == "-" {
-      info.shouldAutoLoadFiles = false  // reset
-      url = URL(string: "stdin")!
+    if str == Constants.stdinPath {
+      url = Constants.stdinURL
     } else if str.first == "/" {
       url = URL(fileURLWithPath: str)
     } else {
@@ -583,21 +583,15 @@ final class PlayerCore: NSObject {
       // running under macOS Sonoma or later. The behavior now matches URLComponents and will
       // automatically percent encode characters. Must not apply percent encoding to the string
       // passed to the URL initializer if the new new behavior is active.
-      var performPercentEncoding = true
-#if compiler(>=5.9)
-      if #available(macOS 14, *) {
-        performPercentEncoding = false
-      }
-#endif
       let pstr: String
-      if performPercentEncoding {
+      if #available(macOS 14, *) {
+        pstr = str
+      } else {
         guard let encoded = str.addingPercentEncoding(withAllowedCharacters: .urlAllowed) else {
           log.error("Cannot add percent encoding for \(str)")
           return 0
         }
         pstr = encoded
-      } else {
-        pstr = str
       }
       url = URL(string: pstr)
       if url == nil {
