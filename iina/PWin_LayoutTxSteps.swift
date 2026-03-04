@@ -1104,7 +1104,7 @@ extension PlayerWindowController {
 
       player.mpv.queue.async { [self] in
         guard !player.isStopping else { return }
-        if player.info.isPaused {
+        if player.info._isPaused {
           if !player.isRestoring && Preference.bool(for: .playWhenEnteringFullScreen) {
             player._resume()
           } else {
@@ -1154,11 +1154,11 @@ extension PlayerWindowController {
 
       player.mpv.queue.async { [self] in
         guard !player.isStopping else { return }
-        if Preference.bool(for: .pauseWhenLeavingFullScreen) && !player.info.isPaused {
+        if Preference.bool(for: .pauseWhenLeavingFullScreen) && !player.info._isPaused {
           player._pause()
         }
 
-        if player.info.isPaused {
+        if player.info._isPaused {
           DispatchQueue.main.async { [self] in
             // When playback is paused the display link is stopped in order to avoid wasting energy on
             // needless processing. It must be running while transitioning from full screen mode. Now that

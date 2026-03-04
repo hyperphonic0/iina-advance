@@ -3277,7 +3277,7 @@ final class PlayerCore: NSObject {
         log.verbose("[GTF:\(ctx.name)] syncVideoParams returned nil but pending miniplayer show video. Assuming no video tracks; will show default art")
         outputVidGeo = inputVidGeo
         // (kludge): ideally we'd want to include this in our window transform, but need refactor to get there from here. This should work ok.
-        pwc.animationPipeline.submitInstantTask{ [self] in
+        pwc.animationPipeline.submitInstantTask {
           pwc.updateDefaultArtVisibility(to: true)
         }
       }
