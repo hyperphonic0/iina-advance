@@ -159,8 +159,8 @@ fileprivate func serialize(track: MPVTrack) -> [String: Any] {
 }
 
 @objc fileprivate protocol CoreSubAPIExportable: JSExport {
-  func __proxyGet(_ prop: String) -> Any?
-  func __proxySet(_ prop: String, _ value: Any)
+  @MainActor func __proxyGet(_ prop: String) -> Any?
+  @MainActor func __proxySet(_ prop: String, _ value: Any)
 }
 
 @objc fileprivate protocol TrackAPIExportable: JSExport {
@@ -217,6 +217,7 @@ fileprivate class TrackAPI: JavascriptAPI, TrackAPIExportable {
 // MARK: Window
 
 fileprivate class WindowAPI: JavascriptAPI, CoreSubAPIExportable {
+  @MainActor
   func __proxyGet(_ prop: String) -> Any? {
     if prop == "loaded" {
       return player!.pwc.loaded
@@ -258,6 +259,7 @@ fileprivate class WindowAPI: JavascriptAPI, CoreSubAPIExportable {
     }
   }
 
+  @MainActor
   func __proxySet(_ prop: String, _ value: Any) {
     guard let window = player!.pwc, window.loaded else { return }
 

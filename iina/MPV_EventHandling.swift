@@ -414,7 +414,7 @@ extension MPVController {
       default:
         player.sendOSD(.noLoop)
       }
-      player.syncUI(.loop)
+      player.pwc.playlistView.updateLoopBtnStatus(loopMode: loopMode)
 
     case MPVOption.PlaybackControl.abLoopA, MPVOption.PlaybackControl.abLoopB:
       player.log.verbose("Δ mpv prop: `\(name)`")

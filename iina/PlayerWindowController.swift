@@ -630,16 +630,13 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
     log.verbose("PlayerWindowController init: done")
   }
 
-  required init?(coder: NSCoder) {
-    fatalError("init(coder:) has not been implemented")
-  }
+  required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
-  override func makeTouchBar() -> NSTouchBar? {
-    return player.makeTouchBar()
-  }
+  override func makeTouchBar() -> NSTouchBar? { player.makeTouchBar() }
 
   /// When entering "windowed" mode (either from initial load, PIP, or music mode), call this to add/return `viewportView`
   /// to this window, and add `videoView` and spacers to that. Will do nothing if all views are already in place.
+  @MainActor
   func addViewportAndSubviewsToWindowIfNeeded() {
     guard let window else { return }
     assert(loaded, "Must not be called if not done loading the window!")
@@ -750,6 +747,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
 
   /// This expects to be executed after `fileLoaded` (i.e. toward the end of restore).
   /// Specifically, it expects that `self.currentLayout` & `self.geo` have already been set from `priorState`.
+  @MainActor
   func restoreFromMiscWindowBools(_ priorState: PlayerSaveState) -> (miniturized: Bool, hidden: Bool)? {
     let window = window!
     let isOnTop = priorState.bool(for: .isOnTop) ?? false
@@ -1044,7 +1042,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
 
   // MARK: - Full Screen
 
-  var isWindowInNativeFullScreen: Bool { NSApp.presentationOptions.contains(.fullScreen) }
+  @MainActor var isWindowInNativeFullScreen: Bool { NSApp.presentationOptions.contains(.fullScreen) }
 
   func customWindowsToEnterFullScreen(for window: NSWindow) -> [NSWindow]? {
     return [window]
@@ -1135,6 +1133,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
     }
   }
 
+  @MainActor
   func toggleWindowFullScreen() {
     log.verbose("ToggleWindowFullScreen")
     let layout = currentLayout
@@ -1147,6 +1146,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
     }
   }
 
+  @MainActor
   func enterFullScreen(legacy: Bool? = nil) {
     guard let window = self.window else { fatalError("make sure the window exists before animating") }
     let isLegacy: Bool = legacy ?? Preference.bool(for: .useLegacyFullScreen)
@@ -1185,8 +1185,8 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
 
   /// Hide menu bar & dock if current window is in full screen (either legacy or native).
   /// Show menu bar & dock if current window is not in full screen (either legacy or native).
+  @MainActor
   func updatePresentationOptions(windowIsFS: Bool) {
-    assert(DispatchQueue.isExecutingIn(.main))
     guard let window else { return }
 
     // Set to true if in legacy FS in any window
@@ -1261,9 +1261,9 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
     restartWindowResizeDenialPeriod("WindowDidChangeScreenProfile")
   }
 
+  @MainActor
   func windowDidChangeOcclusionState(_ notification: Notification) {
     log.verbose("WndDidChangeOcclusionState received")
-    assert(DispatchQueue.isExecutingIn(.main))
     // In case OpenGL buffer was emptied while window was hidden:
     videoView.forceDraw()
   }
@@ -1275,7 +1275,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
 
   // Note: this gets triggered by many unnecessary situations, e.g. several times each time full screen is toggled.
   func windowDidChangeScreen(_ notification: Notification) {
-    guard let window = window, let screen = window.screen else { return }
+    guard let window, let screen = window.screen else { return }
     let displayId = screen.displayId
     guard videoView.currentDisplay != displayId else {
       log.trace("WndDidChangeScreen: no need to update display state; currentDisplayID \(displayId) is unchanged")

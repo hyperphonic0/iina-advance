@@ -375,19 +375,16 @@ class PlaylistViewController: NSViewController, NSMenuDelegate, SidebarTabGroupV
 
   // - Loop Button
 
-  func updateLoopBtnStatus() {
-    player.mpv.queue.async { [self] in
-      guard player.isActive else { return }
-      let loopMode = player.getLoopMode()
-      pwc.animationPipeline.submitInstantTask { [self] in
-        guard isViewLoaded else { return }
-        switch loopMode {
-        case .off:  loopBtn.state = .off
-        case .file: loopBtn.state = .on
-        default:    loopBtn.state = .mixed
-        }
-        loopBtn.alternateImage = NSImage.init(named: loopBtn.state == .on ? "loop_file" : "loop_dark")
+  func updateLoopBtnStatus(loopMode: LoopMode) {
+    assert(DispatchQueue.isExecutingIn(player.mpv.queue))
+    pwc.animationPipeline.submitInstantTask { [self] in
+      guard isViewLoaded else { return }
+      switch loopMode {
+      case .off:  loopBtn.state = .off
+      case .file: loopBtn.state = .on
+      default:    loopBtn.state = .mixed
       }
+      loopBtn.alternateImage = NSImage.init(named: loopBtn.state == .on ? "loop_file" : "loop_dark")
     }
   }
 
@@ -424,7 +421,9 @@ class PlaylistViewController: NSViewController, NSMenuDelegate, SidebarTabGroupV
     case .playlist:
       needsScrollToCurrentItem = true
       reloadData(playlist: true, chapters: false)
-      updateLoopBtnStatus()
+      player.mpv.queue.async { [self] in
+        updateLoopBtnStatus(loopMode: player.info.loopMode)
+      }
       buttonTag = 0
     case .chapters:
       reloadData(playlist: false, chapters: true)

@@ -23,7 +23,7 @@ class WindowController: NSWindowController {
   }
 
   var mouseLocationInWindow: NSPoint {
-    return window!.convertPoint(fromScreen: NSEvent.mouseLocation)
+    window!.convertPoint(fromScreen: NSEvent.mouseLocation)
   }
 
   var isLeftMouseButtonDown: Bool {

@@ -2258,14 +2258,6 @@ final class PlayerCore: NSObject {
     mediaTitleChanged()
   }
 
-  func fullscreenChanged() {
-    guard pwc.loaded, !isStopping else { return }
-    let fs = mpv.getFlag(MPVOption.Window.fullscreen)
-    if fs != isFullScreen {
-      pwc.toggleWindowFullScreen()
-    }
-  }
-
   func idleActiveChanged() {
     let isFileLoaded = info.isFileLoaded
     let errorMsg = errorWhileLoading
@@ -2979,8 +2971,6 @@ final class PlayerCore: NSObject {
   // difficult to use option set
   enum SyncUIOption {
     case chapterList
-    case playlist
-    case loop
   }
 
   func syncUI(_ option: SyncUIOption) {
@@ -2989,7 +2979,7 @@ final class PlayerCore: NSObject {
     log.verbose("Syncing UI \(option)")
 
     switch option {
-
+      
     case .chapterList:
       DispatchQueue.main.async { [self] in
         // this should avoid sending reload when table view is not ready
@@ -2999,20 +2989,10 @@ final class PlayerCore: NSObject {
         } else {
           guard pwc.isOpen(sidebarTab: .chapters) else { return }
         }
-
+        
         guard pwc.playlistView.isViewLoaded else { return }
         pwc.playlistView.chapterTableView.reloadData()
       }
-
-    case .playlist:
-      DispatchQueue.main.async {
-        if self.playlistShown {
-          self.pwc.playlistView.playlistTableView.reloadData()
-        }
-      }
-
-    case .loop:
-      pwc.playlistView.updateLoopBtnStatus()
     }
 
     // All of the above reflect a state change. Save it:

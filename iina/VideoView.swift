@@ -332,6 +332,7 @@ class VideoView: NSView {
   // MARK: - HDR
 
   /// See also: `refreshAllVideoDisplayState`. Cannot execute until player is started & file is loaded.
+  @MainActor
   func refreshEdrMode() {
     guard player.pwc.loaded else { return }
     guard player.info.isFileLoaded else { return }
