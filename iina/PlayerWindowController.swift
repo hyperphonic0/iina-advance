@@ -141,10 +141,6 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
 
   var denyWindowScrollPeriodStartTime = Date()
 
-  var isClosing: Bool {
-    return player.state.isAtLeast(.stopping)
-  }
-
   var modeToSetAfterExitingFullScreen: PlayerWindowMode? = nil
 
   var isPausedDueToInactive: Bool = false
@@ -1110,7 +1106,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
     // operation is processed asynchronously by mpv. If the window is being closed due to IINA
     // quitting then mpv could be in the process of shutting down. Must not access mpv while it is
     // asynchronously processing stop and quit commands.
-    guard !isClosing else { return }
+    guard isOpen else { return }
 
     let oldLayout = currentLayout
 
@@ -1294,7 +1290,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
 
     // MacOS Sonoma sometimes blasts tons of these for unknown reasons. Attempt to prevent slowdown by debouncing
     screenChangedDebouncer.run { [self] in
-      guard !isClosing else { return }
+      guard isOpen else { return }
       guard videoView.currentDisplay != displayId else {
         log.trace("WndDidChangeScreen: no need to update display state; currentDisplayID \(displayId) is unchanged")
         return
@@ -1341,7 +1337,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
       // frame.
       // Use very short duration. This usually gets triggered at the end when entering fullscreen, when the dock and/or menu bar are hidden.
       animationPipeline.submitTask(duration: Constants.AnimationDuration.videoReconfig, { [self] in
-        guard !isClosing else { return }
+        guard isOpen else { return }
         if UIState.shared.isSaveEnabled {
           UIState.shared.updateCachedScreens()
         }
@@ -1431,7 +1427,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
 
   func windowDidBecomeKey(_ notification: Notification) {
     animationPipeline.submitInstantTask { [self] in
-      guard !isClosing else { return }
+      guard isOpen else { return }
 
       if Preference.bool(for: .pauseWhenInactive) && isPausedDueToInactive {
         log.verbose("Window is key & isPausedDueToInactive=Y. Resuming playback")
@@ -1480,7 +1476,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
   /// Should be run inside an animation task!
   func refreshKeyWindowStatus() {
     guard let window else { return }
-    guard !isClosing else { return }
+    guard isOpen else { return }
 
     let isKey = window.isKeyWindow
     lastKeyWindowStatus = isKey
@@ -2072,7 +2068,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
 
   @MainActor
   func _updateVolumeUI() {
-    guard loaded, !isClosing else { return }
+    guard loaded, isOpen else { return }
     guard player.info.isFileLoaded || player.isRestoring else { return }
 
     let volume = player.info.volume

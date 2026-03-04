@@ -76,8 +76,7 @@ final class PlayerCore: NSObject {
   /// If true, mpv needs to reload the current input config file because it has changed
   var needsInputConfFileReload: Bool = false
 
-  @MainActor
-  var undoHelper: PlayerWindowUndoHelper { pwc.undoHelper }
+  @MainActor var undoHelper: PlayerWindowUndoHelper { pwc.undoHelper }
 
   private var subFileMonitor: FileMonitor? = nil
   let thumbnailsLoader = PlayerThumbnailsLoader()
