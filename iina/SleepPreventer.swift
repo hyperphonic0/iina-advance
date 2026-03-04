@@ -83,7 +83,7 @@ class SleepPreventer: NSObject {
       if Preference.bool(for: .preventScreenSaver) {
         let activePlayers = PlayerManager.shared.getNonIdle()
         for player in activePlayers {
-          if player.info.isPlaying {
+          if !player.info.isPaused {
             // Either prevent the screen saver from activating or prevent system from sleeping depending
             // upon user setting.
             let allowScreenSaver = Preference.bool(for: .allowScreenSaverForAudio) && (player.info.currentMediaAudioStatus.isAudio || player.isInMiniPlayer)

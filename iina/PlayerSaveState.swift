@@ -1691,7 +1691,7 @@ extension PlayerCore {
     if let playbackDurationSec = info.playbackTime.durationSec {
       props[PropName.playDuration.rawValue] = playbackDurationSec.stringMaxFrac6
     }
-    props[PropName.paused.rawValue] = info.isPaused.yn
+    props[PropName.paused.rawValue] = info._isPaused.yn
 
     // - Video, Audio, Subtitles Settings
 

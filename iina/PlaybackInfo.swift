@@ -45,15 +45,27 @@ class PlaybackInfo {
   var shouldAutoLoadFiles: Bool = false
   var isMatchingSubtitles = false
 
-  var isPaused: Bool {
-    isPausedLocally ?? isPausedRemotely
-  }
-  var isPlaying: Bool { !isPaused }
+  @MainActor private(set) var isPaused: Bool = true
+  var _isPaused: Bool { isPausedLocally ?? isPausedRemotely }
   /// Set this while waiting for remote to respond
-  var isPausedLocally: Bool? = nil
+  var isPausedLocally: Bool? = nil {
+    didSet {
+      updatePauseState()
+    }
+  }
 
   var isPausedRemotely: Bool = true {
     didSet {
+      updatePauseState()
+    }
+  }
+
+  private func updatePauseState() {
+    let paused = _isPaused
+    DispatchQueue.main.async { [self] in
+      let oldValue = isPaused
+      isPaused = paused
+
       if oldValue != isPaused {
         log.verbose("Playback is \(isPaused ? "PAUSED" : "PLAYING")")
         SleepPreventer.updateSleepPrevention()

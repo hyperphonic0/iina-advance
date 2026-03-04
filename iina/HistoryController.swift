@@ -45,7 +45,7 @@ final class HistoryController {
   /// Whether graceful stop of history queues has commenced (via `stop` func).
   /// Use this to check for app termination in queues other than main, as that is a prerequisite for
   /// `AppDelegate.shared.isTerminating`.
-  private(set) var isAppTerminating = false
+  @Atomic private(set) var isAppTerminating = false
 
   init(plistFileURL: URL) {
     self.plistURL = plistFileURL

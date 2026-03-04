@@ -235,21 +235,25 @@ final class PlayerCore: NSObject {
   var hasPlayback: Bool { info.currentPlayback != nil }
 
   var canSkipBackward: Bool {
-    isActive && (info.isPlaying || (info.playbackTime.positionSec ?? 0.0) > 0.0)
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
+    return isActive && (!info._isPaused || (info.playbackTime.positionSec ?? 0.0) > 0.0)
   }
 
   var canSkipForward: Bool {
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
     guard isActive else { return false }
     guard let pos = info.playbackTime.positionSec, let dur = info.playbackTime.durationSec else { return true }
-    return !info.isPaused || pos < dur
+    return !info._isPaused || pos < dur
   }
 
   var canPlayPrevTrack: Bool {
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
     guard isActive, let currentPlayback = info.currentPlayback else { return false }
     return currentPlayback.playlistPos > 1
   }
 
   var canPlayNextTrack: Bool {
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
     guard isActive, let currentPlayback = info.currentPlayback, currentPlayback.state.isAtLeast(.loaded) else { return false }
     let playlistCount = info.playlist.count
     return currentPlayback.playlistPos < playlistCount - 1
@@ -1008,7 +1012,7 @@ final class PlayerCore: NSObject {
 
   func _togglePause() {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
-    info.isPaused ? _resume() : _pause()
+    info._isPaused ? _resume() : _pause()
   }
 
   /// Pause playback.
@@ -1580,6 +1584,7 @@ final class PlayerCore: NSObject {
   }
 
   func _setSpeed(_ speed: Double, forceResume: Bool? = nil) {
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
     guard isActive else { return }
     log.verbose("Setting speed to \(speed)")
     mpv.setDouble(MPVOption.PlaybackControl.speed, speed)
@@ -1588,7 +1593,7 @@ final class PlayerCore: NSObject {
     /// This will create a subconscious link in the user's mind between "pause" -> "unset speed".
     /// Try to stay consistent by linking the contrapositive together: "set speed" -> "play".
     /// The intuition should be most apparent when using the speed slider in Quick Settings.
-    if info.isPaused {
+    if info._isPaused {
       if forceResume == true {
         _resume()
       } else if forceResume == nil && Preference.bool(for: .resetSpeedWhenPaused) {
@@ -1639,7 +1644,7 @@ final class PlayerCore: NSObject {
     info.playSpeed = speed
     sendOSD(.speed(speed))
     saveState()  // record the new speed
-    let paused = info.isPaused
+    let paused = info._isPaused
     DispatchQueue.main.async { [self] in
       pwc.updatePlayButtonAndSpeedUI(isPaused: paused)
     }
@@ -2333,7 +2338,7 @@ final class PlayerCore: NSObject {
     uiTimeDebouncer.run { [self] in
       assert(DispatchQueue.isExecutingIn(mpv.queue))
       guard let (timeInfo, cacheState, rangesDidChange) = updatePlaybackInfo() else { return }
-      let isPaused = info.isPaused
+      let isPaused = info._isPaused
 
       DispatchQueue.main.async { [self] in
         pwc.updateUIControls(timeInfo, cacheState, rangesDidChange: rangesDidChange, isPaused: isPaused)
@@ -2349,7 +2354,7 @@ final class PlayerCore: NSObject {
     // restart even while paused. See issue #5337.
     syncTimeAndCacheUI()
     saveState()
-    let isPaused = info.isPaused
+    let isPaused = info._isPaused
 
     DispatchQueue.main.async { [self] in
       info.isSeeking = false

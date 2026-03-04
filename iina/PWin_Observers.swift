@@ -346,7 +346,7 @@ extension PlayerWindowController {
         .alwaysFloatOnTop:
       guard loaded else { return }
       if Preference.bool(for: .alwaysFloatOnTop) {
-        let playing = player.info.isPlaying
+        let playing = !player.info.isPaused
         setWindowFloatingOnTop(playing, from: currentLayout)
       } else {
         updateOnTopButton(from: currentLayout)

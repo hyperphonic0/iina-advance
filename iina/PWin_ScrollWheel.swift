@@ -44,7 +44,7 @@ class PlaySliderScrollWheel: SliderScrollWheelDelegate {
 
     player.log.verbose("PlaySlider scrollWheel seek began")
     // pause video when seek begins
-    if player.info.isPlaying {
+    if !player.info.isPaused {
       player.pause()
       wasPlayingBeforeSeeking = true
     }

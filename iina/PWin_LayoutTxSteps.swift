@@ -1154,7 +1154,7 @@ extension PlayerWindowController {
 
       player.mpv.queue.async { [self] in
         guard !player.isStopping else { return }
-        if Preference.bool(for: .pauseWhenLeavingFullScreen) && player.info.isPlaying {
+        if Preference.bool(for: .pauseWhenLeavingFullScreen) && !player.info.isPaused {
           player._pause()
         }
 

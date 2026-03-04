@@ -81,14 +81,14 @@ extension PlayerWindowController {
   }
 
   @objc func menuStepPrevFrame(_ sender: NSMenuItem) {
-    if player.info.isPlaying {
+    if !player.info.isPaused {
       player.pause()
     }
     player.frameStep(backwards: true)
   }
 
   @objc func menuStepNextFrame(_ sender: NSMenuItem) {
-    if player.info.isPlaying {
+    if !player.info.isPaused {
       player.pause()
     }
     player.frameStep(backwards: false)
@@ -577,7 +577,7 @@ extension PlayerWindowController {
         player.events.emit(.windowLoaded)
       }
       player.events.emit(.mpvInitialized)
-      if player.info.isFileLoaded && player.info.isPlaying {
+      if player.info.isFileLoaded && !player.info.isPaused {
         player.events.emit(.fileLoaded)
         player.events.emit(.fileStarted)
       }

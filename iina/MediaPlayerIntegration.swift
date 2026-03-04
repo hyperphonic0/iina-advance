@@ -200,10 +200,18 @@ final class MediaPlayerIntegration {
   }
 
   private static func updateCommandEnablements(for player: PlayerCore) {
-    let remoteCommand = MPRemoteCommandCenter.shared()
-    remoteCommand.skipBackwardCommand.isEnabled = player.canSkipBackward
-    remoteCommand.skipForwardCommand.isEnabled = player.canSkipForward
-    remoteCommand.previousTrackCommand.isEnabled = player.canPlayPrevTrack
-    remoteCommand.nextTrackCommand.isEnabled = player.canPlayNextTrack
+    player.mpv.queue.async {
+      let canSkipBackward = player.canSkipBackward
+      let canSkipForward = player.canSkipForward
+      let canPlayPrevTrack = player.canPlayPrevTrack
+      let canPlayNextTrack = player.canPlayNextTrack
+      DispatchQueue.main.async {
+        let remoteCommand = MPRemoteCommandCenter.shared()
+        remoteCommand.skipBackwardCommand.isEnabled = canSkipBackward
+        remoteCommand.skipForwardCommand.isEnabled = canSkipForward
+        remoteCommand.previousTrackCommand.isEnabled = canPlayPrevTrack
+        remoteCommand.nextTrackCommand.isEnabled = canPlayNextTrack
+      }
+    }
   }
 }

@@ -1448,7 +1448,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
       let otherPlayerWindow = otherAppWindow?.windowController as? PlayerWindowController
       let anotherPlayerWindowIsActive = otherPlayerWindow != nil
       if wholeAppIsInactive || anotherPlayerWindowIsActive {
-        if Preference.bool(for: .pauseWhenInactive), player.info.isPlaying {
+        if Preference.bool(for: .pauseWhenInactive), !player.info.isPaused {
           log.verbose("WindowDidResignKey: pausing cuz either wholeAppIsInactive (\(wholeAppIsInactive.yn)) or anotherPlayerWindowIsActive (\(anotherPlayerWindowIsActive.yn))")
           player.pause()
           isPausedDueToInactive = true
@@ -1542,7 +1542,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
   }
 
   func windowWillMiniaturize(_ notification: Notification) {
-    if Preference.bool(for: .pauseWhenMinimized), player.info.isPlaying {
+    if Preference.bool(for: .pauseWhenMinimized), !player.info.isPaused {
       isPausedDueToMiniaturization = true
       player.pause()
     }

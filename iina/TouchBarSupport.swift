@@ -263,7 +263,7 @@ class TouchBarPlaySlider: NSSlider {
   override func touchesBegan(with event: NSEvent) {
     guard let playerCore else { return }
     isTouching = true
-    wasPlayingBeforeTouching = playerCore.info.isPlaying
+    wasPlayingBeforeTouching = !playerCore.info.isPaused
     playerCore.pause()
     super.touchesBegan(with: event)
   }
