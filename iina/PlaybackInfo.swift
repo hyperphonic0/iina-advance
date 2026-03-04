@@ -368,7 +368,7 @@ class PlaybackInfo {
   /// Make mouse cursor automatically hide after given number of milliseconds (default: 1000 ms).
   /// no will disable cursor autohide. always means the cursor will stay hidden.
   /// ```
-  var cursorAutoHideTimeoutMs: Int = 0
+  @MainActor var cursorAutoHideTimeoutMs: Int = 0
   /// If true, corresoponds to mpv's `cursor-autohide-fs-only=yes`.
   ///
   /// ```
@@ -378,7 +378,7 @@ class PlaybackInfo {
   /// ```
   @MainActor var cursorAutoHideFullScreenOnly: Bool = false
   /// Use these instead: `player.canHideCursor`, `player.shouldAlwaysHideCursor`
-  var enableCursorAutoHide: Bool { cursorAutoHideTimeoutMs >= 0 }
+  @MainActor var enableCursorAutoHide: Bool { cursorAutoHideTimeoutMs >= 0 }
 
   var playbackTime = PlaybackTimeInfo.nullTime
   var cacheState: CacheState = CacheState(pausedForCache: false, cacheUsed: 0, cacheSpeed: 0, bufferingState: 0, isBufferUnderrun: false, cachedRanges: [])

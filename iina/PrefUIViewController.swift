@@ -856,7 +856,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     if isMpvGeometryEnabled {
       let geometryString = Preference.string(for: .initialWindowSizePosition) ?? ""
       if let geometry = MPVGeometryDef.parse(geometryString) {
-        Logger.log("Parsed \(Preference.quoted(.initialWindowSizePosition))=\(geometryString.quoted) ➤ \(geometry)")
+        Logger.log("Parsed \(Preference.Key.initialWindowSizePosition.quoted)=\(geometryString.quoted) ➤ \(geometry)")
         unparsedGeometryLabel.stringValue = "\"\(geometryString)\""
         // size
         if let h = geometry.h {
@@ -886,7 +886,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
         }
       } else {
         if !geometryString.isEmpty {
-          Logger.log("Failed to parse string \(geometryString.quoted) from \(Preference.quoted(.initialWindowSizePosition)) pref", level: .error)
+          Logger.log.error("Failed to parse string \(geometryString.quoted) from \(Preference.Key.initialWindowSizePosition.quoted)) pref")
         }
         unparsedGeometryLabel.stringValue = ""
       }

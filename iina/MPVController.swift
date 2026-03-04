@@ -887,8 +887,12 @@ final class MPVController: NSObject {
 
     DispatchQueue.main.async { [self] in
       Utility.showAlert("fatal_error", arguments: [message])
-      player.shutdown()
-      player.pwc.close()
+      queue.async { [self] in
+        player._shutdown()
+        DispatchQueue.main.async { [self] in
+          player.pwc.close()
+        }
+      }
     }
   }
 

@@ -148,10 +148,7 @@ extension MPVController {
 
     case MPV_EVENT_SHUTDOWN:
       player.log.verbose("Got mpv shutdown event")
-
-      DispatchQueue.main.async {
-        self.player.mpvHasShutdown()
-      }
+      player.mpvHasShutdown()
 
     case MPV_EVENT_LOG_MESSAGE:
       let dataOpaquePtr = OpaquePointer(event.pointee.data)

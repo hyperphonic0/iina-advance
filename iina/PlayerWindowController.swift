@@ -296,13 +296,15 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
   static var windowedModeGeoLastClosed: PWinGeometry = {
     let csv = Preference.string(for: .uiLastClosedWindowedModeGeometry)
     if csv?.isEmpty ?? true {
-      Logger.log.debug("Pref entry for \(Preference.quoted(.uiLastClosedWindowedModeGeometry)) is empty or could not be parsed. Falling back to default geometry")
+      Logger.log.debug("Pref entry for \(Preference.Key.uiLastClosedWindowedModeGeometry.quoted)) is empty or could not be parsed."
+                       + " Falling back to default geometry")
     } else if let savedGeo = PWinGeometry.fromCSV(csv, Logger.log) {
       if savedGeo.mode.isWindowed && !savedGeo.screenFit.isFullScreen {
-        Logger.log.verbose("Loaded pref \(Preference.quoted(.uiLastClosedWindowedModeGeometry)): \(savedGeo)")
+        Logger.log.verbose("Loaded pref \(Preference.Key.uiLastClosedWindowedModeGeometry.quoted)): \(savedGeo)")
         return savedGeo
       } else {
-        Logger.log.error("Saved pref \(Preference.quoted(.uiLastClosedWindowedModeGeometry)) is invalid. Falling back to default geometry (found: \(savedGeo))")
+        Logger.log.error("Saved pref \(Preference.Key.uiLastClosedWindowedModeGeometry.quoted)) is invalid."
+                         + " Falling back to default geometry (found: \(savedGeo))")
       }
     }
     // Compute default geometry for main screen
@@ -311,7 +313,8 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
   }() {
     didSet {
       guard windowedModeGeoLastClosed.mode.isWindowed, !windowedModeGeoLastClosed.screenFit.isFullScreen else {
-        Logger.log.errorDebugAlert("Will skip save of windowedModeGeoLastClosed because it is invalid: not in windowed mode! Found: \(windowedModeGeoLastClosed)")
+        Logger.log.errorDebugAlert("Will skip save of windowedModeGeoLastClosed because it is invalid: not in windowed mode!"
+                                   + " Found: \(windowedModeGeoLastClosed)")
         return
       }
       Preference.set(windowedModeGeoLastClosed.toCSV(), for: .uiLastClosedWindowedModeGeometry)
@@ -325,13 +328,14 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
     let csv = Preference.string(for: .uiLastClosedMusicModeGeometry)
     // Try to parse as modern CSV first. If it fails, try legacy music mode CSV
     if let savedGeo = PWinGeometry.fromCSV(csv, Logger.log) {
-      Logger.log.verbose("Loaded pref \(Preference.quoted(.uiLastClosedMusicModeGeometry)): \(savedGeo)")
+      Logger.log.verbose("Loaded pref \(Preference.Key.uiLastClosedMusicModeGeometry.quoted)): \(savedGeo)")
       return savedGeo
     } else if let savedGeo = PWinGeometry.fromMusicModeCSV(csv, Logger.log) {
-      Logger.log.verbose("Loaded pref \(Preference.quoted(.uiLastClosedMusicModeGeometry)) from legacy music mode CSV: \(savedGeo)")
+      Logger.log.verbose("Loaded pref \(Preference.Key.uiLastClosedMusicModeGeometry.quoted)) from legacy music mode CSV: \(savedGeo)")
       return savedGeo
     }
-    Logger.log.debug("Pref \(Preference.quoted(.uiLastClosedMusicModeGeometry)) is empty or could not be parsed. Falling back to default music mode geometry")
+    Logger.log.debug("Pref \(Preference.Key.uiLastClosedMusicModeGeometry.quoted)) is empty or could not be parsed."
+                     + " Falling back to default music mode geometry")
     let defaultScreen = NSScreen.screens[0]
     let defaultGeo = MiniPlayerViewController.buildMusicModeGeometryFromPrefs(screen: defaultScreen,
                                                                               video: VideoGeometry.defaultGeometry())

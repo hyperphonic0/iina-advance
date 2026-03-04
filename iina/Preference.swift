@@ -15,18 +15,11 @@ protocol HasDisplayString {
 }
 
 protocol InitializingFromKey: CaseIterable {
-
   static var defaultValue: Self { get }
-
   init?(key: Preference.Key)
-
 }
 
 struct Preference {
-
-  static func quoted(_ key: Key) -> String {
-    return key.rawValue.quoted
-  }
 
   // MARK: - Keys
 
@@ -37,9 +30,8 @@ struct Preference {
 
     var rawValue: RawValue
 
-    var hashValue: Int {
-      return rawValue.hashValue
-    }
+    var hashValue: Int { rawValue.hashValue }
+    var quoted: String { rawValue.quoted }
 
     init(_ string: String) { self.rawValue = string }
 

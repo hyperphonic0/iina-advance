@@ -843,6 +843,13 @@ final class PlayerCore: NSObject {
   ///     down was in progress and will call this method again to continue the process of shutting down..
   @MainActor
   func shutdown() {
+    mpv.queue.async { [self] in
+      _shutdown()
+    }
+  }
+
+  func _shutdown() {
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
     guard state.isNotYet(.shuttingDown) else {
       log.verbose("Player is already shutting down")
       return
@@ -869,8 +876,8 @@ final class PlayerCore: NSObject {
   ///     shutting down mpv are bypassed. This means a mpv initiated shutdown can't be made fully deterministic as there are inherit
   ///     windows of vulnerability that can not be fully closed. IINA has no choice but to support a mpv initiated shutdown as best it
   ///     can.
-  @MainActor
   func mpvHasShutdown() {
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
     let isMPVInitiated = state.isAtLeast(.started) && state.isNotYet(.shuttingDown)
     let suffix = isMPVInitiated ? " (initiated by mpv)" : ""
     log.debug("Player has shut down\(suffix)")
@@ -883,19 +890,20 @@ final class PlayerCore: NSObject {
       mpv.removeObservers()
     }
     videoView.uninit()       // Shut down DisplayLink. Has its own lock.
-
-    mpv.queue.sync { [self] in  // run in queue to avoid race condition when handling events in queue, which checks mpv!=nil
-      mpv.mpvDestroy()
-    }
+    mpv.mpvDestroy()
     state = .shutDown
-    PlayerManager.shared.removePlayer(withLabel: label)
-    postNotification(.iinaPlayerShutdown)
-    if isMPVInitiated {
-      // Initiate application termination. AppKit requires this be done from the main thread,
-      // however the main dispatch queue must not be used to avoid blocking the queue as per
-      // instructions from Apple.
-      Task { @MainActor in
-        NSApp.terminate(nil)
+
+    DispatchQueue.main.async { [self] in
+      PlayerManager.shared.removePlayer(withLabel: label)
+      postNotification(.iinaPlayerShutdown)
+
+      if isMPVInitiated {
+        // Initiate application termination. AppKit requires this be done from the main thread,
+        // however the main dispatch queue must not be used to avoid blocking the queue as per
+        // instructions from Apple.
+        Task { @MainActor in
+          NSApp.terminate(nil)
+        }
       }
     }
   }
@@ -1707,12 +1715,14 @@ final class PlayerCore: NSObject {
 
   func updateCursorAutohideState() {
     if let autoHide = mpv.getString(MPVOption.Window.cursorAutohide) {
-      if autoHide == "always" {
-        info.cursorAutoHideTimeoutMs = 0
-      } else if autoHide == "no" {
-        info.cursorAutoHideTimeoutMs = -1000
-      } else if let autoHideMs = Int(autoHide) {
-        info.cursorAutoHideTimeoutMs = autoHideMs
+      DispatchQueue.main.async { [self] in
+        if autoHide == "always" {
+          info.cursorAutoHideTimeoutMs = 0
+        } else if autoHide == "no" {
+          info.cursorAutoHideTimeoutMs = -1000
+        } else if let autoHideMs = Int(autoHide) {
+          info.cursorAutoHideTimeoutMs = autoHideMs
+        }
       }
     }
 
