@@ -196,15 +196,11 @@ class ShutdownHandler {
     // Instruct any players that are already stopped to start shutting down.
     for player in PlayerManager.shared.playerCores {
       if let player = PlayerManager.shared.demoPlayer {
-        if !player.isShutDown {
-          player.log.verbose("Requesting shutdown of demo player")
-          player.shutdown()
-        }
-      }
-      if !player.isShutDown {
-        player.log.verbose("Requesting shutdown of player")
+        player.log.verbose("Requesting shutdown of demo player")
         player.shutdown()
       }
+      player.log.verbose("Requesting shutdown of player")
+      player.shutdown()
     }
 
     proceedWithTermination()

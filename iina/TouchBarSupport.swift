@@ -164,8 +164,8 @@ class TouchBarSupport: NSObject, NSTouchBarDelegate {
     }
   }
 
-  func updateTouchBarPlayBtn() {
-    if player.info.isPaused {
+  func updateTouchBarPlayBtn(isPaused: Bool) {
+    if isPaused {
       touchBarPlayPauseBtn?.image = NSImage(named: NSImage.touchBarPlayTemplateName)
     } else {
       touchBarPlayPauseBtn?.image = NSImage(named: NSImage.touchBarPauseTemplateName)

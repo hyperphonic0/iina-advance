@@ -256,8 +256,10 @@ class PlaylistViewController: NSViewController, NSMenuDelegate, SidebarTabGroupV
     let playlistNew = player.info.playlist
     if let nowPlayingIndex = player.info.currentPlayback?.playlistPos,
        nowPlayingIndex >= 0, nowPlayingIndex < playlistNew.count {
-      // Update this prior to reload so the highlight is drawn correctly at first draw:
-      lastNowPlayingIndex = nowPlayingIndex
+      DispatchQueue.main.async { [self] in
+        // Update this prior to reload so the highlight is drawn correctly at first draw:
+        lastNowPlayingIndex = nowPlayingIndex
+      }
     }
 
     let sw = Utility.Stopwatch()

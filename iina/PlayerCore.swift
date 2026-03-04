@@ -881,19 +881,19 @@ final class PlayerCore: NSObject {
     let isMPVInitiated = state.isAtLeast(.started) && state.isNotYet(.shuttingDown)
     let suffix = isMPVInitiated ? " (initiated by mpv)" : ""
     log.debug("Player has shut down\(suffix)")
+    state = .shuttingDown
     // If mpv shutdown was initiated by mpv then the player state has not been saved.
     if isMPVInitiated {
-      state = .shuttingDown
       if !isDemoPlayer {
         savePlaybackMetaBeforePlayerWillStop() // Save state to mpv watch-later (if enabled)
       }
       mpv.removeObservers()
     }
-    videoView.uninit()       // Shut down DisplayLink. Has its own lock.
-    mpv.mpvDestroy()
     state = .shutDown
 
     DispatchQueue.main.async { [self] in
+      videoView.uninit()       // Shut down DisplayLink. Has its own lock.
+      mpv.mpvDestroy()
       PlayerManager.shared.removePlayer(withLabel: label)
       postNotification(.iinaPlayerShutdown)
 
@@ -1046,7 +1046,7 @@ final class PlayerCore: NSObject {
     }
 
     DispatchQueue.main.async { [self] in
-      pwc.updatePlayButtonAndSpeedUI()
+      pwc.updatePlayButtonAndSpeedUI(isPaused: true)
     }
   }
 
@@ -1059,7 +1059,7 @@ final class PlayerCore: NSObject {
     }
     mpv.setFlag(MPVOption.PlaybackControl.pause, false)
     DispatchQueue.main.async { [self] in
-      pwc.updatePlayButtonAndSpeedUI()
+      pwc.updatePlayButtonAndSpeedUI(isPaused: false)
     }
   }
 
@@ -1619,7 +1619,7 @@ final class PlayerCore: NSObject {
     }
 
     DispatchQueue.main.async { [self] in
-      pwc.updatePlayButtonAndSpeedUI()
+      pwc.updatePlayButtonAndSpeedUI(isPaused: paused)
       if paused {
         videoView.displayIdle()
       } else {  // resume
@@ -1642,11 +1642,13 @@ final class PlayerCore: NSObject {
   }
 
   func speedDidChange(to speed: CGFloat) {
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
     info.playSpeed = speed
     sendOSD(.speed(speed))
     saveState()  // record the new speed
+    let paused = info.isPaused
     DispatchQueue.main.async { [self] in
-      pwc.updatePlayButtonAndSpeedUI()
+      pwc.updatePlayButtonAndSpeedUI(isPaused: paused)
     }
   }
 
@@ -2346,9 +2348,10 @@ final class PlayerCore: NSObject {
     uiTimeDebouncer.run { [self] in
       assert(DispatchQueue.isExecutingIn(mpv.queue))
       guard let (timeInfo, cacheState, rangesDidChange) = updatePlaybackInfo() else { return }
+      let isPaused = info.isPaused
 
       DispatchQueue.main.async { [self] in
-        pwc.updateUIControls(timeInfo, cacheState, rangesDidChange: rangesDidChange)
+        pwc.updateUIControls(timeInfo, cacheState, rangesDidChange: rangesDidChange, isPaused: isPaused)
       }
     }
   }

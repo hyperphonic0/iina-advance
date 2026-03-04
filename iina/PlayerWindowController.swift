@@ -1987,7 +1987,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
 
   /// Updates all UI controls
   @MainActor
-  func updateUIControls(_ playbackTime: PlaybackTimeInfo, _ cacheState: CacheState?, rangesDidChange: Bool) {
+  func updateUIControls(_ playbackTime: PlaybackTimeInfo, _ cacheState: CacheState?, rangesDidChange: Bool, isPaused: Bool) {
     // This method is often run outside of the animation queue, which can be dangerous.
     // Just don't update in this case
     guard !isAnimatingLayoutTransition else { return }
@@ -2019,7 +2019,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
       hideOSD(immediately: true)
     }
 
-    updatePlayButtonAndSpeedUI()
+    updatePlayButtonAndSpeedUI(isPaused: isPaused)
     updatePlaybackTimeUI()
     if osd.additionalInfoView.superview != nil {
       updateAdditionalInfoContent()
@@ -2120,10 +2120,9 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
   }
 
   @MainActor
-  func updatePlayButtonAndSpeedUI() {
+  func updatePlayButtonAndSpeedUI(isPaused: Bool) {
     guard loaded else { return }
 
-    let isPaused = player.info.isPaused
     let playPauseImage: NSImage
     if isPaused {
       if player.shouldShowRestartFromEOFIcon() {
@@ -2137,7 +2136,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
 
     let oscGeo = currentLayout.controlBarGeo
     let playSpeed = player.info.playSpeed
-    let showSpeedLabel = player.info.shouldShowSpeedLabel && oscGeo.barHeight >= (oscGeo.isTwoRowBarOSC ? Constants.minTwoRowOSCBarHeightForSpeedLabel : Constants.minSingleRowOSCBarHeightForSpeedLabel)
+    let showSpeedLabel = !isPaused && (playSpeed != 1) && (oscGeo.barHeight >= (oscGeo.isTwoRowBarOSC ? Constants.minTwoRowOSCBarHeightForSpeedLabel : Constants.minSingleRowOSCBarHeightForSpeedLabel))
 
     let hasPlayButtonChange = playButton.image != playPauseImage
     let hasSpeedLayoutChange = speedLabel.isHidden == !showSpeedLabel
@@ -2162,7 +2161,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
       if showSpeedLabel {
         speedLabel.stringValue = "\(playSpeed.stringTrunc3f)x"
       }
-      player.touchBarSupport.updateTouchBarPlayBtn()
+      player.touchBarSupport.updateTouchBarPlayBtn(isPaused: isPaused)
     })
   }
 

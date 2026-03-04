@@ -143,10 +143,6 @@ class PlaybackInfo {
 
   var playSpeed: Double = 1.0
 
-  var shouldShowSpeedLabel: Bool {
-    return !(isPaused || playSpeed == 1)
-  }
-
   var playlist: [PlaybackID] = []
   var playlistPlayingPos: Int = -1  /// `MPVProperty.playlistPlayingPos`
 
