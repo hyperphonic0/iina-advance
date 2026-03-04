@@ -28,25 +28,24 @@ final class StartupHandler {
       case done
       case cancelled
     }
-    /// The window's autosave name
-    let saveName: WindowAutosaveName
+    let savedWindow: SavedWindow
     var state: State = .restoring
     var wc: WindowController? = nil
 
     var pwc: PlayerWindowController? { wc as? PlayerWindowController }
     var done: Bool { state == .done }
     var cancelled: Bool { state == .cancelled }
+    var saveName: WindowAutosaveName { savedWindow.saveName }
 
-    init(saveName: WindowAutosaveName, _ wc: WindowController? = nil) {
-      self.saveName = saveName
+    init(_ savedWindow: SavedWindow, _ wc: WindowController? = nil) {
+      self.savedWindow = savedWindow
       self.wc = wc
     }
   }
 
   /// Like `WindowToRestore`, but specialized for a `PlayerWindow` being restored
   final class PlayerToRestore {
-    /// The window's autosave name
-    let saveName: WindowAutosaveName
+    let savedWindow: SavedWindow
     let savedState: PlayerSaveState
     /// Set of volume remount URLs found in player to restore which still need to be processed.
     /// Key = absolute string of URL
@@ -55,9 +54,10 @@ final class StartupHandler {
     /// Key = absolute string of URL
     /// Value = `true` if mounted; `false` if failed or not processed (which should be treated as failed)
     var volRemountsProcessed: [String: Bool] = [:]
+    var saveName: WindowAutosaveName { savedWindow.saveName }
 
-    init(saveName: WindowAutosaveName, _ savedState: PlayerSaveState, volumeRemountsToProcess: Set<String>) {
-      self.saveName = saveName
+    init(_ savedWindow: SavedWindow, _ savedState: PlayerSaveState, volumeRemountsToProcess: Set<String>) {
+      self.savedWindow = savedWindow
       self.savedState = savedState
       self.volRemountsNotYetProcessed = volumeRemountsToProcess
     }
@@ -485,7 +485,7 @@ final class StartupHandler {
           uniqueVolRemountsForPlayer.insert(remountRelatedData.volRemountURL)
         }
 
-        let playerToRestore = PlayerToRestore(saveName: pwinToRestore.saveName, savedState, volumeRemountsToProcess: uniqueVolRemountsForPlayer)
+        let playerToRestore = PlayerToRestore(pwinToRestore.savedWindow, savedState, volumeRemountsToProcess: uniqueVolRemountsForPlayer)
 
         if uniqueVolRemountsForPlayer.isEmpty {
           // Player has no volumes to remount: can proceed immediately with restoring it
@@ -540,6 +540,10 @@ final class StartupHandler {
     // This will call `player.openURLs()` when done
     if let player = playerToRestore.savedState.restorePlayer(volRemounts: playerToRestore.volRemountsProcessed) {
       pwinToRestore.wc = player.pwc
+      if playerToRestore.savedWindow.isMinimized {
+        player.pwc.window?.miniaturize(self)
+        UIState.shared.windowsMinimized.insert(playerToRestore.saveName.string)
+      }
     } else {
       pwinToRestore.state = .cancelled
       showWindowsIfReady()
@@ -549,13 +553,13 @@ final class StartupHandler {
   @MainActor @discardableResult
   fileprivate func addWindowToRestore(_ savedWindow: SavedWindow, _ wc: WindowController? = nil) -> WindowToRestore {
     Logger.restore.verbose("Adding window to restore: \(savedWindow.saveName.string.quoted), minimized=\(savedWindow.isMinimized.yn)")
-    let winMeta = WindowToRestore(saveName: savedWindow.saveName, wc)
+    let winMeta = WindowToRestore(savedWindow, wc)
     assert(windowsToRestore[winMeta.saveName] == nil, "Duplicate window to restore: \(winMeta.saveName.string.quoted)")
     windowsToRestore[winMeta.saveName] = winMeta
 
     // Rebuild UIState window sets as we go:
-    if savedWindow.isMinimized {
-      wc!.window?.miniaturize(self)
+    if savedWindow.isMinimized, let wc {
+      wc.window?.miniaturize(self)
       UIState.shared.windowsMinimized.insert(winMeta.saveName.string)
       // No danger of partial show because it's hidden, so no need to wait; just mark as done now
       winMeta.state = .done

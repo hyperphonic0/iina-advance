@@ -246,6 +246,7 @@ class VideoView: NSView {
   }
 
   func enterAsynchronousMode() {
+    displayActive()
     glLayer?.enterAsynchronousMode()
   }
 

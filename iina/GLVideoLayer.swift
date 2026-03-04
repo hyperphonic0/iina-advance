@@ -202,6 +202,10 @@ class GLVideoLayer: CAOpenGLLayer {
               mpv_render_param(type: MPV_RENDER_PARAM_DEPTH, data:.init(bufferDepth)),
               mpv_render_param()
             ]
+            /// # IGNORE THIS XCODE HANG RISK WARNING!
+            /// Calling this directly from the DisplayLink instead of enqueuing in its own DispatchQueue results in reduced draw latency.
+            /// And we do not call `mpvReportSwap` until after this method returns, so mpv should detect buffer underruns and skip frames
+            /// appropriately.
             mpv_render_context_render(context, &params)
             ignoreGLError()
           }
