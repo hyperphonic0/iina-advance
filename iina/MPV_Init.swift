@@ -30,6 +30,13 @@ extension MPVController {
     mpvSetOptionsFromPrefs()
     mpvSetOptions(from: player.userOptions)
 
+    queue.async { [self] in
+      // Need to be in mpv queue to get/set player.state variable. But need to set this before setting up
+      // mpv event callback, because that can block for arbitrary time periods.
+      if player.state == .notYetStarted {
+        player.state = .started
+      }
+    }
     mpvFinishInit()
     player.log.verbose("Init mpv: done")
   }

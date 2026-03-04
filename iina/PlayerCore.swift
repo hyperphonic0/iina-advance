@@ -14,17 +14,11 @@ final class PlayerCore: NSObject {
   enum LifecycleState: Int, StateEnum {
     case notYetStarted = 1
 
-    // TODO: evaluate combining `started` + `idle` states
+    /// Player has started and is either idle (with no media loaded) or is active (with media loaded and/or playing).
+    /// To determine idle state, check whether `info.currentPlayback` is `nil`.
     case started
 
     // TODO: add states for playing, paused
-
-    /// Playback has stopped and the media has been unloaded.
-    ///
-    /// This is the initial state of a player. The player returns to this state when a
-    /// [MPV_EVENT_PROPERTY_CHANGE](https://mpv.io/manual/stable/#command-interface-mpv-event-property-change)
-    /// for the `idle-active` property is received with a value of `true`.
-    case idle
 
     /// Whether stopping of this player has been initiated.
     case stopping
@@ -171,7 +165,7 @@ final class PlayerCore: NSObject {
   var state: LifecycleState = .notYetStarted {
     didSet {
       log.verbose("Δ lifecycleState ≔ \(state)")
-      if state == .idle {
+      if state == .started {
         SleepPreventer.updateSleepPrevention()
       }
     }
@@ -183,7 +177,7 @@ final class PlayerCore: NSObject {
   var isShutDown: Bool { state.isAtLeast(.shutDown) }
   var isStopping: Bool { state.isAtLeast(.stopping) }
   /// An unused player is one which does not have a playback (`!hasPlayback`)
-  var isIdleOrUnused: Bool { state == .idle || (state == .notYetStarted && !hasPlayback) }
+  var isIdleOrUnused: Bool { !hasPlayback && state.isNotYet(.stopping) }
 
   // - Window controller convenience
 
@@ -643,7 +637,7 @@ final class PlayerCore: NSObject {
       info.currentPlayback = playback
       log.debug("Opening player (window=\(isInteractivePlayer.yesno)) for \(path.pii.quoted), playerState=\(state), sessionState=\(pwc.sessionState)")
 
-      if state == .stopping || state == .idle {
+      if state == .stopping {
         // Player was previously started, but closed & is now being reopened
         state = .started
       }
@@ -799,10 +793,6 @@ final class PlayerCore: NSObject {
       videoView.initVideoLayer()
     }
 #endif
-
-    if state == .notYetStarted {
-      state = .started
-    }
   }
 
   @MainActor
@@ -1146,7 +1136,6 @@ final class PlayerCore: NSObject {
 
       // Do not send a stop command to mpv if it is already stopped. This happens when quitting is
       // initiated directly through mpv.
-      guard state != .idle else { return }
       log.debug("Stopping playback")
 
       mpv.command(.stop)
@@ -1605,17 +1594,19 @@ final class PlayerCore: NSObject {
 
   /// Called with `MPVOption.PlaybackControl.pause` changed
   func pausedStateDidChange(to paused: Bool) {
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
     let didChange = info.isPausedRemotely != paused
     info.isPausedRemotely = paused
     info.isPausedLocally = nil
     guard didChange else { return }
 
-    DispatchQueue.main.async { [self] in
-      if !paused {
-        if state == .stopping || state == .idle {
-          state = .started
-        }
+    if !paused {
+      if state == .stopping {
+        state = .started
       }
+    }
+
+    DispatchQueue.main.async { [self] in
       pwc.updatePlayButtonAndSpeedUI()
       if paused {
         videoView.displayIdle()
@@ -2139,7 +2130,7 @@ final class PlayerCore: NSObject {
     triedUsingExactSeekForCurrentFile = false
     // Playback will move directly from stopped to loading when transitioning to the next file in
     // the playlist.
-    if state == .stopping || state == .idle {
+    if state == .stopping {
       state = .started
     }
 
@@ -2295,7 +2286,6 @@ final class PlayerCore: NSObject {
     // Make sure current playback is taken into account before changing state to `idle`.
     // Idle player is one which is closed or never used but can be reused. Do not set to idle when changing media or other small intervals
     if state.isNotYet(.shuttingDown), (errorMsg != nil) || (info.currentPlayback == nil) {
-      state = .idle
       DispatchQueue.main.async { [self] in
         videoView.displayIdle()
       }

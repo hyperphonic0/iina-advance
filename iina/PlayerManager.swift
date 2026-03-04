@@ -85,8 +85,8 @@ final class PlayerManager {
   }
 
   /// `inverseOpenInNewWindowPref` means to negate the current value of pref `.alwaysOpenInNewWindow`
-  func getActiveOrNewForMenuAction(inverseOpenInNewWindowPref: Bool) -> PlayerCore {
-    let useNew = Preference.bool(for: .alwaysOpenInNewWindow) != inverseOpenInNewWindowPref
+  func getActiveOrNewForMenuAction(useNew: Bool? = nil) -> PlayerCore {
+    let useNew = useNew ?? Preference.bool(for: .alwaysOpenInNewWindow)
     if !useNew, let activePlayer {
       return activePlayer
     }
@@ -99,7 +99,7 @@ final class PlayerManager {
     var firstIdlePlayer: PlayerCore? = nil
     for p in playerCores {
       let isPlayerIdleOrUnused = p.isIdleOrUnused
-      Logger.log.verbose("Player-\(p.label): hasPlayback=\(p.hasPlayback.yn) idle=\((p.state == .idle).yn) → UNUSED=\(isPlayerIdleOrUnused.yesno)")
+      Logger.log.verbose("Player-\(p.label): hasPlayback=\(p.hasPlayback.yn) idle=\((p.state == .started).yn) → UNUSED=\(isPlayerIdleOrUnused.yesno)")
       if firstIdlePlayer == nil && isPlayerIdleOrUnused {
         firstIdlePlayer = p
       }
@@ -108,7 +108,7 @@ final class PlayerManager {
   }
 
   func getNonIdle() -> [PlayerCore] {
-    playerCores.filter { $0.isActive && ($0.state != .idle) }
+    playerCores.filter { $0.isActive && ($0.state != .started) }
   }
 
   func getIdleOrCreateNew(loadAdditionalMpvOptionsFromPrefs: Bool = true) -> PlayerCore {

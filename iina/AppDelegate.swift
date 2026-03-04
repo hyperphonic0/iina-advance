@@ -620,10 +620,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
     DispatchQueue.main.async { [self] in
       guard let player = PlayerManager.shared.activePlayer else { return }
-      startupHandler.isAwaitingNewWindowsForOpenedFile = true
+      let isStartingUp = !startupHandler.isDoneLaunching
+      if isStartingUp {
+        startupHandler.isAwaitingNewWindowsForOpenedFile = true
+      }
       if player.openURLString(url) == 0 {
         startupHandler.abortWaitForOpenFilePlayerStartup()
-      } else {
+      } else if isStartingUp {
         startupHandler.pwcsForOpenFiles = [player.pwc]
       }
       startupHandler.showWindowsIfReady()
@@ -663,11 +666,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     DispatchQueue.main.async { [self] in
       if parsed.scheme != "iina" {
         // try to open the URL directly
-        let player = PlayerManager.shared.getActiveOrNewForMenuAction(inverseOpenInNewWindowPref: false)
-        startupHandler.isAwaitingNewWindowsForOpenedFile = true
+        let player = PlayerManager.shared.getActiveOrNewForMenuAction()
+        let isStartingUp = !startupHandler.isDoneLaunching
+        if isStartingUp {
+          startupHandler.isAwaitingNewWindowsForOpenedFile = true
+        }
         if player.openURLString(url) == 0 {
           startupHandler.abortWaitForOpenFilePlayerStartup()
-        } else {
+        } else if isStartingUp {
           startupHandler.pwcsForOpenFiles = [player.pwc]
         }
         startupHandler.showWindowsIfReady()
@@ -688,13 +694,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
           return
         }
 
-        // new_window
-        let player: PlayerCore
+        var useNew: Bool? = nil
         if let newWindowValue = queryDict["new_window"], newWindowValue == "1" {
-          player = PlayerManager.shared.getIdleOrCreateNew()
-        } else {
-          player = PlayerManager.shared.getActiveOrNewForMenuAction(inverseOpenInNewWindowPref: false)
+          useNew = true
         }
+        let player: PlayerCore = PlayerManager.shared.getActiveOrNewForMenuAction(useNew: useNew)
 
         // enqueue
         if let enqueueValue = queryDict["enqueue"], enqueueValue == "1",
@@ -989,7 +993,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
             HistoryController.shared.noteNewRecentDocumentURLs(urls)
           }
         }
-        let playerCore = PlayerManager.shared.getActiveOrNewForMenuAction(inverseOpenInNewWindowPref: isAlternativeAction)
+        let useNew = Preference.bool(for: .alwaysOpenInNewWindow) != isAlternativeAction
+        let playerCore = PlayerManager.shared.getActiveOrNewForMenuAction(useNew: useNew)
         if playerCore.openURLs(panel.urls) == 0 {
           Logger.log("OpenFile: notifying user there is nothing to open", level: .verbose)
           Utility.showAlert("nothing_to_open")

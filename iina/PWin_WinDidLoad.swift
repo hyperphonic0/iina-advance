@@ -16,6 +16,7 @@ extension PlayerWindowController {
   ///
   /// This was formerly `windowDidLoad`, but we no longer load the window via XIB, so we are free to control
   /// the loading process ourselves.
+  @MainActor
   func finishLoading() {
     guard !loaded else { return }
     log.verbose("[Load] PWin_WinDidLoad starting")

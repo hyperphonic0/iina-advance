@@ -131,7 +131,7 @@ final class StartupHandler {
   @MainActor
   init() {
     restoreTimer.action = restoreDidTimeOut
-    openFilesTimer.action = handleOpenFilesTimeout
+    openFilesTimer.action = processPendingOpenFiles
   }
 
   @MainActor
@@ -175,8 +175,9 @@ final class StartupHandler {
     pendingFilesForApplicationOpenFiles.append(contentsOf: urls)
   }
 
+  /// Called when `openFilesTimer` times out.
   @MainActor
-  private func handleOpenFilesTimeout() {
+  private func processPendingOpenFiles() {
     let urls = pendingFilesForApplicationOpenFiles
     pendingFilesForApplicationOpenFiles = []
     guard !urls.isEmpty else { return }
@@ -188,7 +189,6 @@ final class StartupHandler {
       return
     }
 
-
     Logger.log.verbose("OpenFiles: collected \(urls.count) files before timeout")
 
     // if installing a plugin package
@@ -199,7 +199,7 @@ final class StartupHandler {
       return
     }
 
-    let openedSomething = openFiles(urls, applyingCLI: nil) > 0
+    let openedSomething = openFiles(urls) > 0
     if openedSomething {
       Logger.log.verbose("Replying to NSApp: success")
       NSApp.reply(toOpenOrPrint: .success)
@@ -233,16 +233,16 @@ final class StartupHandler {
   /// Open files either from `application(_ ,openFiles:)`, or via command line interface (CLI).
   @MainActor
   @discardableResult
-  private func openFiles(_ urls: [URL], applyingCLI cli: CommandLineState?) -> Int {
-    let shouldOpenMultipleWindows: Bool
+  func openFiles(_ urls: [URL], applyingCLI cli: CommandLineState? = nil) -> Int {
+    let shouldOpenNewWindows: Bool
     if let separateWindowsCLI = cli?.openSeparateWindows {
       // Can force --separate-windows via CLI in addition to pref, for both yes/no
-      shouldOpenMultipleWindows = separateWindowsCLI
+      shouldOpenNewWindows = separateWindowsCLI
     } else {
-      shouldOpenMultipleWindows = Preference.bool(for: .alwaysOpenInNewWindow) && urls.count > 1
+      shouldOpenNewWindows = Preference.bool(for: .alwaysOpenInNewWindow)
     }
 
-    if !shouldOpenMultipleWindows {
+    if !isDoneLaunching, !shouldOpenNewWindows {
       // Use only if opening single window.
       // If multiple windows, don't wait; open each as soon as it loads
       isAwaitingNewWindowsForOpenedFile = true
@@ -254,8 +254,8 @@ final class StartupHandler {
     var lastPlayer: PlayerCore? = nil
     var pwcsForOpenFiles: [PlayerWindowController] = []
 
-    if shouldOpenMultipleWindows {
-      Logger.log.debug("Opening multiple windows for URLs: count=\(urls.count) CLI=\((cli != nil).yesno)")
+    if shouldOpenNewWindows {
+      Logger.log.debug("Opening new windows for URLs: count=\(urls.count) CLI=\((cli != nil).yesno)")
 
       let urlsToOpen: [URL]
       if Preference.bool(for: .allowDuplicatePlayers) {
@@ -324,24 +324,21 @@ final class StartupHandler {
       totalFilesOpened += 1
     }
 
-    if (totalFilesOpened == 0) && (totalExistingFilesShown == 0) {
-      DispatchQueue.main.async { [self] in
-        abortWaitForOpenFilePlayerStartup()
-        Logger.log.verbose("Notifying user nothing was opened")
-        Utility.showAlert("nothing_to_open")
-      }
-    } else {
-      Logger.log.verbose("Will open \(pwcsForOpenFiles.count) new windows for \(totalFilesOpened) files, & will show \(totalExistingFilesShown) existing")
-      if AppDelegate.shared.isInteractiveLaunch {
+    if AppDelegate.shared.isInteractiveLaunch, !isDoneLaunching {
+      if totalFilesOpened == 0, totalExistingFilesShown == 0 {
+        DispatchQueue.main.async { [self] in
+          abortWaitForOpenFilePlayerStartup()
+          Logger.log.verbose("Notifying user nothing was opened")
+          Utility.showAlert("nothing_to_open")
+        }
+      } else {
+        Logger.log.verbose("Will open \(pwcsForOpenFiles.count) new windows for \(totalFilesOpened) files, & will show \(totalExistingFilesShown) existing")
         // Set pwcsForOpenFiles so they can be tracked & shown when ready:
         self.pwcsForOpenFiles = pwcsForOpenFiles
-      } else {
-        // Clear this flag to avoid waiting on opened files
-        isAwaitingNewWindowsForOpenedFile = false
-      }
 
-      if let cli, let lastPlayer {
-        cli.applySpecialModeToLastPlayer(lastPlayer)
+        if let cli, let lastPlayer {
+          cli.applySpecialModeToLastPlayer(lastPlayer)
+        }
       }
     }
     return totalFilesOpened + totalExistingFilesShown
@@ -693,6 +690,7 @@ final class StartupHandler {
   /// (for example if it couldn't be opened).
   @MainActor
   func abortWaitForOpenFilePlayerStartup() {
+    guard !isDoneLaunching else { return }
     Logger.log.verbose("Aborting wait for open files")
     isAwaitingNewWindowsForOpenedFile = false
     pwcsForOpenFiles = nil
@@ -706,17 +704,6 @@ final class StartupHandler {
     let isInteractiveLaunch = AppDelegate.shared.isInteractiveLaunch
 
     if isInteractiveLaunch {
-      switch state {
-      case .stillEnqueuing:
-        log.verbose("ShowAllWindows: not ready, still enqueuing")
-        return
-      case .doneEnqueuing:
-        // This is the only case we care about
-        break
-      case .doneOpening:
-        log.verbose("ShowAllWindows: not needed (startup done)")
-        return
-      }
       guard state == .doneEnqueuing else {
         log.verbose("Skipping showWindowsIfReady: state (\(state)) != doneEnqueuing")
         return
