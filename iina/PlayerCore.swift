@@ -2363,20 +2363,20 @@ final class PlayerCore: NSObject {
     // Important to synchronize the time as mpv may slightly alter the playback position during a
     // restart even while paused. See issue #5337.
     syncTimeAndCacheUI()
+    saveState()
+    let isPaused = info.isPaused
 
     DispatchQueue.main.async { [self] in
       info.isSeeking = false
 
       // When playback is paused the display link may be shutdown in order to not waste energy.
       // The display link will be restarted while seeking. If playback is paused shut it down again.
-      if info.isPaused {
+      if isPaused {
         videoView.displayIdle()
       }
 
       // End of seeking? Set short timer to hide seek time & thumbnail
       pwc.seekPreview.restartHideTimer()
-
-      saveState()
     }
   }
 
@@ -2934,7 +2934,7 @@ final class PlayerCore: NSObject {
   func updatePlaybackInfo() -> (playbackTime: PlaybackTimeInfo, cacheState: CacheState?, rangesDidChange: Bool)? {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
 
-    guard isActive else {
+    guard !isStopping else {
       log.verbose("SyncUI: not syncing: player not active")
       return nil
     }
@@ -3141,15 +3141,16 @@ final class PlayerCore: NSObject {
 
   func reloadTrackInfo() -> Bool {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
-    log.verbose("Reloading tracklist from mpv")
 
     // No need to process track list changes if playback is being stopped. Must not process track
     // list changes if mpv is terminating as accessing mpv once shutdown has been initiated can
     // trigger a crash.
     guard !isStopping, info.isFileLoaded else {
-      log.trace("Aborting tracklist reload: player or file not ready (player=\(state), file=\(info.currentPlayback?.state.description ?? "nil"))")
+      log.verbose("Aborting tracklist reload: player or file not ready (player=\(state), file=\(info.currentPlayback?.state.description ?? "nil"))")
       return false
     }
+
+    log.verbose("Reloading tracklist from mpv")
 
     let raw = mpv.getNode(MPVProperty.trackList)
     guard let list = raw as? [[String: Any]] else {
@@ -3251,15 +3252,17 @@ final class PlayerCore: NSObject {
     let isVidEnabled = vid != 0
     let trackIsAlbumArt = isVidEnabled && (mpv.getString(MPVProperty.trackListNAlbumart(vid)) == "yes")
 
+    let isRestoring = isRestoring
     return videoView.$isUninited.withLock{ _ in
       let didChange = vid != info.vid
       videoView.isVidEnabled = isVidEnabled
       videoView.isVidAlbumArt = trackIsAlbumArt
       // Try to prevent crash when forcing draws. After changing vid from 0 to non-zero, do not allow forced drawing until after
       // the first render callback is triggered (unless track is album art).
-      videoView.isReadyToRender = (isVidEnabled && trackIsAlbumArt) || isRestoring
+      let isReady = (isVidEnabled && trackIsAlbumArt) || isRestoring
+      videoView.isReadyToRender = isReady
       info.vid = vid
-      log.verbose("Updated video state: vid=\(String(info.vid)) isAlbumArt=\(videoView.isVidAlbumArt.yn) ready=\(videoView.isReadyToRender.yn)")
+      log.verbose("Updated video state: vid=\(vid) isAlbumArt=\(trackIsAlbumArt.yn) ready=\(isReady.yn)")
       return (vid, didChange)
     }
   }

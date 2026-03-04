@@ -47,7 +47,8 @@ final class PlayerManager {
     let runningLabels = playerCores.compactMap({ player in
       // Non-interactive players don't have callbacks registered.
       // So just assume they finished shutting down and hope it's fine.
-      !player.isInteractivePlayer || player.isShutDown ? nil : player.label}
+      // Players are expected to remove themselves from the global list once shutdown, so anything remaining is still running.
+      !player.isInteractivePlayer ? nil : player.label}
     )
     if !runningLabels.isEmpty {
       Logger.log.verbose("Players have not yet shut down: \(runningLabels)")

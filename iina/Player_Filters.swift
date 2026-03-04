@@ -32,6 +32,7 @@ extension PlayerCore {
   // MARK: - Audio Filters
 
   func afChanged() {
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
     guard !isStopping else { return }
     _ = updateAudioFiltersFromMpv()
     saveState()
@@ -41,6 +42,7 @@ extension PlayerCore {
 
   /// `af`: gets up-to-date list of audio filters AND updates associated state in the process
   func updateAudioFiltersFromMpv() -> [MPVFilter] {
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
     let audioFilters = mpv.getFilters(MPVProperty.af)
     for filter in audioFilters {
       log.verbose("Got mpv af, name: \(filter.name.quoted), label: \(filter.label?.quoted ?? "nil"), params: \(filter.params ?? [:])")

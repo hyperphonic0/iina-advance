@@ -267,10 +267,10 @@ extension PlayerCore {
 
     // Now verify playlist state again to ensure changes were correct
     guard syncAndValidatePlaylist(expectedPlaylist: expectedPlaylistAfterInsert) else { return }
+    saveState()
 
     pwc.animationPipeline.submitInstantTask { [self] in
       displayedPlaylist = info.playlist  // update cached data
-      saveState()
       onSuccess()
     }
   }
@@ -370,11 +370,11 @@ extension PlayerCore {
         }
         return
       }
+      saveState()
 
       // Success!
       pwc.animationPipeline.submitInstantTask { [self] in
         displayedPlaylist = info.playlist  // Update cached data
-        saveState()
         onSuccess()
       }
     }
@@ -475,13 +475,13 @@ extension PlayerCore {
 
       guard syncAndValidatePlaylist(expectedPlaylist: allItemsNew) else { return }
       let countRemovedCopy = countRemoved
+      saveState()
 
       // 3. Update UI with result, register undo, kick off other post-processing
       pwc.animationPipeline.submitInstantTask { [self] in
         displayedPlaylist = info.playlist                                          // update cached data
         tableUIChange.postNotification(name: playlistTableChangeNotificationName)  // update UI
         sendOSD(.removeFromPlaylist(countRemovedCopy))
-        saveState()
 
         // Register undo/redo?
         switch undoOption {
@@ -570,13 +570,13 @@ extension PlayerCore {
       info.currentPlayback = currentPlayback.clone(playlistPos: currentPlayingIndexNew)
 
       guard syncAndValidatePlaylist(expectedPlaylist: allItemsNew) else { return }
+      saveState()
 
       // 3. Update UI with result, register undo, kick off other post-processing
       pwc.animationPipeline.submitInstantTask { [self] in
         displayedPlaylist = info.playlist                                          // update cached data
         tableUIChange.postNotification(name: playlistTableChangeNotificationName)  // update UI
         postNotification(.iinaPlaylistChanged)
-        saveState()
 
         // Register undo/redo?
         switch undoOption {

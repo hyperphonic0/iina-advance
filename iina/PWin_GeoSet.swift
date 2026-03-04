@@ -100,7 +100,7 @@ extension PlayerWindowController {
     guard let window else { return nil }
     if !force {
       // Need to check state of current playback to avoid race conditions
-      guard loaded, player.isActive, player.info.isFileLoaded, window.isOpen else {
+      guard loaded, player.info.isFileLoaded, window.isOpen else {
         log.trace("Will use cached windowFrame/screenID instead of latest: playerActive=\(player.isActive) fileLoaded=\(player.info.isFileLoaded) wndOpen=\(window.isOpen.yn)")
         return nil
       }

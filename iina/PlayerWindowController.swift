@@ -945,10 +945,10 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
         // Launch to resume as the final task, right after window is finally shown:
         player.mpv.queue.async { [self] in
           resumeIfNeededForShowingWindow()
+          // Make sure to save after opening (possibly new) window
+          player.saveState()
         }
 
-        // Make sure to save after opening (possibly new) window
-        player.saveState()
         // Especially need to save the updated windows list!
         // At launch, any unreferenced PWin entries will be deleted from prefs
         UIState.shared.saveCurrentOpenWindowList()
@@ -1974,9 +1974,9 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
         guard !player.isStopping else { return }
         // TODO: does this hang if videoView is not in window?
         player.mpv.setFlag(MPVOption.Window.ontop, onTop)
+        player.saveState()
         DispatchQueue.main.async { [self] in
           updateOnTopButton(from: layout, showIfFadeable: true)
-          player.saveState()
         }
       }
     }
@@ -1992,7 +1992,6 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
     // Just don't update in this case
     guard !isAnimatingLayoutTransition else { return }
     guard loaded else { return }
-    guard player.state.isNotYet(.shuttingDown) else { return }
 
     // scroll wheel will set newer value; do not overwrite it until it is done
     if !isScrollingOrDraggingPlaySlider {

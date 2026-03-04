@@ -1796,14 +1796,10 @@ extension PlayerCore {
     /// Runs asynchronously in background queue to avoid blocking UI.
     /// Cuts down on duplicate work via delay and ticket check.
     saveUIStateDebouncer.run { [self] in
-      guard !isShuttingDown else {
-        log.verbose("Skipping player state save: player is shutting down")
-        return
-      }
       guard !isStopping else {
         // mpv core is often still active even after closing, and will send events which
         // can trigger save. Need to make sure we check for this so that we don't un-delete state
-        log.trace("Skipping player state save: window.isClosing is true")
+        log.verbose("Skipping player state save: player is stopping")
         return
       }
 

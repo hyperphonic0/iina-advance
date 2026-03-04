@@ -321,11 +321,10 @@ extension MPVController {
     case MPVProperty.videoParamsRotate:
       /** `video-params/rotate: Intended display rotation in degrees (clockwise).` - mpv manual
        Do not confuse with the user-configured `video-rotate` (below) */
-      if let totalRotation = property.intData(log) {
-        player.log.verbose("Δ mpv prop: 'video-params/rotate' ≔ \(totalRotation)")
-        player.saveState()
-        /// Any necessary resizing will be handled elsewhere
-      }
+      guard let totalRotation = property.intData(log) else { return }
+      player.log.verbose("Δ mpv prop: 'video-params/rotate' ≔ \(totalRotation)")
+      player.saveState()
+      /// Any necessary resizing will be handled elsewhere
 
     case MPVOption.Video.videoRotate:
       guard let userRotation = property.intData(log) else { break }
