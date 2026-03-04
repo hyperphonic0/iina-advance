@@ -2375,7 +2375,6 @@ final class PlayerCore: NSObject {
 
   func refreshEdrMode() {
     pwc.animationPipeline.submitInstantTask { [self] in
-      guard isActive else { return }
       guard pwc.loaded else { return }
       videoView.refreshEdrMode()
     }

@@ -216,8 +216,9 @@ class VideoView: NSView {
 
   // MARK: - Misc
 
+  @MainActor
   func needsForcedRedraws() -> Bool {
-    guard player.pwc.loaded, player.isActive else { return false }
+    guard player.pwc.loaded, !AppDelegate.shared.isTerminating else { return false }
     guard player.videoView.isVidEnabled, player.videoView.isVidAlbumArt || player.info.isPaused else { return false }
     return true
   }
@@ -230,8 +231,8 @@ class VideoView: NSView {
   }
 
   /// Deprecated! Use `activateForcedRedraws` instead.
+  @MainActor
   func forceDraw() {
-    assert(DispatchQueue.isExecutingIn(.main))
     guard needsForcedRedraws() else { return }
     glLayer?.draw(forced: true)
   }
@@ -353,7 +354,7 @@ class VideoView: NSView {
 
   private func requestEdrMode(then doAfter: @escaping (Bool?) -> Void) {
     player.mpv.queue.async { [self] in
-      guard player.info.isFileLoaded, let mpv = player.mpv else {
+      guard player.info.isFileLoaded, let mpv = player.mpv, player.isActive else {
         return doAfter(false)
       }
 
