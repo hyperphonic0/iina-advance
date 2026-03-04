@@ -128,8 +128,8 @@ class OpenURLWindowController: WindowController, NSWindowDelegate, NSTextFieldDe
       overlayView.isHidden = false
       // Must not leave the focus in the username or password text fields.
       window?.makeFirstResponder(nil)
-      playerCore = PlayerManager.shared.getActiveOrNewForMenuAction(inverseOpenInNewWindowPref: inverseOpenInNewWindowPref)
-      playerCore!.openURL(url)
+      let useNew = Preference.bool(for: .alwaysOpenInNewWindow) != inverseOpenInNewWindowPref
+      AppDelegate.shared.openPlayersForFiles([url], useNewWindows: useNew)
     } else {
       Utility.showAlert("wrong_url_format")
     }

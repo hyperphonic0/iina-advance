@@ -571,15 +571,13 @@ final class PlayerCore: NSObject {
   /// Returns number of playable URLs opened. If `0`, no player window was opened.
   @MainActor
   @discardableResult
-  func openURLString(_ str: String) -> Int? {
+  func openURLString(_ str: String) -> Int {
+    let url: URL?
     if str == "-" {
       info.shouldAutoLoadFiles = false  // reset
-      let id = PlaybackID(URL(string: "stdin")!)
-      openPlayerWindow([id])
-      return 1
-    }
-    if str.first == "/" {
-      return openURL(URL(fileURLWithPath: str))
+      url = URL(string: "stdin")!
+    } else if str.first == "/" {
+      url = URL(fileURLWithPath: str)
     } else {
       // For apps built with Xcode 15 or later the behavior of the URL initializer has changed when
       // running under macOS Sonoma or later. The behavior now matches URLComponents and will
@@ -591,20 +589,26 @@ final class PlayerCore: NSObject {
         performPercentEncoding = false
       }
 #endif
-      var pstr = str
+      let pstr: String
       if performPercentEncoding {
         guard let encoded = str.addingPercentEncoding(withAllowedCharacters: .urlAllowed) else {
           log.error("Cannot add percent encoding for \(str)")
           return 0
         }
         pstr = encoded
+      } else {
+        pstr = str
       }
-      guard let url = URL(string: pstr) else {
+      url = URL(string: pstr)
+      if url == nil {
         log.error("Cannot parse url for \(pstr)")
-        return 0
       }
-      return openURL(url)
     }
+    if let url {
+      openURL(url)
+      return 1
+    }
+    return 0
   }
 
   /// Loads the first URL into the player, and adds any remaining URLs to playlist.
@@ -2033,10 +2037,6 @@ final class PlayerCore: NSObject {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
     guard !isStopping else { return }
 
-    if isIdleOrUnused {
-      state = .started
-    }
-
     // TODO: do something with this
     let parentPlaylist = mpv.getString(MPVProperty.playlistPath) ?? ""
 
@@ -3035,8 +3035,6 @@ final class PlayerCore: NSObject {
     pwc.postWindowMustCancelShow()
     log.verbose("Closing window")
     pwc.close()
-    /// Some doubts about whether `windowWillClose` is always fired. Call manually to ensure things execute:
-    AppDelegate.shared.windowWillClose(window)
   }
 
   @MainActor

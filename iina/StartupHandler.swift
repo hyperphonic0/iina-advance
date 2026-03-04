@@ -158,6 +158,8 @@ final class StartupHandler {
 
   // MARK: - Open Files
 
+  /// This can be called either at startup, or after startup. It is called when files are dropped onto the
+  /// application icon.
   @MainActor
   func applicationOpenFilesWasReceived(with filePaths: [String]) {
     let urls = filePaths.map { URL(fileURLWithPath: $0) }
@@ -233,13 +235,13 @@ final class StartupHandler {
   /// Open files either from `application(_ ,openFiles:)`, or via command line interface (CLI).
   @MainActor
   @discardableResult
-  func openFiles(_ urls: [URL], applyingCLI cli: CommandLineState? = nil) -> Int {
+  func openFiles(_ urls: [URL], applyingCLI cli: CommandLineState? = nil, useNewWindows: Bool? = nil) -> Int {
     let shouldOpenNewWindows: Bool
     if let separateWindowsCLI = cli?.openSeparateWindows {
       // Can force --separate-windows via CLI in addition to pref, for both yes/no
       shouldOpenNewWindows = separateWindowsCLI
     } else {
-      shouldOpenNewWindows = Preference.bool(for: .alwaysOpenInNewWindow)
+      shouldOpenNewWindows = useNewWindows ?? Preference.bool(for: .alwaysOpenInNewWindow)
     }
 
     if !isDoneLaunching, !shouldOpenNewWindows {

@@ -963,6 +963,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
     player.mpv.setFlag(MPVOption.PlaybackControl.pause, false)
   }
 
+  /// `windowWillClose`.
   /// Do not use the offical `NSWindowDelegate` method. This method will be called by the global window listener.
   func doPriorToWindowWillClose(_ window: NSWindow) {
     log.verbose("Window will close")
@@ -983,6 +984,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
 
     // Stop playing. This will save state if configured to do so:
     player.stop()
+    videoView.stopDisplayLink()
 
     guard !AppDelegate.shared.isTerminating else { return }
 

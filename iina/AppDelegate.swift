@@ -115,14 +115,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
         MediaPlayerIntegration.shared.update()
       }
 
-    // TODO: #1, see above
-//    case PK.hideWindowsWhenInactive:
-//      if let newValue = newValue as? Bool {
-//        for window in NSApp.windows {
-//          guard window as? PlayerWindow == nil else { continue }
-//          window.hidesOnDeactivate = newValue
-//        }
-//      }
+      // TODO: #1, see above
+      //    case PK.hideWindowsWhenInactive:
+      //      if let newValue = newValue as? Bool {
+      //        for window in NSApp.windows {
+      //          guard window as? PlayerWindow == nil else { continue }
+      //          window.hidesOnDeactivate = newValue
+      //        }
+      //      }
 
     case .killRequest:
       Task { @MainActor in
@@ -212,7 +212,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     // Set up observers
 
     var ncDefaultObservers: [NotificationHandler.NCObserver] = [ .init(.windowIsReadyToShow, startupHandler.windowIsReadyToShow),
-                                                           .init(.windowMustCancelShow, startupHandler.windowMustCancelShow)]
+                                                                 .init(.windowMustCancelShow, startupHandler.windowMustCancelShow)]
     // The "action on last window closed" action will vary slightly depending on which type of window was closed.
     // Here we add a listener which fires when *any* window is closed, in order to handle that logic all in one place.
     ncDefaultObservers.append(.init(NSWindow.willCloseNotification, windowWillClose))
@@ -994,13 +994,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
           }
         }
         let useNew = Preference.bool(for: .alwaysOpenInNewWindow) != isAlternativeAction
-        let playerCore = PlayerManager.shared.getActiveOrNewForMenuAction(useNew: useNew)
-        if playerCore.openURLs(panel.urls) == 0 {
-          Logger.log("OpenFile: notifying user there is nothing to open", level: .verbose)
+        if openPlayersForFiles(panel.urls, useNewWindows: useNew) == 0 {
+          Logger.log.verbose("OpenFile: notifying user there is nothing to open")
           Utility.showAlert("nothing_to_open")
         }
       } else {  /// Cancel
-        Logger.log("OpenFile: user cancelled", level: .verbose)
+        Logger.log.verbose("OpenFile: user cancelled")
       }
       // AppKit does not consider a panel to be a window, so it won't fire this. Must call ourselves:
       windowWillClose(panel)
@@ -1019,6 +1018,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   func showInspectorWindow() {
     Logger.log("Showing Inspector window", level: .verbose)
     inspector.openWindow(self)
+  }
+
+  @MainActor @discardableResult
+  func openPlayersForFiles(_ urls: [URL], useNewWindows: Bool? = nil) -> Int {
+    startupHandler.openFiles(urls, useNewWindows: useNewWindows)
   }
 
   // MARK: - Recent Documents
