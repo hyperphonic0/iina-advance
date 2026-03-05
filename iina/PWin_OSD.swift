@@ -143,9 +143,9 @@ final class OSDState {
   @MainActor
   var queue = LinkedList<() -> Void>()
 
-  fileprivate static func buildOSDView(subviews: [NSView]) -> NSView {
+  fileprivate static func buildOSDView(_ colorScheme: Preference.PanelColorScheme,
+                                       subviews: [NSView]) -> NSView {
     let osdView: NSView
-    let colorScheme: Preference.PanelColorScheme = Preference.enum(for: .osdColorScheme)
     if #available(macOS 26, *), colorScheme == .clearGlass || colorScheme == .tintedGlass {
       let style: NSGlassEffectView.Style = colorScheme == .clearGlass ? .clear : .regular
       let osdGlassView = OSDGlassEffectView(style)
@@ -261,7 +261,7 @@ final class OSDState {
     osdView.removeAllSubviews()
     osdView.removeFromSuperview()
 
-    osdView = OSDState.buildOSDView(subviews: [osdIconImageView, osdVStackView])
+    osdView = OSDState.buildOSDView(colorScheme, subviews: [osdIconImageView, osdVStackView])
     rebuildOSDViewConstraints()
     if osdIsHidden {
       osdView.isHidden = true
@@ -370,7 +370,8 @@ final class OSDState {
     osdVStackView.addView(osdAccessoryProgress, in: .center)
 
     // Build root view & add subviews
-    osdView = OSDState.buildOSDView(subviews: [osdIconImageView, osdVStackView])
+    osdView = OSDState.buildOSDView(LayoutState.effectiveOSDColorSchemeFromPrefs,
+                                    subviews: [osdIconImageView, osdVStackView])
     rebuildOSDViewConstraints()
 
     // Add views' internal constraints:
