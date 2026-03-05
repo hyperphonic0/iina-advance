@@ -2069,12 +2069,14 @@ final class PlayerCore: NSObject {
     // Stop watchers from prev media (if any)
     stopWatchingSubFile()
 
-    DispatchQueue.main.async { [self] in
-      // Check this inside main DispatchQueue
-      // TableView whole table reload is very expensive. No need to reload entire playlist; just the two changed rows:
-      pwc.playlistView.refreshNowPlayingIndex(thenScrollToVisible: true)
+    if let pwc, pwc.loaded {
+      DispatchQueue.main.async {
+        // Check this inside main DispatchQueue
+        // TableView whole table reload is very expensive. No need to reload entire playlist; just the two changed rows:
+        pwc.playlistView.refreshNowPlayingIndex(thenScrollToVisible: true)
 
-      MediaPlayerIntegration.shared.update()
+        MediaPlayerIntegration.shared.update()
+      }
     }
 
     // set "date last opened" attribute
@@ -2111,28 +2113,30 @@ final class PlayerCore: NSObject {
 
     log.verbose("FileLoaded path=\(info.currentPlayback?.path.pii.quoted ?? "nil")")
 
-    // mpv will play when loaded by default. But if we are opening a new window or starting a new session in an existing window,
-    // we will have told mpv to pause the playback, and we should not unpause the playback until we are ready to show the window.
-    if isRestoring {
-      // If restoring, playback was already paused, & will not be unpaused until window is ready to show (see `showWindow`)
-      // Finally call this to update info.vid & related video track state in VideoView:
-      updateVidStateFromMpv()
-    } else if pwc.loaded, pwc.sessionState.hasOpenSession {
-      // Note: we only need to handle existing session here.
-      // New session or reuse of existing will be handled in openWindow().
-      // Traditionally IINA will un-pause when starting a new file, unless it is configured to do otherwise.
-      // So we should also be setting this value one way or another.
-      let shouldPause = getPauseFromUserOptions() ?? Preference.bool(for: .pauseWhenOpen)
-      log.verbose("FileLoaded: in existing session: setting pause=\(shouldPause.yn)")
-      mpv.setFlag(MPVOption.PlaybackControl.pause, shouldPause)
+    if let pwc, pwc.loaded {
+      // mpv will play when loaded by default. But if we are opening a new window or starting a new session in an existing window,
+      // we will have told mpv to pause the playback, and we should not unpause the playback until we are ready to show the window.
+      if pwc.sessionState.isRestoring {
+        // If restoring, playback was already paused, & will not be unpaused until window is ready to show (see `showWindow`)
+        // Finally call this to update info.vid & related video track state in VideoView:
+        updateVidStateFromMpv()
+      } else if pwc.sessionState.hasOpenSession {
+        // Note: we only need to handle existing session here.
+        // New session or reuse of existing will be handled in openWindow().
+        // Traditionally IINA will un-pause when starting a new file, unless it is configured to do otherwise.
+        // So we should also be setting this value one way or another.
+        let shouldPause = getPauseFromUserOptions() ?? Preference.bool(for: .pauseWhenOpen)
+        log.verbose("FileLoaded: in existing session: setting pause=\(shouldPause.yn)")
+        mpv.setFlag(MPVOption.PlaybackControl.pause, shouldPause)
 
-      if !shouldPause {
-        // Normally the display link is started when finishLoading() calls initVideo.
-        // However if this player is being reused then the window will have already been loaded and
-        // windowDidLoad will not be called. If playback is not paused make sure the display link is
-        // active.
-        DispatchQueue.main.async { [self] in
-          pwc.videoView.displayActive()
+        if !shouldPause {
+          // Normally the display link is started when finishLoading() calls initVideo.
+          // However if this player is being reused then the window will have already been loaded and
+          // windowDidLoad will not be called. If playback is not paused make sure the display link is
+          // active.
+          DispatchQueue.main.async {
+            pwc.videoView.displayActive()
+          }
         }
       }
     }
@@ -2172,18 +2176,19 @@ final class PlayerCore: NSObject {
       }
     }
 
-    // Kick off thumbnails load/gen - it can happen in background
-    reloadThumbnails()
-
-    checkUnsyncedWindowOptions()
     if !reloadTrackInfo() {
       // TODO: can this ever happen here?! May need to terminate player if so
       log.error("FileLoaded: no tracks returned by mpv! Returning early…")
       return
     }
 
+    // Kick off thumbnails load/gen - it can happen in background
+    reloadThumbnails()
+
+    checkUnsyncedWindowOptions()
+
     // Cache these vars to keep them constant for background tasks
-    let priorStateIfRestoring = pwc.priorStateIfRestoring
+    let priorStateIfRestoring = pwc?.priorStateIfRestoring
     let isRestoring = priorStateIfRestoring != nil
 
     // Sync tracks
@@ -2368,7 +2373,7 @@ final class PlayerCore: NSObject {
       }
 
       // End of seeking? Set short timer to hide seek time & thumbnail
-      pwc.seekPreview.restartHideTimer()
+      pwc?.seekPreview.restartHideTimer()
     }
   }
 
@@ -2389,7 +2394,6 @@ final class PlayerCore: NSObject {
 
   @MainActor
   func reloadQuickSettingsViewNow() {
-    guard pwc.loaded else { return }
     guard !isStopping else { return }
 
     pwc.quickSettingView.reloadCurrentTab()
@@ -2875,7 +2879,7 @@ final class PlayerCore: NSObject {
   /// These options currently include fullscreen and ontop.
   private func checkUnsyncedWindowOptions() {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
-    guard pwc.loaded, isActive else { return }
+    guard let pwc, pwc.loaded, isActive else { return }
 
     syncFullScreenState()
     syncOntopState()
