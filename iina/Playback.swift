@@ -202,10 +202,31 @@ struct PlaybackID: Sendable, Equatable, Hashable {
   /// 1. If a file resource, a file path in slash notation
   /// 2. If a network resource, a URL string in protocol://domain/resource/etc notation
   static func url(fromPath path: String) -> URL? {
-    if path.contains("://") {
-      return URL(string: path.addingPercentEncoding(withAllowedCharacters: .urlAllowed) ?? path)
+    let url: URL?
+    if path == Constants.stdinPath {
+      url = Constants.stdinURL
+    } else if path.first == "/" {
+      url = URL(fileURLWithPath: path)
     } else {
-      return URL(fileURLWithPath: path)
+      // For apps built with Xcode 15 or later the behavior of the URL initializer has changed when
+      // running under macOS Sonoma or later. The behavior now matches URLComponents and will
+      // automatically percent encode characters. Must not apply percent encoding to the string
+      // passed to the URL initializer if the new new behavior is active.
+      let pstr: String
+      if #available(macOS 14, *) {
+        pstr = path
+      } else {
+        guard let encoded = path.addingPercentEncoding(withAllowedCharacters: .urlAllowed) else {
+          Logger.log.error("Cannot add percent encoding for \(path)")
+          return nil
+        }
+        pstr = encoded
+      }
+      url = URL(string: pstr)
+      if url == nil {
+        Logger.log.error("Cannot parse url for \(pstr)")
+      }
     }
+    return url
   }
 }

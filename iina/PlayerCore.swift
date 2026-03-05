@@ -532,16 +532,22 @@ final class PlayerCore: NSObject {
     PlayerCore.mouseLocationAtLastOpen = NSEvent.mouseLocation
     openedWindowsSetIndex = 0  // reset
 
-    let ids = urls.compactMap{ MediaMetaCache.shared.getBestPlaybackID(forURL: $0) }
     let urls = Utility.resolveURLs(urls)
-    log.debug("OpenURLs: \(ids.map{$0.path.pii})")
+    let ids = urls.map{ MediaMetaCache.shared.getBestPlaybackID(forURL: $0) }
+    return openPlaybackIDs(ids)
+  }
+
+  @MainActor
+  @discardableResult
+  func openPlaybackIDs(_ ids: [PlaybackID]) -> Int {
+    log.debug("OpenPlaybackIDs: \(ids.map{$0.path.pii})")
 
     // Handle folder URL (to support mpv shuffle, etc), BD folders and m3u / m3u8 files first.
     // For these cases, mpv will load/build the playlist and notify IINA when it can be retrieved.
     if ids.count == 1,
        ids[0].isStdin
-        || isBDFolder(urls[0])
-        || Utility.playlistFileExt.contains(urls[0].absoluteString.lowercasedPathExtension) {
+        || isBDFolder(ids[0].staticURL)
+        || Utility.playlistFileExt.contains(ids[0].staticURL.absoluteString.lowercasedPathExtension) {
 
       info.shouldAutoLoadFiles = false
       openPlayerWindow(ids)
@@ -552,7 +558,7 @@ final class PlayerCore: NSObject {
     // Filter URL args for playable files (video/audio), because mpv will "play" image files, text files (anything?)
     let playableFiles = getPlayableFiles(in: ids, organizeList: true)
 
-    log.verbose("Found \(playableFiles.count) playable files for \(urls.count) requested URLs")
+    log.verbose("Found \(playableFiles.count) playable files for \(ids.count) requested URLs")
     // check playable files count
     guard playableFiles.count > 0 else {
       return 0
@@ -576,34 +582,8 @@ final class PlayerCore: NSObject {
   @MainActor
   @discardableResult
   func openURLString(_ str: String) -> Int {
-    let url: URL?
-    if str == Constants.stdinPath {
-      url = Constants.stdinURL
-    } else if str.first == "/" {
-      url = URL(fileURLWithPath: str)
-    } else {
-      // For apps built with Xcode 15 or later the behavior of the URL initializer has changed when
-      // running under macOS Sonoma or later. The behavior now matches URLComponents and will
-      // automatically percent encode characters. Must not apply percent encoding to the string
-      // passed to the URL initializer if the new new behavior is active.
-      let pstr: String
-      if #available(macOS 14, *) {
-        pstr = str
-      } else {
-        guard let encoded = str.addingPercentEncoding(withAllowedCharacters: .urlAllowed) else {
-          log.error("Cannot add percent encoding for \(str)")
-          return 0
-        }
-        pstr = encoded
-      }
-      url = URL(string: pstr)
-      if url == nil {
-        log.error("Cannot parse url for \(pstr)")
-      }
-    }
-    if let url {
-      openURL(url)
-      return 1
+    if let id = PlaybackID(path: str) {
+      return openPlaybackIDs([id])
     }
     return 0
   }
