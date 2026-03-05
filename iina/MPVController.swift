@@ -633,6 +633,7 @@ final class MPVController: NSObject {
     }
     log.verbose("Sending to script: \(stringArgs)")
     mpv_command_node(mpv, &argsNode, &resultNode)
+    MPVNode.free(argsNode)
   }
 
   /// For mpv, window size is always the same as video size, but this is not always true with IINA due to exterior panels.
@@ -645,30 +646,59 @@ final class MPVController: NSObject {
     return mpvVideoScale.roundedTo6()
   }
 
-  func getScreenshot(_ arg: String) -> NSImage? {
+  func getScreenshot() {
+    let arg = "video"
     log.verbose("Taking screenshot-raw \(arg)")
     var args = try! MPVNode.create(["screenshot-raw", arg])
     defer {
       MPVNode.free(args)
     }
-    var result = mpv_node()
-    mpv_command_node(self.mpv, &args, &result)
-    guard let rawImage = try? MPVNode.parse(result) as? [String: Any] else { return nil }
-    mpv_free_node_contents(&result)
-    var pixelArray = rawImage["data"] as! [UInt8]
-    // According to mpv's client.h, the pixel array mpv returns arrange
-    // color data as "B8G8R8X8", whereas CGImages's data provider needs
-    // RGBA, so swap each pixel at index 0 and 2.
-    for i in 0 ..< pixelArray.count >> 2 {
-      pixelArray.swapAt(i << 2, i << 2 | 2)
+    var dataNode = mpv_node()
+    mpv_command_node(self.mpv, &args, &dataNode)
+    if let cgImage = parseScreenshotRaw(dataNode) {
+      player.log.verbose("Successfully created CGImage from screenshot-raw data")
+      let screenshotImage = NSImage(cgImage: cgImage, size: cgImage.size())
+      player.screenshotRawCallback(screenshotImage)
     }
-    let width = Int(truncatingIfNeeded: rawImage["w"] as! Int64)
-    let height = Int(truncatingIfNeeded: rawImage["h"] as! Int64)
-    let rgbColorSpace = CGColorSpaceCreateDeviceRGB()
-    let bitmapInfo = CGBitmapInfo(rawValue: CGImageAlphaInfo.premultipliedLast.rawValue)
-    let providerRef = CGDataProvider(data: NSData(bytes: pixelArray, length: pixelArray.count))!
-    let cgImage = CGImage(width: width, height: height, bitsPerComponent: 8, bitsPerPixel: 4 * 8, bytesPerRow: width * 4, space: rgbColorSpace, bitmapInfo: bitmapInfo, provider: providerRef, decode: nil, shouldInterpolate: true, intent: .defaultIntent)
-    return NSImage(cgImage: cgImage!, size: NSSize(width: width, height: height))
+  }
+
+  /// Must be in BGR0 format
+  func parseScreenshotRaw(_ dataNode: mpv_node) -> CGImage? {
+    do {
+      guard let map = try MPVNode.parse(dataNode) as? [String: Any?] else {
+        player.log.error("Failed to parse MPVNode for screenshot-raw response!")
+        return nil
+      }
+
+      guard let w = map["w"] as! Optional<Int64>,
+            let h = map["h"] as! Optional<Int64>,
+            let stride = map["stride"] as! Optional<Int64>,
+            let format = map["format"] as! Optional<String> else {
+        player.log.error("Failed to parse one or more fields of screenshot-raw response!")
+        return nil
+      }
+      log.verbose("Data for screenshot-raw: W=\(w) H=\(h) stride=\(stride)")
+
+      guard format == "bgr0" else {
+        player.log.error("Wrong format for screenshot-raw response: \(format.quoted)")
+        return nil
+      }
+      guard let data = map["data"] as! Optional<[UInt8]> else {
+        player.log.error("Failed to parse data field of screenshot-raw response!")
+        return nil
+      }
+      // Create CGImage from BGR0 data
+      guard let cgImage = CGImage.createFromBGR0(data: data, width: Int(w), height: Int(h), stride: Int(stride), player.log) else {
+        player.log.error("Failed to create CGImage from BGR0 data")
+        return nil
+      }
+
+      player.log.verbose("Successfully created CGImage from screenshot-raw data")
+      return cgImage
+    } catch {
+      player.log.error("Failed to parse property data for screenshot-raw: \(error)")
+      return nil
+    }
   }
 
   /// Returns true if mpv's state has fallen behind the current user intention and it is currently operating on an entry
