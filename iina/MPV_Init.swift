@@ -26,9 +26,16 @@ extension MPVController {
       player.log.error("Failed to create mpv instance")
       return
     }
+    logError(mpv_set_option_string(mpv, MPVOption.OSD.osc, no))
 
-    mpvSetOptionsFromPrefs()
-    mpvSetOptions(from: player.userOptions)
+    if player.isDemoPlayer {
+      _updateUsingMpvOSDFromPrefs()  // will disable mpv OSD if demo player
+      logError(mpv_set_option_string(mpv, MPVOption.OSD.osc, no))
+      chkErr(mpv_set_option_string(mpv, MPVOption.Input.inputMediaKeys, no))
+    } else {
+      mpvSetOptionsFromPrefs()
+      mpvSetOptions(from: player.userOptions)
+    }
 
     queue.async { [self] in
       // Need to be in mpv queue to get/set player.state variable. But need to set this before setting up
@@ -37,24 +44,59 @@ extension MPVController {
         player.state = .started
       }
     }
-    mpvFinishInit()
+
+    if player.isDemoPlayer {
+      // Do the minimum needed for demo player
+      setFlag(MPVOption.ProgramBehavior.loadAutoProfiles, false, level: .verbose)
+      setFlag(MPVOption.ProgramBehavior.loadOsdConsole, false, level: .verbose)
+      setFlag(MPVOption.ProgramBehavior.loadScripts, false, level: .verbose)
+      setFlag(MPVOption.ProgramBehavior.loadStatsOverlay, false, level: .verbose)
+      setFlag(MPVOption.ProgramBehavior.idle, true, level: .verbose)
+      setOptionString(MPVOption.Window.keepOpen, "always", level: .verbose)
+      setString("config", no)
+
+      setFlag(MPVOption.WatchLater.savePositionOnQuit, false, level: .verbose)
+      setFlag(MPVOption.WatchLater.resumePlayback, false, level: .verbose)
+      setFlag(MPVOption.Window.keepOpen, false, level: .verbose)
+      setFlag(MPVOption.ProgramBehavior.ytdl, false, level: .verbose)
+
+      setInt(MPVOption.Demuxer.demuxerReadaheadSecs, 0, level: .verbose)
+      setString(MPVOption.Demuxer.demuxerMaxBytes, "128KiB", level: .verbose)
+      setString(MPVOption.TrackSelection.aid, no, level: .verbose)
+      setString(MPVOption.TrackSelection.vid, "auto", level: .verbose)
+
+      setString(MPVOption.Video.hwdec, no, level: .verbose)
+
+      logError(mpv_request_log_messages(mpv, MPVLogLevel.warn.description))
+
+      addEventCallbacks()
+
+      logError(mpv_initialize(mpv))
+
+      chkErr(setString(MPVOption.Video.gpuHwdecInterop, "auto", level: .verbose))
+
+      mpvVersion = getString(MPVProperty.mpvVersion)
+      player.log.verbose("Configuration when building mpv: \(getString(MPVProperty.mpvConfiguration)!)")
+    } else {
+      mpvFinishInit()
+    }
+
     player.log.verbose("Init mpv: done")
   }
 
   /// This is designed to be called again if this mpv core is reused across player sessions.
   func mpvSetOptionsFromPrefs() {
     log.verbose("Setting mpv options from IINA settings")
+    assert(!player.isDemoPlayer)
 
-    _updateUsingMpvOSDFromPrefs()  // will disable mpv OSD if demo player
-    if player.isDemoPlayer || !player.isPresentInUserOptions(MPVOption.OSD.osc) {
+    _updateUsingMpvOSDFromPrefs()
+    if !player.isPresentInUserOptions(MPVOption.OSD.osc) {
       logError(mpv_set_option_string(mpv, MPVOption.OSD.osc, no))
     }
 
     // Disable mpv's media key system as it now uses the MediaPlayer Framework.
     // Dropped media key support in 10.11 and 10.12.
     chkErr(mpv_set_option_string(mpv, MPVOption.Input.inputMediaKeys, no))
-
-    guard !player.isDemoPlayer else { return }
 
     if !player.isRestoring, !player.isPresentInUserOptions(MPVOption.Audio.volume) {
       if Preference.bool(for: .enableInitialVolume) {
@@ -427,32 +469,7 @@ extension MPVController {
   @MainActor
   private func mpvFinishInit() {
     player.log.verbose("Finshing mpv init")
-
-    if player.isDemoPlayer {
-      // Do the minimum needed for demo player
-      setFlag(MPVOption.ProgramBehavior.loadAutoProfiles, false, level: .verbose)
-      setFlag(MPVOption.ProgramBehavior.loadOsdConsole, false, level: .verbose)
-      setFlag(MPVOption.ProgramBehavior.loadScripts, false, level: .verbose)
-      setFlag(MPVOption.ProgramBehavior.loadStatsOverlay, false, level: .verbose)
-      setString("config", no)
-
-      setFlag(MPVOption.WatchLater.savePositionOnQuit, false, level: .verbose)
-      setFlag(MPVOption.WatchLater.resumePlayback, false, level: .verbose)
-      setFlag(MPVOption.Window.keepOpen, false, level: .verbose)
-      setFlag(MPVOption.ProgramBehavior.ytdl, false, level: .verbose)
-
-      setInt(MPVOption.Demuxer.demuxerReadaheadSecs, 0, level: .verbose)
-      setString(MPVOption.Demuxer.demuxerMaxBytes, "128KiB", level: .verbose)
-      setString(MPVOption.TrackSelection.aid, no, level: .verbose)
-
-      setString(MPVOption.Video.hwdec, no, level: .verbose)
-
-      logError(mpv_request_log_messages(mpv, MPVLogLevel.warn.description))
-      logError(mpv_initialize(mpv))
-
-      mpvVersion = getString(MPVProperty.mpvVersion)
-      return
-    }
+    assert(!player.isDemoPlayer)
 
     // Set up event callback
     setMpvEventLogSubscription()
@@ -545,14 +562,6 @@ extension MPVController {
     }
 
     player.updateCursorAutohideState()
-
-    // get version
-    mpvVersion = getString(MPVProperty.mpvVersion)
-
-    // Unlike upstream IINA, we do not start any mpv cores until a window has been opened.
-    // So we must wait until now to log this info, instead of at app start.
-    // Should be fine to log this for every mpv core - it may be useful to have it in every mpv log file.
-    player.log.verbose("Configuration when building mpv: \(getString(MPVProperty.mpvConfiguration)!)")
   }
 
   /// Remove codecs from the hardware decoding white list that this Mac does not support.

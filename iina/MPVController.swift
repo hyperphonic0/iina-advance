@@ -41,7 +41,7 @@ extension mpv_event_end_file {
     }
     if reason == MPV_END_FILE_REASON_ERROR {
       let errStr = String(cString: mpv_error_string(error))
-      reasonString += " \(error) (\(errStr))"
+      reasonString += " \(error): \(errStr.quoted)"
     }
     return reasonString
   }
@@ -646,20 +646,22 @@ final class MPVController: NSObject {
     return mpvVideoScale.roundedTo6()
   }
 
-  func getScreenshot() {
-    let arg = "video"
-    log.verbose("Taking screenshot-raw \(arg)")
-    var args = try! MPVNode.create(["screenshot-raw", arg])
+  func getScreenshot(_ argString: String) -> CGImage? {
+    log.verbose("Taking screenshot-raw \(argString)")
+    var args = try! MPVNode.create(["screenshot-raw", argString])
     defer {
       MPVNode.free(args)
     }
     var dataNode = mpv_node()
-    mpv_command_node(self.mpv, &args, &dataNode)
-    if let cgImage = parseScreenshotRaw(dataNode) {
-      player.log.verbose("Successfully created CGImage from screenshot-raw data")
-      let screenshotImage = NSImage(cgImage: cgImage, size: cgImage.size())
-      player.screenshotRawCallback(screenshotImage)
+    let returnCode = mpv_command_node(self.mpv, &args, &dataNode)
+    guard logError(returnCode) == 0 else {
+      return nil
     }
+    let cgImage = parseScreenshotRaw(dataNode)
+    if cgImage != nil {
+      player.log.verbose("Successfully created CGImage from screenshot-raw data")
+    }
+    return cgImage
   }
 
   /// Must be in BGR0 format
@@ -667,6 +669,7 @@ final class MPVController: NSObject {
     do {
       guard let map = try MPVNode.parse(dataNode) as? [String: Any?] else {
         player.log.error("Failed to parse MPVNode for screenshot-raw response!")
+        
         return nil
       }
 
@@ -911,8 +914,8 @@ final class MPVController: NSObject {
    Utility function for checking mpv api error
    */
   func chkErr(_ returnCode: Int32!) {
-    guard returnCode < 0 else { return }
-    let message = "mpv API error: \"\(errorString(returnCode))\", Return value: \(returnCode!)."
+    guard let returnCode, returnCode < 0 else { return }
+    let message = "Error returned by mpv: \(returnCode) (\"\(errorString(returnCode))\")"
     player.log.error(message)
 
     DispatchQueue.main.async { [self] in
@@ -930,7 +933,7 @@ final class MPVController: NSObject {
   func logError(_ returnCode: Int32) -> Int32 {
     guard returnCode < 0 else { return returnCode }
     guard player.log.isErrorEnabled else { return returnCode }
-    player.log.error("mpv API error: \"\(errorString(returnCode))\", Return value: \(returnCode)")
+    player.log.error("Error returned by mpv: \(returnCode) (\"\(errorString(returnCode))\")")
     return returnCode
   }
 

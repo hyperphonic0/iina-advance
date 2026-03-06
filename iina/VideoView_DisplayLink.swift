@@ -132,6 +132,7 @@ extension VideoView {
   /// Starts the display link if it has been stopped in order to save energy.
   @MainActor
   func displayActive() {
+    guard let pwc, pwc.loaded else { return }
     let hasTimeout = player.info.isPaused
     log.trace("VideoView displayActive willTimeout=\(hasTimeout.yn)")
     if !hasTimeout {
@@ -159,6 +160,7 @@ extension VideoView {
   ///         full screen mode.
   @MainActor
   func displayIdle() {
+    guard let pwc, pwc.loaded else { return }
     // Because the display link is critical there is an internal setting that can be changed to
     // disable shutting down the display link should any problems with this energy saving feature
     // be discovered.

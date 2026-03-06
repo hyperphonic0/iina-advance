@@ -354,6 +354,7 @@ final class PlayerCore: NSObject {
   @MainActor
   static func buildDemoPlayer() -> PlayerCore {
     let player = PlayerCore(Constants.String.demoPlayerIdentifier, isDemoPlayer: true)
+
     player.log.verbose("PlayerCore init (demo): done")
     return player
   }
@@ -1109,18 +1110,20 @@ final class PlayerCore: NSObject {
       $postLoadBGQTicket.withLock { $0 += 1 }
       shutDownPlayerThumbnails()
 
-      pwc.playlistView.clearBackgroundQueue()
-
       // Reset playback state
       info.playbackTime = .nullTime
       info.playlist = []
 
       info.$matchedSubs.withLock { $0.removeAll() }
 
-      // Do not enqueue after window is closed (and info.currentPlayback is nil)
-      sendOSD(.stop)
-      DispatchQueue.main.async { [self] in
-        videoView.stopDisplayLink()
+      if let pwc, pwc.loaded {
+        pwc.playlistView.clearBackgroundQueue()
+
+        // Do not enqueue after window is closed (and info.currentPlayback is nil)
+        sendOSD(.stop)
+        DispatchQueue.main.async { [self] in
+          videoView.stopDisplayLink()
+        }
       }
 
       // Do not send a stop command to mpv if it is already stopped. This happens when quitting is
@@ -2093,6 +2096,10 @@ final class PlayerCore: NSObject {
 
     log.verbose("FileLoaded path=\(info.currentPlayback?.path.pii.quoted ?? "nil")")
 
+    if self.isDemoPlayer {
+      log.verbose("DEMO PLAYER LOADED")
+    }
+
     if let pwc, pwc.loaded {
       // mpv will play when loaded by default. But if we are opening a new window or starting a new session in an existing window,
       // we will have told mpv to pause the playback, and we should not unpause the playback until we are ready to show the window.
@@ -2226,14 +2233,14 @@ final class PlayerCore: NSObject {
     }
   }
 
-  func fileEnded(dueToStopCommand: Bool, detail: String) {
+  func fileEnded(dueToStopCommand: Bool, errorDetail: String) {
     // if receive end-file when loading file, might be error
     // wait for idle
     if info.isFileLoaded {
       info.shouldAutoLoadFiles = false
     } else {
       if !dueToStopCommand {
-        errorWhileLoading = detail
+        errorWhileLoading = errorDetail
       }
     }
     if dueToStopCommand {
@@ -2255,8 +2262,8 @@ final class PlayerCore: NSObject {
     let errorMsg = errorWhileLoading
     log.verbose("Got mpv 'idle-active': isFileLoaded=\(isFileLoaded.yn) error=\(errorMsg?.quoted ?? "nil") playerState=\(state)")
     /// Make sure to check that `info.currentPlayback != nil` before outputting error
-    if let errorMsg, let playback = info.currentPlayback, playback.state.isNotYet(.loaded) {
-      log.error("Received fileEnded + 'idle-active' from mpv while loading \(playback.path.pii.quoted)!"
+    if let errorMsg, let playback = info.currentPlayback, !isFileLoaded {
+      log.error("Received 'file-ended' + 'idle-active' from mpv while loading \(playback.path.pii.quoted)!"
                 + " Will stop player\(isInteractivePlayer ? " & close window" : "")")
       DispatchQueue.main.async { [self] in
         let errorDetail = errorMsg.isEmpty ? "" : "\n\n\(errorMsg)"
