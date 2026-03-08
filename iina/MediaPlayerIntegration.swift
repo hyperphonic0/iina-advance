@@ -61,6 +61,49 @@ final class MediaPlayerIntegration {
     }
   }
 
+  /// Returns the value to use for the [preferredIntervals](https://developer.apple.com/documentation/mediaplayer/mpskipintervalcommand/preferredintervals) property.
+  ///
+  /// The [MPRemoteCommandCenter](https://developer.apple.com/documentation/MediaPlayer/MPRemoteCommandCenter)
+  /// expects the media keys tied to the  [seekBackwardCommand](https://developer.apple.com/documentation/mediaplayer/mpremotecommandcenter/seekbackwardcommand) and the [seekForwardCommand](https://developer.apple.com/documentation/mediaplayer/mpremotecommandcenter/seekforwardcommand) to seek backward and
+  /// forward in the current media track. The
+  /// [MPSkipIntervalCommand](https://developer.apple.com/documentation/mediaplayer/mpskipintervalcommand)
+  /// property [preferredIntervals](https://developer.apple.com/documentation/mediaplayer/mpskipintervalcommand/preferredintervals) provides the number of
+  /// seconds pressing the key will skip.
+  ///
+  /// IINA allows the user to bind a mpv command to the `FORWARD` and `REWIND` media keys. This method must:
+  /// - Determine if there is a key binding for the given key and if not return the default of 15 seconds
+  /// - Determine if the key is bound to an IINA command and if so return an empty array indicating the property is not applicable
+  /// - Determine if the key is bound to the mpv
+  ///     [seek](https://mpv.io/manual/stable/#command-interface-seek-%3Ctarget%3E-[%3Cflags%3E]) command
+  ///     and if not, return an empty array
+  /// - Parse the `target` value of the `seek` command as an integer, if it cannot be parsed log an error and  return an empty array
+  /// - If present, parse the `seek` command flags and if any flags other than `exact`, `keyframes` and `relative` are
+  ///     present then return an empty array as this is not a normal seek
+  /// - When all the above checks pass the key has been bound to a normal seek command and the absolute value of the seek
+  ///     command target parameter can be used as the interval
+  ///
+  /// To see the `preferredIntervals` value open
+  /// [Control Center](https://support.apple.com/guide/mac-help/quickly-change-settings-mchl50f94f8f/mac)
+  /// and double click on the Now Playing module with IINA playing media. The expanded Now Playing module will contain seek
+  /// backward and seek forward buttons. The interval may be shown inside the button icons.
+  /// - Parameter key: Media key the value is for.
+  /// - Returns: Value to use for` preferredIntervals`.
+  private func formPreferredIntervalsValue(_ key: String) -> Double {
+    let seconds: Double
+    if let player = lastActivePlayer, let keyBinding = player.keyBindingContext.matchActiveKeyBinding(endingWith: "GO_FORWARD"),
+       let action = keyBinding.action, action.count >= 2, action[0] == MPVCommand.seek.rawValue,
+       let targetSeekTime = Double(action[1]) {
+          seconds = abs(targetSeekTime)
+    } else {
+      seconds = 15
+    }
+    // The seek command target may be negative to indicate seeking backwards, however the remote
+    // command dictates the direction and requires that the interval to be positive.
+    Logger.log.verbose("Seek interval for key \(key) is \(seconds) s")
+    return seconds
+  }
+
+
   @MainActor
   private func attachRemoteCommands() {
     Logger.log.trace("Attaching MediaPlayer remote commands")
@@ -78,13 +121,16 @@ final class MediaPlayerIntegration {
     remoteCommand.changePlaybackRateCommand.addTarget(handler: buildCmdHandler{ player, event in
       player.setSpeed(Double((event as! MPChangePlaybackRateCommandEvent).playbackRate))
     })
-    remoteCommand.skipForwardCommand.preferredIntervals = [15]
+
+    let seekForwardInterval = formPreferredIntervalsValue("GO_FORWARD")
+    remoteCommand.skipForwardCommand.preferredIntervals = [NSNumber(value: seekForwardInterval)]
     remoteCommand.skipForwardCommand.addTarget(handler: buildCmdHandler(forKey: "GO_FORWARD", fallbackAction: { player, event in
-      player.seek(relativeSecond: (event as! MPSkipIntervalCommandEvent).interval, option: .defaultValue)
+      player.seek(relativeSecond: Double(seekForwardInterval), option: .defaultValue)
     }))
-    remoteCommand.skipBackwardCommand.preferredIntervals = [15]
+    let seekBackwardInterval = formPreferredIntervalsValue("GO_BACK")
+    remoteCommand.skipBackwardCommand.preferredIntervals = [NSNumber(value: seekBackwardInterval)]
     remoteCommand.skipBackwardCommand.addTarget(handler: buildCmdHandler(forKey: "GO_BACK", fallbackAction: { player, event in
-      player.seek(relativeSecond: -(event as! MPSkipIntervalCommandEvent).interval, option: .defaultValue)
+      player.seek(relativeSecond: -seekBackwardInterval, option: .defaultValue)
     }))
     remoteCommand.changePlaybackPositionCommand.addTarget(handler: buildCmdHandler{ player, event in
       player.seek(absoluteSecond: (event as! MPChangePlaybackPositionCommandEvent).positionTime)

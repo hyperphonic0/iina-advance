@@ -149,14 +149,12 @@ final class MPVController: NSObject {
 
   func mpvDestroy() {
     player.log.verbose("Destroying mpv")
-    guard mpv != nil else {
+    guard let mpv else {
       log.error("Skipping call to mpv_destroy; mpv handle is nil!")
       return
     }
-    ObjcUtils.silenced { [self] in
-      mpv_destroy(mpv)
-    }
-    mpv = nil
+    self.mpv = nil
+    mpv_destroy(mpv)
   }
 
   // MARK: - Commands

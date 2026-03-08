@@ -2450,8 +2450,8 @@
 		847557121F405F2B0006B0FF /* Menu */ = {
 			isa = PBXGroup;
 			children = (
-				D1CC811F2EFD5F8700D9785F /* MenuItemMatcher.swift */,
 				8487BEC21D76A1AF00FD17B0 /* MenuController.swift */,
+				D1CC811F2EFD5F8700D9785F /* MenuItemMatcher.swift */,
 				84AE59481E0FD65800771B7E /* PlayerWindowMenuActions.swift */,
 			);
 			name = Menu;
