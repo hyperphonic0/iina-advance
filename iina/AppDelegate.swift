@@ -129,6 +129,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
         appDidReceiveKillRequest()
       }
 
+    case .screenshotUseRAMDisk, .screenshotRAMDiskSizeMB:
+      // Reload screenshot storage when RAM disk settings change
+      ScreenshotStorageManager.shared.reloadIfNeeded()
+
     default:
       break
     }
@@ -241,6 +245,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       .enableCmdN,
       .resumeLastPosition,
       .useMediaKeys,
+      .screenshotUseRAMDisk,
+      .screenshotRAMDiskSizeMB,
       //    .hideWindowsWhenInactive, // TODO: #1, see below
       .killRequest,
     ]
@@ -313,6 +319,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
   func applicationDidFinishLaunching(_ aNotification: Notification) {
     Logger.log.verbose("App did finish launching")
+    
+    // Setup screenshot storage (RAM disk if enabled)
+    if isInteractiveLaunch {
+      ScreenshotStorageManager.shared.setup()
+    }
+    
     startupHandler.doStartup()
   }
 

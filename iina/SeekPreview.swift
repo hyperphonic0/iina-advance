@@ -139,7 +139,7 @@ extension PlayerWindowController {
         }
       } else {
         if showThumbnail {
-          log.verbose("Cannot show thumbnail for time=\(previewTimeSec): hasThumbstore=\((thumbStore != nil).yn) thumbsCount=\(thumbStore?.thumbnails.count ?? 0)")
+          log.verbose("[SeekPreview] No thumbnail for \(previewTimeSec)s: hasStore=\((thumbStore != nil).yn) thumbCount=\(thumbStore?.thumbnails.count ?? 0)")
         }
         showThumbnail = false
         thumbWidth = 0
@@ -308,7 +308,8 @@ extension PlayerWindowController {
       timeLabel.isHidden = false
 
       // Done with timeLabel.
-      log.verbose("[SeekPreview] Showing TimeLabel: centerX=\(timeLabelCenterX) originY=\(timeLabelOriginY) size=\(timeLabelSize). Thumbnail: show=\(showThumbnail.yn) thumbfast=\(usingThumbfast.yn)")
+      log.verbose("[SeekPreview] Showing Time: centerX=\(Int(timeLabelCenterX)) originY=\(Int(timeLabelOriginY)) size=\(timeLabelSize). Thumb=\(showThumbnail.yn)"
+                  + (showThumbnail ? " thumbfast=\(usingThumbfast.yn)" : ""))
 
       // Need integers below.
       if showThumbnail && !usingThumbfast {
@@ -561,7 +562,7 @@ extension PlayerWindowController {
     }
 
     let playbackPositionRatio = playSlider.computeProgressRatioGiven(centerOfKnobInSliderCoordX: centerOfKnobInSliderCoordX)
-    let previewTimeSec = mediaDuration * playbackPositionRatio
+    let previewTimeSec = (mediaDuration * playbackPositionRatio).roundedTo6()
 
     // Get X coord of hover (not the knob center)!
     let pointInWindowX: CGFloat = playSlider.convert(pointInWindow, from: nil).x

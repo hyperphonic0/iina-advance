@@ -286,7 +286,7 @@ class VideoView: NSView {
     }
     let screenColorSpace = player.pwc.window?.screen?.colorSpace
     if !Preference.bool(for: .loadIccProfile) {
-      logHDR.verbose("Not using ICC profile due to user preference")
+      logHDR.verbose("Not using ICC profile due to user pref")
     } else if let screenColorSpace {
       let name = screenColorSpace.localizedName ?? "unnamed"
       logHDR.verbose("Using the ICC profile of the color space \(name.quoted)")

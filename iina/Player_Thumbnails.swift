@@ -86,6 +86,7 @@ extension PlayerCore {
   func shutDownPlayerThumbnails() {
     // need to run in mpv queue to maintain data isolation
     assert(DispatchQueue.isExecutingIn(mpv.queue))
+    guard !isDemoPlayer else { return }
 
     log.verbose("Clearing thumbnails & cancelling thumbnail generation")
     thumbnailsLoader.currentMediaThumbnailsLoader = nil
@@ -133,6 +134,7 @@ extension PlayerCore {
 
   func reloadThumbnails() {
     guard let pwc, pwc.loaded else { return }
+    guard !isDemoPlayer else { return }
     DispatchQueue.main.asyncAfter(deadline: .now() + Constants.TimeInterval.thumbnailRegenerationDelay) { [self] in
       let videoGeo = pwc.geo.video
 
@@ -175,6 +177,24 @@ extension PlayerCore {
                                                                   videoTrackID: videoTrackID, thumbnailWidth: thumbnailWidth)
         // This will cancel / discard any previous thumbs for this player:
         thumbnailsLoader.currentMediaThumbnailsLoader = newMediaThumbnailLoader
+
+        /*
+        DispatchQueue.main.async { [self] in
+          let demoPlayer = PlayerManager.shared.getOrCreateDemo()
+          demoPlayer.mpv.queue.async {
+            demoPlayer.mpv.command(.loadfile, args: [playback.url.path])
+          }
+          demoPlayer.seek(percent: 10.0)
+          demoPlayer.mpv.queue.async { [self] in
+            if let screenshotImg = demoPlayer.mpv.getScreenshot("video") {
+              log.debug("Got screenshot: \(screenshotImg.size().description)")
+            } else {
+              log.error("Failed to get screenshot")
+            }
+          }
+        }
+        */
+
         // Run the following in the background (`thumbnailQueue`) at lower priority, so the UI is not slowed down.
         ThumbnailCache.shared.thumbnailQueue.async { [self] in
           log.trace("Thumbnails reload requested")

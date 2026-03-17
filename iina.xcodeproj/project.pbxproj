@@ -336,6 +336,9 @@
 		D160783B2D140DEE00105001 /* BarRendererUtil.swift in Sources */ = {isa = PBXBuildFile; fileRef = D160783A2D140DDB00105001 /* BarRendererUtil.swift */; };
 		D161A0B42EBA2226006BF42C /* FixedProgressBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = D161A0B32EBA2226006BF42C /* FixedProgressBar.swift */; };
 		D16A434D2CDDB75B0012D66F /* BarRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D16A434C2CDDB7570012D66F /* BarRenderer.swift */; };
+		D16B51062F5AA869000D9767 /* RAMDiskManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D16B51052F5AA869000D9767 /* RAMDiskManager.swift */; };
+		D16B51082F5AA86F000D9767 /* ScreenshotStorageManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D16B51072F5AA86F000D9767 /* ScreenshotStorageManager.swift */; };
+		D16B510A2F5AA928000D9767 /* RAMDisk_README.md in Resources */ = {isa = PBXBuildFile; fileRef = D16B51092F5AA928000D9767 /* RAMDisk_README.md */; };
 		D16E1F152E302C6800F8F208 /* DefaultAlbumArtView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D16E1F142E302C5D00F8F208 /* DefaultAlbumArtView.swift */; };
 		D1724A692BF80C9A00BCE335 /* FolderMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1724A682BF80C9A00BCE335 /* FolderMonitor.swift */; };
 		D17504A629167ACF005C3DD0 /* CascadingMenuItemBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = D17504A529167ACF005C3DD0 /* CascadingMenuItemBuilder.swift */; };
@@ -1868,6 +1871,9 @@
 		D160783A2D140DDB00105001 /* BarRendererUtil.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BarRendererUtil.swift; sourceTree = "<group>"; };
 		D161A0B32EBA2226006BF42C /* FixedProgressBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FixedProgressBar.swift; sourceTree = "<group>"; };
 		D16A434C2CDDB7570012D66F /* BarRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BarRenderer.swift; sourceTree = "<group>"; };
+		D16B51052F5AA869000D9767 /* RAMDiskManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RAMDiskManager.swift; sourceTree = "<group>"; };
+		D16B51072F5AA86F000D9767 /* ScreenshotStorageManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotStorageManager.swift; sourceTree = "<group>"; };
+		D16B51092F5AA928000D9767 /* RAMDisk_README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = RAMDisk_README.md; sourceTree = "<group>"; };
 		D16E1F142E302C5D00F8F208 /* DefaultAlbumArtView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultAlbumArtView.swift; sourceTree = "<group>"; };
 		D1724A682BF80C9A00BCE335 /* FolderMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderMonitor.swift; sourceTree = "<group>"; };
 		D17504A529167ACF005C3DD0 /* CascadingMenuItemBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CascadingMenuItemBuilder.swift; sourceTree = "<group>"; };
@@ -2640,6 +2646,8 @@
 				D1F2B09A2CFF07CC00F995B3 /* AppDetailsLogging.swift */,
 				D1FF15742A7E072200C0CE86 /* PlayerManager.swift */,
 				348F71952DE2A814006C587D /* MPVCommandWrappers.swift */,
+				D16B51052F5AA869000D9767 /* RAMDiskManager.swift */,
+				D16B51072F5AA86F000D9767 /* ScreenshotStorageManager.swift */,
 				84C6D3611EAF8D63009BF721 /* HistoryController.swift */,
 				D1F2B09C2CFF271900F995B3 /* MediaPlayerIntegration.swift */,
 				D17780D72CA0B680006B3B33 /* MediaMetaCache.swift */,
@@ -2865,6 +2873,7 @@
 				8452DD7F1D3A1F2A008A543A /* Preference */,
 				E3CAD4AD2146DB23000B373A /* Javascript */,
 				84A0BAA61D2FAF8400BC8DA1 /* Utils */,
+				D16B51092F5AA928000D9767 /* RAMDisk_README.md */,
 			);
 			indentWidth = 2;
 			path = iina;
@@ -3324,6 +3333,7 @@
 				849581F31F03D55A00D3B359 /* InitialWindowController.xib in Resources */,
 				845AC09C1E1AE6C10080B614 /* Localizable.strings in Resources */,
 				8400D5F61E1AB34D006785F5 /* PrefNetworkViewController.xib in Resources */,
+				D16B510A2F5AA928000D9767 /* RAMDisk_README.md in Resources */,
 				8400D5D51E1AB317006785F5 /* FilterWindowController.xib in Resources */,
 				E3B3DD5720FDB8A600325184 /* PreferenceWindowController.xib in Resources */,
 				84996F901EC11CE6009A8A39 /* HistoryWindowController.xib in Resources */,
@@ -3431,6 +3441,7 @@
 				D13E807E2C026A2700537954 /* PWin_GeoSet.swift in Sources */,
 				84D0FB811F5E5A4000C6A6A7 /* CropBoxViewController.swift in Sources */,
 				D13350952D06B7EC00201623 /* GeometryTransform.swift in Sources */,
+				D16B51062F5AA869000D9767 /* RAMDiskManager.swift in Sources */,
 				E3ECC89E1FE9A6D900BED8C7 /* MPVGeometryDef.swift in Sources */,
 				D13A7F0E2D3A03B100840277 /* VideoView_DisplayLink.swift in Sources */,
 				D1D87E002924F92100737886 /* ConfTableStateManager.swift in Sources */,
@@ -3544,6 +3555,7 @@
 				D192C7D82E8CF2BD00CC537A /* OptionalConstraint.swift in Sources */,
 				84C6D3621EAF8D63009BF721 /* HistoryController.swift in Sources */,
 				D16A434D2CDDB75B0012D66F /* BarRenderer.swift in Sources */,
+				D16B51082F5AA86F000D9767 /* ScreenshotStorageManager.swift in Sources */,
 				D1AF3D7928F16CA4002A15A7 /* CellEditTracker.swift in Sources */,
 				E38B3213214FB9EA000F6D27 /* PrefPluginPermissionView.swift in Sources */,
 				D1AE04CE2A9317CD00F58860 /* PWin_LayoutTxBuilder.swift in Sources */,

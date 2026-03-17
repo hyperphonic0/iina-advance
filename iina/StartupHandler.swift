@@ -156,7 +156,7 @@ final class StartupHandler {
     showWindowsIfReady()
   }
 
-  // MARK: - Open Files
+  // MARK: - Open Files (at OR after launch)
 
   /// This can be called either at startup, or after startup. It is called when files are dropped onto the
   /// application icon.
@@ -287,7 +287,9 @@ final class StartupHandler {
         // open one window per file
         let player: PlayerCore
         if let cli {
-          // TODO: do we ever need to reuse a PlayerCore for command line?
+          // We never need to reuse a PlayerCore for command-line launches.
+          // CLI args are only applied to the players which open at launch. Any new windows opened afterwards
+          // should behave as though not launched via CLI.
           player = PlayerManager.shared.createNewPlayerCore(applyingCLI: cli)
         } else {
           player = PlayerManager.shared.getIdleOrCreateNew()
@@ -346,7 +348,7 @@ final class StartupHandler {
     return totalFilesOpened + totalExistingFilesShown
   }
 
-  // MARK: - Restore
+  // MARK: - Restore From Prev Launch
 
   /// Returns `true` if any windows were restored; `false` otherwise.
   @MainActor @discardableResult

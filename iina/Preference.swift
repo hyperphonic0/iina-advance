@@ -142,6 +142,11 @@ struct Preference {
     static let screenshotTemplate = Key("screenShotTemplate")
     static let screenshotShowPreview = Key("screenshotShowPreview")
 
+    /// Whether to use RAM disk for temporary screenshot storage
+    static let screenshotUseRAMDisk = Preference.Key("screenshotUseRAMDisk")
+    /// Size of RAM disk for screenshots in MB (default: 100)
+    static let screenshotRAMDiskSizeMB = Preference.Key("screenshotRAMDiskSizeMB")
+
     static let playlistAutoAdd = Key("playlistAutoAdd")
     static let playlistAutoPlayNext = Key("playlistAutoPlayNext")
     /// "Show artist and track name for audio files when available"
@@ -1740,6 +1745,9 @@ struct Preference {
     .screenshotFormat: ScreenshotFormat.png.rawValue,
     .screenshotTemplate: "%F-%n",
     .screenshotShowPreview: true,
+
+      .screenshotUseRAMDisk: false,
+    .screenshotRAMDiskSizeMB: 100,
 
       .watchProperties: [String](),
     .savedVideoFilters: [SavedFilter](),

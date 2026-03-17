@@ -54,10 +54,10 @@ extension MPVController {
       setFlag(MPVOption.ProgramBehavior.idle, true, level: .verbose)
       setOptionString(MPVOption.Window.keepOpen, "always", level: .verbose)
       setString("config", no)
+      setFlag(MPVOption.PlaybackControl.pause, true, level: .verbose)
 
       setFlag(MPVOption.WatchLater.savePositionOnQuit, false, level: .verbose)
       setFlag(MPVOption.WatchLater.resumePlayback, false, level: .verbose)
-      setFlag(MPVOption.Window.keepOpen, false, level: .verbose)
       setFlag(MPVOption.ProgramBehavior.ytdl, false, level: .verbose)
 
       setInt(MPVOption.Demuxer.demuxerReadaheadSecs, 0, level: .verbose)
@@ -65,11 +65,22 @@ extension MPVController {
       setString(MPVOption.TrackSelection.aid, no, level: .verbose)
       setString(MPVOption.TrackSelection.vid, "auto", level: .verbose)
 
+      // The following params are largely copied from thumbfast.lua (thanks!)
+      setString(MPVEncoding.ovc, "rawvideo", level: .verbose)
+      setString(MPVEncoding.of, "image2", level: .verbose)
+      setString(MPVEncoding.ofopts, "update=1", level: .verbose)
+      setString(MPVEncoding.o, "image2", level: .verbose)
+      setString(MPVOption.Video.vdLavcSkiploopfilter, "all", level: .verbose)
+      setInt(MPVOption.Video.vdLavcSoftwareFallback, 1, level: .verbose)
+      setFlag(MPVOption.Video.vdLavcFast, true, level: .verbose)
+      setInt(MPVOption.Video.vdLavcThreads, 2, level: .verbose)
+      setFlag(MPVOption.SoftwareScaler.swsAllowZimg, false, level: .verbose)
+
       setString(MPVOption.Video.hwdec, no, level: .verbose)
 
       logError(mpv_request_log_messages(mpv, MPVLogLevel.warn.description))
 
-      addEventCallbacks()
+//      addEventCallbacks()
 
       logError(mpv_initialize(mpv))
 
