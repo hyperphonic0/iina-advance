@@ -7,7 +7,7 @@
 //
 
 extension VideoView {
-  /// This is on the DisplayLink's thread!
+  /// This is on the DisplayLink's thread, *not* the main thread!
   func displayLinkDidFire() {
     // We need to run the checks below in the main DQ to prevent data races, but the timing of these checks does not need
     // to be super precise, and be nice to avoid 60 (or whatever rate of the DisplayLink) async tasks being enqueud per sec,

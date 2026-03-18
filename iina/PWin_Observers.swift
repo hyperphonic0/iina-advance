@@ -405,7 +405,7 @@ extension PlayerWindowController {
         /// For that, we follow `appleColorPreferencesChangedNotification`.
         /// Compare `NSApp.effectiveAppearance`, not window appearance (that can change via `themeMaterial` pref
         /// which we handle elsewhere).
-        let effectiveAppearanceName = NSApp.effectiveAppearance.name.rawValue
+        let effectiveAppearanceName = window!.effectiveAppearance.name.rawValue
         guard cachedEffectiveAppearanceName != effectiveAppearanceName else { return }
         log.verbose("Window appearance changed to: \(effectiveAppearanceName)")
         cachedEffectiveAppearanceName = effectiveAppearanceName

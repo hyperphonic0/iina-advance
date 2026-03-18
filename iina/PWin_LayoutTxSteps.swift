@@ -357,7 +357,7 @@ extension PlayerWindowController {
     /// Set `window.contentView.appearance` instead.
     let theme: Preference.Theme = Preference.enum(for: .themeMaterial)
     // Can be nil, which means dynamic system appearance as set by MacOS (via NSApp)
-    let targetWindowAppearance: NSAppearance = NSAppearance(iinaTheme: theme) ?? NSApp.effectiveAppearance
+    let targetWindowAppearance: NSAppearance = NSAppearance(iinaTheme: theme) ?? window.effectiveAppearance
     let topBarAppearance = outputLayout.topBarColorScheme.hasClearBG ? NSAppearance(iinaTheme: .dark)! : targetWindowAppearance
     log.verbose("TopBarAppearance: \(topBarAppearance.isDark ? "DARK" : "LIGHT")")
 

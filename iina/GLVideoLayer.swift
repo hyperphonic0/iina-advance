@@ -134,10 +134,6 @@ class GLVideoLayer: CAOpenGLLayer {
 
   override func canDraw(inCGLContext ctx: CGLContextObj, pixelFormat pf: CGLPixelFormatObj,
                         forLayerTime t: CFTimeInterval, displayTime ts: UnsafePointer<CVTimeStamp>?) -> Bool {
-    // When isAsynchronous==true, skip all drawing calls on the main thread.
-    // Setting isAsynchronous = true is enough to prevent jittering.
-    guard !(isAsynchronous && Thread.isMainThread) else { return false }
-
     guard lockAndSetOpenGLContext() else { return false }
     defer { unlockOpenGLContext() }
     return videoView.$isUninited.withLock { isUninited in
@@ -223,16 +219,14 @@ class GLVideoLayer: CAOpenGLLayer {
   /// throw off the timing of each draw.
   @MainActor
   func enterAsynchronousMode() {
-    videoView.$isUninited.withLock() { isUninited in
-      asynchronousModeStartTime = Date().timeIntervalSince1970
-      if !isAsynchronous {
-        videoView.player.log.verbose("Entering asynchronous mode")
-      }
-      /// Set this to `true` to enable video redraws to match the timing of the view redraw during animations.
-      /// This fixes a situation where the layer size may not match the size of its superview at each redraw,
-      /// which would cause noticable clipping or wobbling during animations.
-      isAsynchronous = true
+    asynchronousModeStartTime = Date().timeIntervalSince1970
+    if !isAsynchronous {
+      videoView.player.log.verbose("Entering asynchronous mode")
     }
+    /// Set this to `true` to enable video redraws to match the timing of the view redraw during animations.
+    /// This fixes a situation where the layer size may not match the size of its superview at each redraw,
+    /// which would cause noticable clipping or wobbling during animations.
+    isAsynchronous = true
   }
 
   func drawAsync(forced: Bool = false) {

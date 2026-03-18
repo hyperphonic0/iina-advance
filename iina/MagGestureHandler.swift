@@ -426,8 +426,9 @@ final class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
 extension PlayerWindowController {
   fileprivate func scaleWindowFromPinch(_ recognizer: NSMagnificationGestureRecognizer, currentMode: PlayerWindowMode) {
 
-    // avoid zero and negative numbers because they will cause problems
-    let targetScale = max(0.0001, recognizer.magnification + 1.0)
+    // Avoid zero and negative numbers because they will cause problems.
+    // Round to 6 decimal places: mpv doesn't support finer grained behavior, so anything beyond that is just noise.
+    let targetScale = max(0.0001, recognizer.magnification + 1.0).roundedTo6()
 
     switch recognizer.state {
 
