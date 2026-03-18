@@ -52,8 +52,8 @@ extension PlayerWindowController {
   ///   `window.setFrame`. Do not use for anything too serious because it seems to sometimes fire during animations in progress.
   /// * `windowDidEndLiveResize`: Never use! It is unreliable. Use `windowDidResize` if anything.
   func windowWillResize(_ window: NSWindow, to requestedSize: NSSize) -> NSSize {
-    guard !isAnimatingLayoutTransition else {
-      log.verbose("[WndWillResize] isAnimatingLayoutTransition=Y: will grant requestedSize=\(requestedSize)")
+    guard !isAnimatingLayoutTransition, !isApplyingPWinGeo else {
+      log.verbose("[WndWillResize] isAnimatingLayoutTransition=\(isAnimatingLayoutTransition.yn) isApplyingPWinGeo=\(isApplyingPWinGeo.yn): will grant requestedSize=\(requestedSize)")
       return requestedSize
     }
     guard !isMagnifying else {
@@ -353,10 +353,10 @@ extension PlayerWindowController {
   /// Not supported in music mode at this time. Need to resolve backing scale bugs.
   ///
   /// See also: `PWinGeometry.mpvWindowScale`.
+  @MainActor
   func mpvWindowScaleDidUpdate(to newMpvWindowScale: CGFloat) {
-    assert(DispatchQueue.isExecutingIn(.main))
     // Do not call while resizing the window, as doing so has race conditions.
-    guard loaded, let window, !window.inLiveResize, !isAnimatingLayoutTransition else { return }
+    guard loaded, let window, !window.inLiveResize, !isAnimatingLayoutTransition, !isApplyingPWinGeo else { return }
     guard !isMagnifying else { return }
     guard currentLayout.mode == .windowedNormal || currentLayout.mode == .musicMode else {
       // Not supported in music mode at this time. Need to resolve backing scale bugs
@@ -500,7 +500,7 @@ extension PlayerWindowController {
 
     // TASK 1: Background prep
     tasks.append(.instantTask{ [self] in
-      isAnimatingLayoutTransition = true  /// Try not to trigger `windowDidResize` while animating
+      isApplyingPWinGeo = true            /// Try not to trigger `windowDidResize` while animating
       videoView.enterAsynchronousMode()   /// Enable smooth video redraws while animating
 
       hideSeekPreviewImmediately()        /// Location of thumbnail may become invalid during window resize; just hide it
@@ -538,9 +538,9 @@ extension PlayerWindowController {
 
     // TASK 3: Post-animation background state updates
     tasks.append(.instantTask{ [self] in
-      isAnimatingLayoutTransition = false
+      isApplyingPWinGeo = false
 
-      // OSD messages may have been supressed because isAnimatingLayoutTransition was set.
+      // OSD messages may have been supressed because isApplyingPWinGeo was set.
       // Display now if needed (see note about OSD in `buildApplyPWinGeoTasks`)
       videoView.displayActive()
       if !outputGeo.mode.isFullScreen {

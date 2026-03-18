@@ -605,7 +605,7 @@ extension PlayerWindowController {
 
   override func mouseEntered(with event: NSEvent) {
     guard !isValidDragInProgress() else { return }
-    guard !isAnimatingLayoutTransition else { return }
+    guard !isAnimatingLayoutTransition, !isApplyingPWinGeo else { return }
     guard !isInInteractiveMode else { return }
 
     guard let area = event.trackingArea?.userInfo?[TrackingArea.key] as? TrackingArea else {
@@ -629,7 +629,7 @@ extension PlayerWindowController {
 
   override func mouseExited(with event: NSEvent) {
     guard !isValidDragInProgress() else { return }
-    guard !isAnimatingLayoutTransition else { return }
+    guard !isAnimatingLayoutTransition, !isApplyingPWinGeo else { return }
     guard let area = event.trackingArea?.userInfo?[TrackingArea.key] as? TrackingArea else {
       log.warn("MouseExited: no data for tracking area!")
       return
@@ -648,7 +648,7 @@ extension PlayerWindowController {
       if player.isInMiniPlayer {
         miniPlayer.loadIfNeeded()
         miniPlayer.showOrHideControls()
-      } else if !isAnimatingLayoutTransition, Preference.bool(for: .hideFadeableViewsWhenOutsideWindow) {
+      } else if Preference.bool(for: .hideFadeableViewsWhenOutsideWindow) {
         // Hide fadeable views if configured
         log.verbose("MouseExited from playerWindow: hiding fadeableViews")
         hideFadeableViews()
@@ -671,7 +671,7 @@ extension PlayerWindowController {
 
   func mouseDidMoveInWindow() {
     guard !isScrollingOrDraggingPlaySlider, !isScrollingOrDraggingVolumeSlider else { return }
-    guard !isAnimatingLayoutTransition else { return }
+    guard !isAnimatingLayoutTransition, !isApplyingPWinGeo else { return }
     assert(!isValidDragInProgress(), "Must check isValidDragInProgress() before calling mouseDidMoveInWindow()!")
     // Do not use `event.locationInWindow`: it can be very stale
     let pointInWindow = mouseLocationInWindow

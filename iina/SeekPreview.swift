@@ -431,7 +431,7 @@ extension PlayerWindowController {
 
   func shouldSeekPreviewBeVisible(forPointInWindow pointInWindow: NSPoint) -> Bool {
     guard !player.disableUI,
-          !isAnimatingLayoutTransition,
+          !isAnimatingLayoutTransition, !isApplyingPWinGeo,
           !osd.isShowingUserInteractiveOSD,
           currentLayout.hasControlBar else {
       return false

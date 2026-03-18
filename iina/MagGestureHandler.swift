@@ -52,10 +52,24 @@ final class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
   }
 
   @objc func handleMagnifyGesture(recognizer: NSMagnificationGestureRecognizer) {
-    guard !pwc.isInInteractiveMode else { return }
+    guard !pwc.isInInteractiveMode else {
+      pwc.isMagnifying = false
+      return
+    }
     // If in music mode, viewport must be shown to allow scaling window
-    guard !pwc.isInMiniPlayer || pwc.miniPlayer.isViewportShown else { return }
-    guard !pwc.isAnimatingLayoutTransition else { return }
+    guard !pwc.isInMiniPlayer || pwc.miniPlayer.isViewportShown else {
+      pwc.isMagnifying = false
+      return
+    }
+    guard !pwc.isAnimatingLayoutTransition, !pwc.isApplyingPWinGeo else {
+      pwc.isMagnifying = false
+      return
+    }
+    guard pwc.animationPipeline.enableRunning, !pwc.animationPipeline.isExecuting else {
+      // Need to reset this in case the "ended" event was received after some new animation started
+      pwc.isMagnifying = false
+      return
+    }
 
     let pinchAction: Preference.PinchAction = Preference.enum(for: .pinchAction)
     switch pinchAction {
@@ -217,42 +231,48 @@ final class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
   }
 
   /// Adjusts the window size as needed to scale the video as specified by `recognizer`.
+  /// This assumes the window is already full screen or maximized.
   @MainActor
   fileprivate func zoomVideoFromPinchGesture(_ recognizer: NSMagnificationGestureRecognizer, currentMode: PlayerWindowMode) {
     guard let window = pwc.window else { return }
 
     switch recognizer.state {
 
-    case .began:
-      // Fullscreen or maximized window: pinch to zoom video around the pinch origin.
-      pwc.isMagnifying = true
-      currentPinchScale = 1.0
-      // Update from prefs
-      pinchMaxZoom = Preference.double(for: .pinchMaxZoom)
+    case .began, .changed:
+      // Group these two cases to match the logic in `scaleWindowFromPinch`. See the comments there for why we do this.
 
-      if currentMode.isWindowed, Preference.bool(for: .lockViewportToVideoSize) {
-        // Update cached copy: we will reference them as we zoom
-        pwc.windowedModeGeo = pwc.windowedGeoForCurrentFrame()
-      }
+      if pwc.isMagnifying {
+        // Already magnifying: treat as `.changed`
+        currentPinchScale = recognizer.magnification + 1.0
+        applyVideoZoom(currentMode: currentMode)
+      } else {
+        // Begin magnifying: pinch to zoom video around the pinch origin.
+        pwc.isMagnifying = true
+        currentPinchScale = 1.0
+        // Update from prefs
+        pinchMaxZoom = Preference.double(for: .pinchMaxZoom)
 
-      guard let currentZoom = getCurrentZoomFromMPV() else { return }
-      pinchInitialZoom = max(pinchMinZoom, currentZoom)
-      // Only update the pinch origin if starting from baseline; otherwise keep the prior origin to reduce jumps.
-      if pinchInitialZoom <= pinchMinZoom {
-        pinchOriginInWindow = recognizer.location(in: window.contentView)
-        pinchOriginInVideo = clampedVideoPoint(fromWindowPoint: pinchOriginInWindow ?? .zero)
-        pinchOriginInVideoUnit = normalizedVideoPoint(fromWindowPoint: pinchOriginInWindow ?? .zero)
+        if currentMode.isWindowed, Preference.bool(for: .lockViewportToVideoSize) {
+          // Update cached copy: we will reference them as we zoom
+          pwc.windowedModeGeo = pwc.windowedGeoForCurrentFrame()
+        }
+
+        guard let currentZoom = getCurrentZoomFromMPV() else { return }
+        pinchInitialZoom = max(pinchMinZoom, currentZoom)
+        // Only update the pinch origin if starting from baseline; otherwise keep the prior origin to reduce jumps.
+        if pinchInitialZoom <= pinchMinZoom {
+          pinchOriginInWindow = recognizer.location(in: window.contentView)
+          pinchOriginInVideo = clampedVideoPoint(fromWindowPoint: pinchOriginInWindow ?? .zero)
+          pinchOriginInVideoUnit = normalizedVideoPoint(fromWindowPoint: pinchOriginInWindow ?? .zero)
+        }
       }
-    case .changed:
-      currentPinchScale = recognizer.magnification + 1.0
-      applyVideoZoom(currentMode: currentMode)
     case .ended:
       applyVideoZoom(currentMode: currentMode, submitResult: true)
       pwc.isMagnifying = false
     case .cancelled, .failed:
-      break
+      pwc.isMagnifying = false
     default:
-      break
+      pwc.isMagnifying = false
     }
   }
 
@@ -432,20 +452,23 @@ extension PlayerWindowController {
 
     switch recognizer.state {
 
-    case .began:
-      isMagnifying = true
+    case .began, .changed:
+      // Need to group these two cases together, because we may ignore the actual `.begin` event (not to mentio first
+      // several `.changed` events) if we are not ready to start zooming when the pinch starts (due to an animation which
+      // is completing or other situations). See the `guard` statements at the start of `handleMagnifyGesture`.
+      // We use our `isMagnifying` variable to know when we have actually begun our pinch handling.
+      if !isMagnifying {
+        isMagnifying = true
 
-      // Save current window frame. All updates until the end of this session will operate on this.
-      if currentMode == .musicMode {
-        miniPlayer.loadIfNeeded()
-        musicModeGeo = musicModeGeoForCurrentFrame()
-      } else if currentMode.isWindowed {
-        windowedModeGeo = windowedGeoForCurrentFrame()
+        // Save current window frame. All updates until the end of this session will operate on this.
+        if currentMode == .musicMode {
+          miniPlayer.loadIfNeeded()
+          musicModeGeo = musicModeGeoForCurrentFrame(force: true)
+        } else if currentMode.isWindowed {
+          windowedModeGeo = windowedGeoForCurrentFrame(force: true)
+        }
       }
 
-      scaleWindowFromPinchGesture(targetVideoScale: targetScale, currentMode: currentMode)
-
-    case .changed:
       scaleWindowFromPinchGesture(targetVideoScale: targetScale, currentMode: currentMode)
 
     case .ended:
@@ -457,7 +480,7 @@ extension PlayerWindowController {
       isMagnifying = false
 
     default:
-      return
+      isMagnifying = false
     }
   }
 
@@ -466,7 +489,8 @@ extension PlayerWindowController {
     /// For best experience for the user, do not check `isAnimatingLayoutTransition` at state `began` (i.e., allow it to
     /// start keeping track  of pinch), but do not allow this method to execute (i.e. do not respond) until after layout
     /// transitions are complete.
-    guard !isAnimatingLayoutTransition else { return }
+    assert(!isAnimatingLayoutTransition && !isApplyingPWinGeo,
+           "Should never get here if either isAnimatingLayoutTransition (\(isAnimatingLayoutTransition)) or isApplyingPWinGeo (\(isApplyingPWinGeo)) is true!")
 
     let originalGeo: PWinGeometry
     if currentMode == .musicMode {

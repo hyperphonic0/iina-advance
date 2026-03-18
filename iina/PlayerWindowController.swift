@@ -74,12 +74,17 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
     return animationPipeline.isExecuting
   }
 
-  // While true, disable window geometry listeners so they don't overwrite cache with intermediate data
+  /// Indicates that a `LayoutTransition` is currently executing.
+  /// While `true`, disable window geometry listeners so they don't overwrite cache with intermediate data or interrupt
+  /// any animations in progress.
   var isAnimatingLayoutTransition: Bool = false {
     didSet {
       log.verbose("Δ isAnimatingLayoutTransition ≔ \(isAnimatingLayoutTransition.yesno)")
     }
   }
+
+  /// Indicates that an `applyPWinGeometry` operation is in progress. Similar to `isAnimatingLayoutTransition`.
+  var isApplyingPWinGeo: Bool = false
 
   var sessionState: PWinSessionState = .noSession {
     willSet {
@@ -1311,7 +1316,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
         blackOutOtherMonitors()
       }
 
-      guard !sessionState.isRestoring, !isAnimatingLayoutTransition else { return }
+      guard !sessionState.isRestoring, !isAnimatingLayoutTransition, !isApplyingPWinGeo else { return }
 
       animationPipeline.submitTask(timing: .linear, { [self] in
         adjustWindowFrameForScreenUpdate(nameForLog: "WndDidChangeScreen")
@@ -1329,7 +1334,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
     // MacOS Sonoma sometimes blasts tons of these for unknown reasons. Attempt to prevent slowdown by de-duplicating
     screenParamsChangedDebouncer.run { [self] in
 
-      guard !sessionState.isRestoring, !isAnimatingLayoutTransition else { return }
+      guard !sessionState.isRestoring, !isAnimatingLayoutTransition, !isApplyingPWinGeo else { return }
 
       // In normal full screen mode AppKit will automatically adjust the window frame if the window
       // is moved to a new screen such as when the window is on an external display and that display
@@ -1352,7 +1357,8 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
 
   func windowDidMove(_ notification: Notification) {
     guard let window = window else { return }
-    guard !window.inLiveResize, !isAnimatingLayoutTransition, !isMagnifying, !sessionState.isRestoring else { return }
+    guard !window.inLiveResize, !isAnimatingLayoutTransition, !isApplyingPWinGeo, !isMagnifying, !sessionState.isRestoring else { return }
+    log.verbose("WndDidMove")
     guard !isAnimating else { return }
 
     // Do not allow scrolling if window recently moved! By default, multi-touch gestures can trigger scrolling
@@ -1986,7 +1992,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
   func updateUIControls(_ playbackTime: PlaybackTimeInfo, _ cacheState: CacheState?, rangesDidChange: Bool, isPaused: Bool) {
     // This method is often run outside of the animation queue, which can be dangerous.
     // Just don't update in this case
-    guard !isAnimatingLayoutTransition else { return }
+    guard !isAnimatingLayoutTransition, !isApplyingPWinGeo else { return }
     guard loaded else { return }
 
     // scroll wheel will set newer value; do not overwrite it until it is done

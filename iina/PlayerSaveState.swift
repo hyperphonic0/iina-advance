@@ -1810,7 +1810,7 @@ extension PlayerCore {
           return
         }
         pwc.animationPipeline.submitInstantTask {
-          guard !pwc.isAnimatingLayoutTransition else {
+          guard !pwc.isAnimatingLayoutTransition, !pwc.isApplyingPWinGeo else {
             /// The transition itself will call `save` when it is done. Just return
             return
           }
@@ -1868,7 +1868,7 @@ extension PlayerWindowController {
     // Retrieve appropriate geometry values, updating to latest window frame if needed:
     let currentLayout = currentLayout
     let geo: GeometrySet
-    if isAnimatingLayoutTransition {
+    if isAnimatingLayoutTransition || isApplyingPWinGeo {
       geo = self.geo
     } else {
       geo = buildGeoSet(layoutMode: currentLayout.mode)
