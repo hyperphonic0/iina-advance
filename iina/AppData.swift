@@ -581,6 +581,9 @@ struct Constants {
     ]
     static let clearBlackGradientExtraTopBarColor = CGColor(red: 0, green: 0, blue: 0, alpha: 0.575)
 
+    // Inspector window's Watch Properties table
+    static let watchTableBG = NSColor(red: 1, green: 1, blue: 1, alpha: 0.05)
+    static let watchTableColumnHeader = NSColor(red: 0.05, green: 0.05, blue: 0.05, alpha: 1)
   }
 }  /// end `Constants`
 
