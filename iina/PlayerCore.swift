@@ -1699,20 +1699,17 @@ final class PlayerCore: NSObject {
   }
 
   func updateCursorAutohideState() {
-    if let autoHide = mpv.getString(MPVOption.Window.cursorAutohide) {
-      DispatchQueue.main.async { [self] in
-        if autoHide == "always" {
-          info.cursorAutoHideTimeoutMs = 0
-        } else if autoHide == "no" {
-          info.cursorAutoHideTimeoutMs = -1000
-        } else if let autoHideMs = Int(autoHide) {
-          info.cursorAutoHideTimeoutMs = autoHideMs
-        }
-      }
-    }
-
     let cursorAutoHideFullScreenOnly = mpv.getFlag(MPVOption.Window.cursorAutohideFsOnly)
-    SwiftTask { @MainActor [self] in
+    guard let autoHide = mpv.getString(MPVOption.Window.cursorAutohide) else { return }
+    DispatchQueue.main.async { [self] in
+      if autoHide == "always" {
+        info.cursorAutoHideTimeoutMs = 0
+      } else if autoHide == "no" {
+        info.cursorAutoHideTimeoutMs = -1000
+      } else if let autoHideMs = Int(autoHide) {
+        info.cursorAutoHideTimeoutMs = autoHideMs
+      }
+
       info.cursorAutoHideFullScreenOnly = cursorAutoHideFullScreenOnly
     }
   }

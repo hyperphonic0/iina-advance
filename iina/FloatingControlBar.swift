@@ -295,7 +295,8 @@ final class FloatingControlBar {
       if abs(newCenterX - xPosWhenCenter) <= threshold {
         newCenterX = xPosWhenCenter
         if !isAlignFeedbackSent {
-          NSHapticFeedbackManager.defaultPerformer.perform(.alignment, performanceTime: .default)
+          pwc.log.trace("Floating OSC sending haptic feedback for snap-to-center")
+          NSHapticFeedbackManager.defaultPerformer.perform(.alignment, performanceTime: .now)
           isAlignFeedbackSent = true
         }
       } else {

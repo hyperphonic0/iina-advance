@@ -292,19 +292,17 @@ class PlaybackInfo {
   }
 
   var selectedSub: MPVTrack? {
-    infoLock.withLock {
-      let selected = subTracks.filter { $0.id == sid }
-      if selected.count > 0 {
-        return selected[0]
-      }
-      return nil
+    let subTracksCached = subTracks
+    let selected = subTracksCached.filter { $0.id == sid }
+    if selected.count > 0 {
+      return selected[0]
     }
+    return nil
   }
 
   func findExternalSubTrack(withURL url: URL) -> MPVTrack? {
-    infoLock.withLock {
-      return subTracks.first(where: { $0.externalFilename == url.path })
-    }
+    let subTracksCached = subTracks
+    return subTracksCached.first(where: { $0.externalFilename == url.path })
   }
 
   func replaceTracks(audio: [MPVTrack], video: [MPVTrack], sub: [MPVTrack]) {
