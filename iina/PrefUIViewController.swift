@@ -102,7 +102,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
   @IBOutlet weak var themeMenu: NSMenu!
   @IBOutlet weak var globalColorSchemeContainerView: NSView!
   @IBOutlet weak var topBarPositionContainerView: NSView!
-  @IBOutlet weak var topBarColorSchemeContainerView: NSView!
+  @IBOutlet weak var topBarColorSchemeHStackView: NSView!
   @IBOutlet weak var showTopBarTriggerContainerView: NSView!
   @IBOutlet weak var windowPreviewImageView: NSImageView!
   @IBOutlet weak var arrowButtonActionPopUpButton: NSPopUpButton!
@@ -123,13 +123,18 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
   @IBOutlet weak var oscAutoHideTimeoutTextField: NSTextField!
   @IBOutlet weak var hideFadeableViewsOutsideWindowCheckBox: NSButton!
   @IBOutlet weak var keepVideoAwayFromBarsCheckBox: NSButton!
+  @IBOutlet weak var oscForceSingleRowContainerView: NSStackView!
 
   @IBOutlet weak var oscFloatingColorSchemeHStackView: NSStackView!
   @IBOutlet weak var oscBottomColorSchemeHStackView: NSStackView!
-  @IBOutlet weak var oscForceSingleRowContainerView: NSStackView!
-
   @IBOutlet weak var osdColorSchemeHStackView: NSStackView!
   @IBOutlet weak var sidebarsColorSchemeHStackView: NSStackView!
+
+  @IBOutlet weak var oscFloatingColorSchemeCentralHStackView: NSStackView!
+  @IBOutlet weak var topBarColorSchemeCentralHStackView: NSView!
+  @IBOutlet weak var oscBottomColorSchemeCentralHStackView: NSStackView!
+  @IBOutlet weak var osdColorSchemeCentralHStackView: NSStackView!
+  @IBOutlet weak var sidebarsColorSchemeCentralHStackView: NSStackView!
 
   @IBOutlet weak var leftSidebarLabel: NSTextField!
   @IBOutlet weak var leftSidebarPlacement: NSSegmentedControl!
@@ -508,17 +513,26 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
 
     viewHidePairs.append((globalColorSchemeContainerView, !hasMacOS26))
     viewHidePairs.append((topBarPositionContainerView, !hasTopBar))
-    viewHidePairs.append((topBarColorSchemeContainerView, !(hasMacOS26 && !useGlobalColorScheme && (ib.topBarPlacement == .insideViewport) && !oscIsTop ) ))
+    let showTopBarColorScheme = hasMacOS26 && !useGlobalColorScheme && (ib.topBarPlacement == .insideViewport) && !oscIsTop
+    viewHidePairs.append((topBarColorSchemeHStackView, !showTopBarColorScheme ))
+    viewHidePairs.append((topBarColorSchemeCentralHStackView, !showTopBarColorScheme))
     viewHidePairs.append((showTopBarTriggerContainerView, !showTopBarTrigger))
 
     viewHidePairs.append((oscForceSingleRowContainerView, !showForceSingleRowCheckbox))
     viewHidePairs.append((oscTimeLabelsAlwaysWrapSliderStackView, !hasTwoRowOSC))
 
-    viewHidePairs.append((oscBottomColorSchemeHStackView, !(!useGlobalColorScheme && oscIsOverlay && (oscIsTop || oscIsBottom))))
+    let showBottomBarColorScheme = !useGlobalColorScheme && oscIsOverlay && (oscIsTop || oscIsBottom)
+    viewHidePairs.append((oscBottomColorSchemeHStackView, !showBottomBarColorScheme))
+    viewHidePairs.append((oscBottomColorSchemeCentralHStackView, !showBottomBarColorScheme))
     viewHidePairs.append((oscBottomPlacementContainerView, !oscIsBottom))
 
-    viewHidePairs.append((oscFloatingColorSchemeHStackView, !(hasMacOS26 && oscIsFloating && !useGlobalColorScheme)))
-    viewHidePairs.append((osdColorSchemeHStackView, !(hasMacOS26 && !useGlobalColorScheme)))
+    let showFloatingOSCColorScheme = hasMacOS26 && oscIsFloating && !useGlobalColorScheme
+    viewHidePairs.append((oscFloatingColorSchemeHStackView, !showFloatingOSCColorScheme))
+    viewHidePairs.append((oscFloatingColorSchemeCentralHStackView, !showFloatingOSCColorScheme))
+
+    let showOSDColorScheme = hasMacOS26 && !useGlobalColorScheme
+    viewHidePairs.append((osdColorSchemeHStackView, !showOSDColorScheme))
+    viewHidePairs.append((osdColorSchemeCentralHStackView, !showOSDColorScheme))
 
     viewHidePairs.append((oscSnapToCenterContainerView, !oscIsFloating))
 
@@ -528,11 +542,12 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     viewHidePairs.append((oscWidthStackView, !oscIsFloating))
     viewHidePairs.append((playbackBtnDimensionsHStackView, !hasSingleRowOSC))
 
-
     let arrowButtonActionIsSpeed = arrowButtonAction == .speed
     viewHidePairs.append((usePressureForArrowsButton, !arrowButtonActionIsSpeed))
 
-    viewHidePairs.append((sidebarsColorSchemeHStackView, !(hasMacOS26 && !useGlobalColorScheme)))
+    let showSidebarsColorScheme = hasMacOS26 && !useGlobalColorScheme
+    viewHidePairs.append((sidebarsColorSchemeHStackView, !showSidebarsColorScheme))
+    viewHidePairs.append((sidebarsColorSchemeCentralHStackView, !showSidebarsColorScheme))
 
     // Two-phase animation. First show/hide the subviews of each container view with no animation.
     for (view, shouldHide) in viewHidePairs {
