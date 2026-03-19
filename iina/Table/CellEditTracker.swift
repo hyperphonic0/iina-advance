@@ -78,6 +78,9 @@ class CellEditTracker: NSObject, NSTextFieldDelegate {
       guard !wasUsed else { return }
       wasUsed = true
 
+      // Redraw row with new/prev colors and/or new text content
+      parentTable.reloadRow(current.row)
+
       // Tab / return navigation (if any) will show up in the notification
       if let textMovementInt = notification.userInfo?["NSTextMovement"] as? Int,
          let textMovement = NSTextMovement(rawValue: textMovementInt) {
@@ -160,11 +163,12 @@ class CellEditTracker: NSObject, NSTextFieldDelegate {
   }
 
   func endEdit(then doAfter: OnSuccessCallback? = nil) {
+    var didSucceed = false
     if let current = current, current.editInProgress {
       let textField = current.textField
       log.verbose("END Edit   [\(current.row), \(current.column)] \"\(textField.stringValue)\"")
 
-      let didSucceed = commitChanges(to: current, then: doAfter)
+      didSucceed = commitChanges(to: current, then: doAfter)
 
       textField.heightConstraint?.isActive = false
       textField.heightConstraint = nil
@@ -178,16 +182,12 @@ class CellEditTracker: NSObject, NSTextFieldDelegate {
       textField.isSelectable = false
       textField.needsDisplay = true
 
-      if didSucceed {
-        // Load custom color or other cell changes based on new value:
-        parentTable.reloadRow(current.row)
-        return
-      }
-      // else fall through
+      // Load custom color or other cell changes based on new value, or restore color/formatting to old value:
+      parentTable.reloadRow(current.row)
     }
 
     // Did not succeed. Need to execute completionHandler ourselves.
-    if let doAfter {
+    if let doAfter, !didSucceed {
       doAfter()
     }
   }

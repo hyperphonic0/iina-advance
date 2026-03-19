@@ -439,7 +439,7 @@ extension BindingTableViewController: NSTableViewDataSource {
 // MARK: EditableTableViewDelegate
 
 extension BindingTableViewController: EditableTableViewDelegate {
-
+  
   var parentTableView: EditableTableView! { tableView }
 
   func canEdit(row rowIndex: Int, column columnIndex: Int) -> Bool {
@@ -495,14 +495,12 @@ extension BindingTableViewController: EditableTableViewDelegate {
       return false
     }
 
-    let completionHandler: TableUIChange.CompletionHandler = { tableUIChange in
+    let newVersion = editedRow.keyMapping.clone(rawKey: rawKey, rawAction: rawAction, isIINACommand: isIINA)
+    bindingTableState.updateBinding(at: rowIndex, to: newVersion, completionHandler: { tableUIChange in
       if let doAfter {
         doAfter()
       }
-    }
-
-    let newVersion = editedRow.keyMapping.clone(rawKey: rawKey, rawAction: rawAction, isIINACommand: isIINA)
-    bindingTableState.updateBinding(at: rowIndex, to: newVersion, completionHandler: completionHandler)
+    })
     return true
   }
 

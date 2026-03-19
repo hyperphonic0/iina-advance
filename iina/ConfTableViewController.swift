@@ -202,7 +202,7 @@ extension ConfTableViewController: EditableTableViewDelegate {
   }
 
   func editDidEndWithNoChange(row rowIndex: Int, column columnIndex: Int) {
-    if self.confTableState.isAddingNewConfInline {
+    if confTableState.isAddingNewConfInline {
       // If user didn't enter a name, just remove the row
       confTableState.cancelInlineAdd()
     }

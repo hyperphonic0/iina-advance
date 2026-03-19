@@ -97,7 +97,6 @@ extension EditableTableViewDelegate {
   }
 
   func editDidEndWithNoChange(row rowIndex: Int, column columnIndex: Int) {
-    parentTableView.reloadRow(rowIndex)
   }
 
   func userDidDoubleClickOnCell(row rowIndex: Int, column columnIndex: Int) -> Bool {
@@ -118,31 +117,14 @@ extension EditableTableViewDelegate {
 
   // Edit > Cut, Copy, Paste, Delete are disabled by default.
 
-  func isCutEnabled() -> Bool {
-    false
-  }
-
-  func isCopyEnabled() -> Bool {
-    false
-  }
-
-  func isPasteEnabled() -> Bool {
-    false
-  }
-
-  func isDeleteEnabled() -> Bool {
-    false
-  }
-
-  func isSelectAllEnabled() -> Bool {
-    true
-  }
+  func isCutEnabled() -> Bool { false }
+  func isCopyEnabled() -> Bool { false }
+  func isPasteEnabled() -> Bool { false }
+  func isDeleteEnabled() -> Bool { false }
+  func isSelectAllEnabled() -> Bool { true }
 
   func doEditMenuCut() {}
-
   func doEditMenuCopy() {}
-
   func doEditMenuPaste() {}
-
   func doEditMenuDelete() {}
 }

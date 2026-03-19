@@ -108,7 +108,7 @@ final class PlayerWindow: NSWindow {
     // status, so we cannot rely on the key-view-loop to end editing. Need to do this explicitly.
     if let textView = firstResponder as? NSTextView {
       if keyCode == "ENTER" || keyCode == "TAB" {
-        self.endEditing(for: textView)
+        endEditing(for: textView)
         return
       }
     }
