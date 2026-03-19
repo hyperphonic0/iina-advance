@@ -189,6 +189,10 @@ extension ConfTableViewController: EditableTableViewDelegate {
 
   var parentTableView: EditableTableView! { tableView }
 
+  func canEdit(row rowIndex: Int, column columnIndex: Int) -> Bool {
+    !confTableState.isBuiltinConf(at: rowIndex)
+  }
+
   func userDidDoubleClickOnCell(row rowIndex: Int, column columnIndex: Int) -> Bool {
     return confTableState.getUserConfName(at: rowIndex) != nil
   }

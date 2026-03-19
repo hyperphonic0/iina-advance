@@ -442,6 +442,10 @@ extension BindingTableViewController: EditableTableViewDelegate {
 
   var parentTableView: EditableTableView! { tableView }
 
+  func canEdit(row rowIndex: Int, column columnIndex: Int) -> Bool {
+    bindingTableState.isRowModifiable(rowIndex)
+  }
+
   func userDidDoubleClickOnCell(row rowIndex: Int, column columnIndex: Int) -> Bool {
     log.verbose("Double-click: Edit requested for row \(rowIndex), col \(columnIndex)")
     return edit(rowIndex: rowIndex, columnIndex: columnIndex, skipInlineEdit: true)

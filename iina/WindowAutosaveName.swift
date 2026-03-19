@@ -205,10 +205,7 @@ enum WindowAutosaveName: Equatable, Hashable {
   }
 
   var hashValue: Int { return string.hashValue }
-
-  func hash(into hasher: inout Hasher) {
-    return string.hash(into: &hasher)
-  }
+  func hash(into hasher: inout Hasher) { string.hash(into: &hasher) }
 
   static func playerWindowLaunchID(from playerWindowID: String?) -> Int? {
     if let playerWindowID {

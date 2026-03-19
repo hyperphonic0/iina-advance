@@ -305,7 +305,7 @@ struct VideoGeometry: Equatable, CustomStringConvertible, Sendable {
     && lhs.videoSizeDisplay == rhs.videoSizeDisplay
   }
 
-  static func != (lhs: VideoGeometry, rhs: VideoGeometry) -> Bool {
+  static func != (lhs: Self, rhs: Self) -> Bool {
     return !(lhs == rhs)
   }
 

@@ -146,6 +146,10 @@ struct PlaybackID: Sendable, Equatable, Hashable {
     return hasher.finalize()
   }
 
+  func hash(into hasher: inout Hasher) {
+    hasher.combine(url)
+  }
+
   /// Equatable protocol conformance, to enable diffing
   func isEqual(_ object: Any?) -> Bool {
     guard let other = object as? PlaybackID else {

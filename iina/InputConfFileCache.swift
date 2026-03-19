@@ -252,7 +252,7 @@ fileprivate func sendErrorAlert(key alertKey: String, args: [String]) {
 }
 
 // Represents an input config file which has been loaded into memory.
-struct InputConfFile: Sendable {
+struct InputConfFile: Sendable, Hashable {
   static let cache = InputConfFileCache()
 
   enum Status {
@@ -286,16 +286,17 @@ struct InputConfFile: Sendable {
                   lines: lines ?? self.lines)
   }
 
-  var isReadOnly: Bool {
-    return self.status == .readOnly
+  var isReadOnly: Bool { status == .readOnly }
+  var failedToLoad: Bool { status == .failedToLoad }
+  var canonicalFilePath: String { URL(fileURLWithPath: filePath).resolvingSymlinksInPath().path }
+  
+  static func == (lhs: InputConfFile, rhs: InputConfFile) -> Bool {
+    lhs.confName == rhs.confName && lhs.filePath == rhs.filePath
   }
 
-  var failedToLoad: Bool {
-    return self.status == .failedToLoad
-  }
-
-  var canonicalFilePath: String {
-    URL(fileURLWithPath: filePath).resolvingSymlinksInPath().path
+  func hash(into hasher: inout Hasher) {
+    hasher.combine(confName)
+    hasher.combine(filePath)
   }
 
   // Notifies the cache as well

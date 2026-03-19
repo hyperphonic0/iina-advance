@@ -207,6 +207,24 @@ class EditableTableView: NSTableView {
       return
     }
 
+    self.scrollRowToVisible(rowIndex)
+
+    if selectedRow != rowIndex {
+      log.verbose("EditableTableView: request to edit row \(rowIndex), which is not selected (current selection: "
+                  + "\(selectedRow)); changing selection")
+      self.selectApprovedRowIndexes(IndexSet(integer: rowIndex), byExtendingSelection: false)
+    }
+
+    guard editableTextColumnIndexes.contains(columnIndex) else {
+      log.verbose("Discarding request to edit cell: row \(rowIndex), col \(columnIndex): column not in editable column set")
+      return
+    }
+
+    if let editableDelegate, !editableDelegate.canEdit(row: rowIndex, column: columnIndex) {
+      log.verbose("Discarding request to edit cell: row \(rowIndex), col \(columnIndex) is not editable")
+      return
+    }
+
     guard let view = self.view(atColumn: columnIndex, row: rowIndex, makeIfNecessary: true),
           let cellView = view as? NSTableCellView,
           let editableTextField = cellView.textField as? EditableTextField else {
@@ -215,13 +233,7 @@ class EditableTableView: NSTableView {
 
     log.verbose("EditableTableView: Opening inline editor for row \(rowIndex), col \(columnIndex)")
 
-    self.scrollRowToVisible(rowIndex)
     cellEditTracker.changeCurrentCell(to: editableTextField, row: rowIndex, column: columnIndex)
-
-    if selectedRow != rowIndex {
-      Logger.log.verbose("EditableTableView: selectedRow (\(selectedRow)) does not match target row; selecting row: \(rowIndex)")
-      self.selectApprovedRowIndexes(IndexSet(integer: rowIndex), byExtendingSelection: false)
-    }
 
     self.window?.makeFirstResponder(editableTextField)
   }

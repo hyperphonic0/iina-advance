@@ -15,6 +15,10 @@ protocol EditableTableViewDelegate {
   /// Implementors need to provide this
   var parentTableView: EditableTableView! { get }
 
+  /// Returns true (default implementation's return value) if the given cell @ `row`, `column` can be edited.
+  /// If `column` is not a member of the table's `editableTextColumnIndexes`, this is assumed to be `false`.
+  func canEdit(row rowIndex: Int, column columnIndex: Int) -> Bool
+
   /// If `true` is returned, the caller will assume that `newValue` was accepted & that `completionHandler` will be handled.
   func editDidEndWithNewText(newValue: String, row rowIndex: Int, column columnIndex: Int,
                              then doAfter: OnSuccessCallback?) -> Bool
@@ -81,6 +85,7 @@ protocol EditableTableViewDelegate {
 // Adds null defaults for all protocol methods
 extension EditableTableViewDelegate {
 
+  func canEdit(row rowIndex: Int, column columnIndex: Int) -> Bool { true }
   func handleMouseDown(with event: NSEvent) -> Bool { false }
   func handleMouseUp(with event: NSEvent) -> Bool { false }
 

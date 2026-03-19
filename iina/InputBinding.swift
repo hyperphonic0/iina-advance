@@ -18,7 +18,7 @@
 
  An instance of this class encapsulates all the data needed to display a single row/line in the Key Bindings table.
  */
-struct InputBinding: Sendable, Equatable, Hashable, CustomStringConvertible {
+struct InputBinding: Sendable, Hashable, CustomStringConvertible {
   /// Will be `nil` for plugin bindings.
   let keyMapping: KeyMapping
 
@@ -63,10 +63,12 @@ struct InputBinding: Sendable, Equatable, Hashable, CustomStringConvertible {
   var description: String { "{\(srcSectionName)} \(keyMapping)" }
 
   /// Hashable protocol conformance, to enable diffing
-  var hash: Int {
-    var hasher = Hasher()
+  func hash(into hasher: inout Hasher) {
     hasher.combine(keyMapping)
-    return hasher.finalize()
+    hasher.combine(origin)
+    hasher.combine(srcSectionName)
+    hasher.combine(isEnabled)
+    hasher.combine(displayMessage)
   }
 
   /// Equatable protocol conformance, to enable diffing
@@ -77,8 +79,15 @@ struct InputBinding: Sendable, Equatable, Hashable, CustomStringConvertible {
     return self == other
   }
 
-  static func == (lhs: InputBinding, rhs: InputBinding) -> Bool {
-    lhs.origin == rhs.origin && lhs.srcSectionName == rhs.srcSectionName && lhs.keyMapping == rhs.keyMapping
+  static func == (lhs: Self, rhs: Self) -> Bool {
+    (lhs.keyMapping == rhs.keyMapping)
+    && (lhs.origin == rhs.origin)
+    && (lhs.srcSectionName == rhs.srcSectionName)
+    && (lhs.isEnabled == rhs.isEnabled)
+    && (lhs.displayMessage == rhs.displayMessage)
+  }
+  static func != (lhs: Self, rhs: Self) -> Bool {
+    !(lhs == rhs)
   }
 
   func getKeyColumnDisplay(raw: Bool) -> String {
