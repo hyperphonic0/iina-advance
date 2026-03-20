@@ -867,7 +867,7 @@ For smoothest results, also enable custom full screen.</string>
                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                     </textFieldCell>
                 </textField>
-                <stackView clipsToBounds="YES" distribution="fill" orientation="vertical" alignment="leading" spacing="4" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="250" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="3GV-dH-tZQ" userLabel="RightColumn Stack View">
+                <stackView clipsToBounds="YES" distribution="fill" orientation="vertical" alignment="leading" spacing="4" horizontalStackHuggingPriority="248.99998474121094" verticalStackHuggingPriority="250" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="3GV-dH-tZQ" userLabel="RightColumn Stack View">
                     <rect key="frame" x="120" y="8" width="462" height="453"/>
                     <subviews>
                         <button translatesAutoresizingMaskIntoConstraints="NO" id="Xgb-im-tqO">
@@ -930,7 +930,7 @@ For smoothest results, also enable custom full screen.</string>
                             </constraints>
                         </customView>
                         <stackView clipsToBounds="YES" distribution="fill" orientation="horizontal" alignment="firstBaseline" horizontalStackHuggingPriority="749" verticalStackHuggingPriority="749" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="zQs-0g-sHV" userLabel="ResizeWindowScheme HStack View">
-                            <rect key="frame" x="0.0" y="361" width="410" height="30"/>
+                            <rect key="frame" x="0.0" y="361" width="462" height="30"/>
                             <subviews>
                                 <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="MY4-AB-Orx" userLabel="ResizeWindowWhenOpeningFile Checkbox">
                                     <rect key="frame" x="0.0" y="6" width="190" height="18"/>
@@ -966,6 +966,9 @@ For smoothest results, also enable custom full screen.</string>
                                         </binding>
                                     </connections>
                                 </popUpButton>
+                                <customView horizontalHuggingPriority="501" verticalHuggingPriority="501" horizontalCompressionResistancePriority="249" verticalCompressionResistancePriority="249" translatesAutoresizingMaskIntoConstraints="NO" id="WWk-sp-Se7" userLabel="Flexible Spacer">
+                                    <rect key="frame" x="418" y="0.0" width="44" height="30"/>
+                                </customView>
                             </subviews>
                             <constraints>
                                 <constraint firstItem="HBJ-ip-LD2" firstAttribute="top" secondItem="zQs-0g-sHV" secondAttribute="top" constant="1" id="0hL-ia-zgz"/>
@@ -975,8 +978,10 @@ For smoothest results, also enable custom full screen.</string>
                             <visibilityPriorities>
                                 <integer value="1000"/>
                                 <integer value="1000"/>
+                                <integer value="1000"/>
                             </visibilityPriorities>
                             <customSpacing>
+                                <real value="3.4028234663852886e+38"/>
                                 <real value="3.4028234663852886e+38"/>
                                 <real value="3.4028234663852886e+38"/>
                             </customSpacing>
@@ -996,7 +1001,7 @@ For smoothest results, also enable custom full screen.</string>
                             </connections>
                         </customView>
                         <stackView clipsToBounds="YES" distribution="fill" orientation="horizontal" alignment="firstBaseline" horizontalStackHuggingPriority="749" verticalStackHuggingPriority="749" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="rrv-sf-1sf" userLabel="CenterAndResizeWindow HStack View">
-                            <rect key="frame" x="20" y="323" width="340" height="30"/>
+                            <rect key="frame" x="20" y="323" width="398" height="30"/>
                             <subviews>
                                 <button tag="1" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="VP5-cz-tSV" userLabel="CenterAndResizeWindow Radio Button">
                                     <rect key="frame" x="0.0" y="6" width="187" height="18"/>
@@ -1032,6 +1037,9 @@ For smoothest results, also enable custom full screen.</string>
                                         </binding>
                                     </connections>
                                 </popUpButton>
+                                <customView horizontalHuggingPriority="501" verticalHuggingPriority="501" horizontalCompressionResistancePriority="249" verticalCompressionResistancePriority="249" translatesAutoresizingMaskIntoConstraints="NO" id="ST0-o5-h9w" userLabel="Flexible Spacer">
+                                    <rect key="frame" x="348" y="0.0" width="50" height="30"/>
+                                </customView>
                             </subviews>
                             <constraints>
                                 <constraint firstItem="PxB-We-0Hu" firstAttribute="firstBaseline" secondItem="VP5-cz-tSV" secondAttribute="firstBaseline" id="Ffe-sQ-fxH"/>
@@ -1041,8 +1049,10 @@ For smoothest results, also enable custom full screen.</string>
                             <visibilityPriorities>
                                 <integer value="1000"/>
                                 <integer value="1000"/>
+                                <integer value="1000"/>
                             </visibilityPriorities>
                             <customSpacing>
+                                <real value="3.4028234663852886e+38"/>
                                 <real value="3.4028234663852886e+38"/>
                                 <real value="3.4028234663852886e+38"/>
                             </customSpacing>
@@ -1079,7 +1089,7 @@ For smoothest results, also enable custom full screen.</string>
                                         </binding>
                                     </connections>
                                 </button>
-                                <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="751" translatesAutoresizingMaskIntoConstraints="NO" id="LA6-rp-Ub0" userLabel="GeometryString Label">
+                                <textField focusRingType="none" horizontalHuggingPriority="249" verticalHuggingPriority="751" translatesAutoresizingMaskIntoConstraints="NO" id="LA6-rp-Ub0" userLabel="GeometryString Label">
                                     <rect key="frame" x="130" y="1" width="67" height="16"/>
                                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" refusesFirstResponder="YES" title="++20-+20" id="ZGN-hK-bfY">
                                         <font key="font" usesAppearanceFont="YES"/>
@@ -1598,7 +1608,7 @@ For smoothest results, also enable custom full screen.</string>
                 <constraint firstItem="Xgb-im-tqO" firstAttribute="firstBaseline" secondItem="RFk-nU-SGL" secondAttribute="firstBaseline" id="II5-lK-ib7"/>
                 <constraint firstItem="RFk-nU-SGL" firstAttribute="trailing" relation="lessThanOrEqual" secondItem="D77-Iw-nrY" secondAttribute="leading" constant="120" id="fQs-qt-2Vt"/>
                 <constraint firstItem="3GV-dH-tZQ" firstAttribute="leading" secondItem="D77-Iw-nrY" secondAttribute="leading" constant="120" id="kG0-11-4qZ"/>
-                <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="3GV-dH-tZQ" secondAttribute="trailing" id="xI9-7V-Oef"/>
+                <constraint firstAttribute="trailing" secondItem="3GV-dH-tZQ" secondAttribute="trailing" id="xI9-7V-Oef"/>
                 <constraint firstItem="RFk-nU-SGL" firstAttribute="leading" secondItem="D77-Iw-nrY" secondAttribute="leading" id="ypV-gE-Ld4"/>
             </constraints>
             <point key="canvasLocation" x="-38" y="-1711"/>
@@ -2950,7 +2960,7 @@ For smoothest results, also enable custom full screen.</string>
                         <stackView clipsToBounds="YES" distribution="fill" orientation="horizontal" alignment="firstBaseline" horizontalStackHuggingPriority="501" verticalStackHuggingPriority="501" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Ler-Pn-RNT" userLabel="EnableOSD HStack View">
                             <rect key="frame" x="0.0" y="354" width="533" height="28"/>
                             <subviews>
-                                <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="MU2-yF-bjd">
+                                <button horizontalHuggingPriority="750" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="MU2-yF-bjd">
                                     <rect key="frame" x="0.0" y="5" width="96" height="18"/>
                                     <buttonCell key="cell" type="check" title="Enable OSD" bezelStyle="regularSquare" imagePosition="left" controlSize="large" state="on" inset="2" id="xMh-SP-nkc">
                                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>

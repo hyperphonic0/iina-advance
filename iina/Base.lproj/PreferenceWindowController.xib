@@ -159,14 +159,14 @@
                             <rect key="frame" x="0.0" y="0.0" width="640" height="510"/>
                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                             <subviews>
-                                <view horizontalCompressionResistancePriority="250" verticalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="5R5-77-bmq" userLabel="PrefDetailPanel Flipped Content View" customClass="FlippedView" customModule="IINA_Advance" customModuleProvider="target">
+                                <view horizontalCompressionResistancePriority="250" verticalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="5R5-77-bmq" userLabel="PrefDetailPanel Content View">
                                     <rect key="frame" x="0.0" y="0.0" width="640" height="510"/>
                                 </view>
                             </subviews>
                             <constraints>
                                 <constraint firstItem="5R5-77-bmq" firstAttribute="leading" secondItem="fAk-o1-RBn" secondAttribute="leading" id="GDH-y8-wlw"/>
                                 <constraint firstAttribute="trailing" secondItem="5R5-77-bmq" secondAttribute="trailing" id="dpQ-k3-zSF"/>
-                                <constraint firstAttribute="bottom" secondItem="5R5-77-bmq" secondAttribute="bottom" priority="499" id="qOd-lL-pGV"/>
+                                <constraint firstAttribute="bottom" secondItem="5R5-77-bmq" secondAttribute="bottom" priority="200" id="qOd-lL-pGV"/>
                                 <constraint firstItem="5R5-77-bmq" firstAttribute="top" secondItem="fAk-o1-RBn" secondAttribute="top" id="xXS-T3-Lsu"/>
                             </constraints>
                         </clipView>
@@ -228,7 +228,7 @@
                     <rect key="frame" x="0.0" y="0.0" width="340" height="180"/>
                     <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" id="oMs-Q9-XbP">
                         <rect key="frame" x="0.0" y="0.0" width="340" height="180"/>
-                        <autoresizingMask key="autoresizingMask"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <tableView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" columnReordering="NO" columnResizing="NO" multipleSelection="NO" autosaveColumns="NO" rowHeight="40" rowSizeStyle="automatic" viewBased="YES" id="MUI-pR-u00">
                                 <rect key="frame" x="0.0" y="0.0" width="340" height="180"/>
