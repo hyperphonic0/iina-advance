@@ -648,37 +648,29 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
 
     var didAddSubviewToViewport = false
     do {
-      let hasOpenGL = videoView.lockAndSetOpenGLContext()
-      defer {
-        if hasOpenGL {
-          videoView.unlockOpenGLContext()
+      if !window.contentView!.containsSubview(viewportView) {
+        log.verbose("Adding viewportView to window")
+        window.contentView!.addSubview(viewportView)
+      }
+      if !viewportView.subviews.contains(videoView) {
+        if currentLayout.isInPiP {
+          log.debug("Aborting add of videoView to window: isInPiP=\(currentLayout.isInPiP.yn)")
+        } else {
+          log.verbose("Adding videoView to viewportView, screenScaleFactor: \(window.screenScaleFactor)")
+          viewportView.addSubview(videoView)
+          // Reset this in case it was changed for PiP. (Need to use optional to support initial load)
+          videoView.layer?.autoresizingMask = []
+          /// Add constraints. These get removed each time `videoView` changes superviews.
+          videoView.translatesAutoresizingMaskIntoConstraints = false
+          didAddSubviewToViewport = true
         }
       }
-      videoView.$isUninited.withLock() { isUninited in
-        if !window.contentView!.containsSubview(viewportView) {
-          log.verbose("Adding viewportView to window")
-          window.contentView!.addSubview(viewportView)
-        }
-        if !viewportView.subviews.contains(videoView) {
-          if currentLayout.isInPiP {
-            log.debug("Aborting add of videoView to window: isInPiP=\(currentLayout.isInPiP.yn)")
-          } else {
-            log.verbose("Adding videoView to viewportView, screenScaleFactor: \(window.screenScaleFactor)")
-            viewportView.addSubview(videoView)
-            // Reset this in case it was changed for PiP. (Need to use optional to support initial load)
-            videoView.layer?.autoresizingMask = []
-            /// Add constraints. These get removed each time `videoView` changes superviews.
-            videoView.translatesAutoresizingMaskIntoConstraints = false
-            didAddSubviewToViewport = true
-          }
-        }
 
-        let didAddSpacers = viewportView.addSpacers()
-        didAddSubviewToViewport = didAddSubviewToViewport || didAddSpacers
+      let didAddSpacers = viewportView.addSpacers()
+      didAddSubviewToViewport = didAddSubviewToViewport || didAddSpacers
 
-        if didAddSubviewToViewport {
-          sortViewportViewSubviews()
-        }
+      if didAddSubviewToViewport {
+        sortViewportViewSubviews()
       }
     }
     if didAddSubviewToViewport {
