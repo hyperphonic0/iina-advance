@@ -356,11 +356,13 @@ class VideoView: NSView {
 
   private func requestEdrMode(then doAfter: @escaping (Bool?) -> Void) {
     player.mpv.queue.async { [self] in
-      guard player.info.isFileLoaded, let mpv = player.mpv, player.isActive else {
+      guard let mpv = player.mpv, player.state.isNotYet(.stopping) else { return }
+      guard player.state.isAtLeast(.started), player.info.isFileLoaded else {
         return doAfter(false)
       }
 
-      guard let primaries = mpv.getString(MPVProperty.videoParamsPrimaries), let gamma = mpv.getString(MPVProperty.videoParamsGamma) else {
+      guard let primaries = mpv.getString(MPVProperty.videoParamsPrimaries),
+            let gamma = mpv.getString(MPVProperty.videoParamsGamma) else {
         logHDR.debug("Video gamma and primaries not available")
         return doAfter(false)
       }
