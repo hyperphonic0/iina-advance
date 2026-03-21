@@ -167,22 +167,6 @@
                                 <constraint firstAttribute="width" constant="1" id="LCK-d9-b3z"/>
                                 <constraint firstAttribute="height" constant="4" id="lPC-dw-o5T"/>
                             </constraints>
-                            <connections>
-                                <binding destination="lH7-Vv-0M1" name="hidden2" keyPath="values.useLegacyWindowedMode" previousBinding="lro-Q2-fbI" id="ndh-Gq-x8b">
-                                    <dictionary key="options">
-                                        <integer key="NSMultipleValuesPlaceholder" value="-1"/>
-                                        <integer key="NSNoSelectionPlaceholder" value="-1"/>
-                                        <integer key="NSNotApplicablePlaceholder" value="-1"/>
-                                        <integer key="NSNullPlaceholder" value="-1"/>
-                                        <string key="NSValueTransformerName">NSNegateBoolean</string>
-                                    </dictionary>
-                                </binding>
-                                <binding destination="lH7-Vv-0M1" name="hidden" keyPath="values.enableAdvancedSettings" id="lro-Q2-fbI">
-                                    <dictionary key="options">
-                                        <string key="NSValueTransformerName">NSNegateBoolean</string>
-                                    </dictionary>
-                                </binding>
-                            </connections>
                         </customView>
                         <stackView clipsToBounds="YES" autoresizesSubviews="NO" distribution="fill" orientation="horizontal" alignment="centerY" horizontalStackHuggingPriority="250" verticalStackHuggingPriority="250" verticalHuggingPriority="1000" verticalCompressionResistancePriority="250" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="DiV-l8-Zu1" userLabel="Global-Color-Scheme HStack View">
                             <rect key="frame" x="0.0" y="264" width="452" height="28"/>
@@ -491,18 +475,12 @@ For smoothest results, also enable custom full screen.</string>
                                 <constraint firstAttribute="height" constant="4" id="J1R-zk-WH5"/>
                             </constraints>
                             <connections>
-                                <binding destination="lH7-Vv-0M1" name="hidden" keyPath="values.enableAdvancedSettings" id="vdi-Ma-Kap">
-                                    <dictionary key="options">
-                                        <string key="NSValueTransformerName">NSNegateBoolean</string>
-                                    </dictionary>
-                                </binding>
-                                <binding destination="lH7-Vv-0M1" name="hidden2" keyPath="values.useLegacyWindowedMode" previousBinding="vdi-Ma-Kap" id="ms7-Fx-SoJ">
+                                <binding destination="lH7-Vv-0M1" name="hidden" keyPath="values.useLegacyWindowedMode" id="E4J-Wz-eof">
                                     <dictionary key="options">
                                         <integer key="NSMultipleValuesPlaceholder" value="-1"/>
                                         <integer key="NSNoSelectionPlaceholder" value="-1"/>
                                         <integer key="NSNotApplicablePlaceholder" value="-1"/>
                                         <integer key="NSNullPlaceholder" value="-1"/>
-                                        <string key="NSValueTransformerName">NSNegateBoolean</string>
                                     </dictionary>
                                 </binding>
                             </connections>
