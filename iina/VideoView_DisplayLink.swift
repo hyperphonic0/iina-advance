@@ -80,6 +80,7 @@ extension VideoView {
   @MainActor
   func stopDisplayLink() {
     guard let link = link, CVDisplayLinkIsRunning(link) else { return }
+    log.verbose("DisplayLink stopping")
     displayIdleStartTime = nil
     checkResult(CVDisplayLinkStop(link), "CVDisplayLinkStop")
     log.verbose("DisplayLink stopped")

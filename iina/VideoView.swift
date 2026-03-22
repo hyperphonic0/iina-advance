@@ -336,26 +336,32 @@ class VideoView: NSView {
   @MainActor
   func refreshEdrMode() {
     guard player.pwc.loaded else { return }
+    guard !AppDelegate.shared.isTerminating else {
+      logHDR.verbose("Aborting HDR refresh: application is terminating")
+      return
+    }
     guard player.info.isFileLoaded else { return }
     guard let displayId = currentDisplay else { return }
     if let screen = self.window?.screen {
       NSScreen.logEDR("Refreshing HDR for \(player.label) on display\(displayId)",
                       screen, subsystem: logHDR)
     }
-    requestEdrMode(then: { [self] edrEnabled in
-      DispatchQueue.main.execOrAsync { [self] in
-        let edrAvailable = edrEnabled != false
-        if player.info.hdrAvailable != edrAvailable {
-          player.info.hdrAvailable = edrAvailable
-          player.pwc.quickSettingView.setHdrAvailability(to: edrAvailable)
+    player.mpv.queue.async { [self] in
+      requestEdrMode(then: { [self] edrEnabled in
+        DispatchQueue.main.execOrAsync { [self] in
+          let edrAvailable = edrEnabled != false
+          if player.info.hdrAvailable != edrAvailable {
+            player.info.hdrAvailable = edrAvailable
+            player.pwc.quickSettingView.setHdrAvailability(to: edrAvailable)
+          }
+          if edrEnabled != true { setICCProfile() }
         }
-        if edrEnabled != true { setICCProfile() }
-      }
-    })
+      })
+    }
   }
 
-  private func requestEdrMode(then doAfter: @escaping (Bool?) -> Void) {
-    player.mpv.queue.async { [self] in
+    private func requestEdrMode(then doAfter: @escaping (Bool?) -> Void) {
+      assert(DispatchQueue.isExecutingIn(player.mpv.queue))
       guard let mpv = player.mpv, player.state.isNotYet(.stopping) else { return }
       guard player.state.isAtLeast(.started), player.info.isFileLoaded else {
         return doAfter(false)
@@ -474,5 +480,4 @@ class VideoView: NSView {
         return doAfter(true)
       }
     }
-  }
 }
