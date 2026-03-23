@@ -196,10 +196,6 @@ class GLVideoLayer: CAOpenGLLayer {
               mpv_render_param(type: MPV_RENDER_PARAM_DEPTH, data:.init(bufferDepth)),
               mpv_render_param()
             ]
-            /// # IGNORE THIS XCODE HANG RISK WARNING!
-            /// Calling this directly from the DisplayLink instead of enqueuing in its own DispatchQueue results in reduced draw latency.
-            /// And we do not call `mpvReportSwap` until after this method returns, so mpv should detect buffer underruns and skip frames
-            /// appropriately.
             mpv_render_context_render(context, &params)
             ignoreGLError()
           }
@@ -238,8 +234,11 @@ class GLVideoLayer: CAOpenGLLayer {
 
   /// Although this generates a warning in Xcode, synchronous drawing via the DisplayLink seems far smoother.
   /// Despite Xcode's declarations, no lockup has yet been observed.
-  func drawSync(forced: Bool = false) {
+  func drawSync(forced: Bool = false, onSuccess: (() -> Void)? = nil) {
     draw(forced: forced)
+    if let onSuccess {
+      onSuccess()
+    }
   }
 
   func draw(forced: Bool = false) {

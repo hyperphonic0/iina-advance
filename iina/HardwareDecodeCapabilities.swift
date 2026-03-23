@@ -48,9 +48,11 @@ class HardwareDecodeCapabilities {
       Logger.fatal("HardwareDecodeCapabilities is already initialized")
     }
     initialization = DispatchWorkItem() { [self] in
+      var supportedWorkList: [CMVideoCodecType: Bool] = [:]
       for codec in codecs {
-        supported[codec] = isHardwareDecodeSupported(codec)
+        supportedWorkList[codec] = isHardwareDecodeSupported(codec)
       }
+      supported = supportedWorkList
     }
     DispatchQueue.global(qos: .userInitiated).async { self.initialization!.perform() }
   }
