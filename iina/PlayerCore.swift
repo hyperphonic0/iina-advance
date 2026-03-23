@@ -3206,22 +3206,12 @@ final class PlayerCore: NSObject {
     guard !isStopping else { return (0, false) }
 
     let vid = Int(mpv.getInt(MPVOption.TrackSelection.vid))
-    let isVidEnabled = vid != 0
-    let trackIsAlbumArt = isVidEnabled && (mpv.getString(MPVProperty.trackListNAlbumart(vid)) == "yes")
-
-    let isRestoring = isRestoring
-    return videoView.$isUninited.withLock{ _ in
-      let didChange = vid != info.vid
-      videoView.isVidEnabled = isVidEnabled
-      videoView.isVidAlbumArt = trackIsAlbumArt
-      // Try to prevent crash when forcing draws. After changing vid from 0 to non-zero, do not allow forced drawing until after
-      // the first render callback is triggered (unless track is album art).
-      let isReady = (isVidEnabled && trackIsAlbumArt) || isRestoring
-      videoView.isReadyToRender = isReady
-      info.vid = vid
-      log.verbose("Updated video state: vid=\(vid) isAlbumArt=\(trackIsAlbumArt.yn) ready=\(isReady.yn)")
-      return (vid, didChange)
-    }
+    let didChange = vid != info.vid
+    let trackIsAlbumArt = (vid > 0) && (mpv.getString(MPVProperty.trackListNAlbumart(vid)) == "yes")
+    videoView.isVidAlbumArt = trackIsAlbumArt
+    info.vid = vid
+    log.verbose("Updated video state: vid=\(vid) isAlbumArt=\(trackIsAlbumArt.yn) ready=\(true.yn)")
+    return (vid, didChange)
   }
 
   func vidChanged(silent: Bool = false) {

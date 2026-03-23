@@ -136,23 +136,21 @@ class GLVideoLayer: CAOpenGLLayer {
                         forLayerTime t: CFTimeInterval, displayTime ts: UnsafePointer<CVTimeStamp>?) -> Bool {
     guard lockAndSetOpenGLContext() else { return false }
     defer { unlockOpenGLContext() }
-    return videoView.$isUninited.withLock { isUninited in
-      guard !isUninited else { return false }
+    guard !videoView.isUninited else { return false }
 #if LOG_VIDEO_LAYER
-      canDrawCountTotal += 1
+    canDrawCountTotal += 1
 
-      if let ts = ts?.pointee {
-        NSLog("CAN_DRAW vidTS: \(ts.videoTime), hostTS: \(ts.hostTime), layerTime: \(t), queue: \(DispatchQueue.currentQueueLabel ?? "nil")")
-      } else {
-        NSLog("CAN_DRAW")
-      }
-      printStats()
-#endif
-      // Prevent crash if trying to use forceDraw when vid=0 (usually when toggling video on or off)
-      guard videoView.isVidEnabled && videoView.isReadyToRender else { return false }
-      if forceDraw { return true }
-      return shouldRenderUpdateFrame()
+    if let ts = ts?.pointee {
+      NSLog("CAN_DRAW vidTS: \(ts.videoTime), hostTS: \(ts.hostTime), layerTime: \(t), queue: \(DispatchQueue.currentQueueLabel ?? "nil")")
+    } else {
+      NSLog("CAN_DRAW")
     }
+    printStats()
+#endif
+    // Prevent crash if trying to use forceDraw when vid=0 (usually when toggling video on or off)
+    guard videoView.isReadyToRender else { return false }
+    if forceDraw { return true }
+    return shouldRenderUpdateFrame()
   }
 
   override func draw(inCGLContext ctx: CGLContextObj, pixelFormat pf: CGLPixelFormatObj,
@@ -229,9 +227,12 @@ class GLVideoLayer: CAOpenGLLayer {
     isAsynchronous = true
   }
 
-  func drawAsync(forced: Bool = false) {
+  func drawAsync(forced: Bool = false, onSuccess: (() -> Void)? = nil) {
     mpvGLQueue.async { [self] in
       draw(forced: forced)
+      if let onSuccess {
+        onSuccess()
+      }
     }
   }
 
@@ -274,31 +275,29 @@ class GLVideoLayer: CAOpenGLLayer {
     // without locking isUninited to avoid data races.
     guard lockAndSetOpenGLContext() else { return }
     defer { unlockOpenGLContext() }
-    videoView.$isUninited.withLock() { [self] isUninited in
-      guard !isUninited else { return }
+    guard !videoView.isUninited else { return }
 
-      guard !forceDraw else {
-        forceDraw = false
-        return
-      }
-      guard needsMPVRender else { return }
-
-      // Neither canDraw nor draw(inCGLContext:) were called by AppKit, needs a skip render.
-      // This can happen when IINA is playing in another space, as might occur when just playing
-      // audio. See issue #5025.
-      if let renderContext = mpvRenderContext,
-         shouldRenderUpdateFrame() {
-        var skip: CInt = 1
-        withUnsafeMutablePointer(to: &skip) { skip in
-          var params: [mpv_render_param] = [
-            mpv_render_param(type: MPV_RENDER_PARAM_SKIP_RENDERING, data: .init(skip)),
-            mpv_render_param()
-          ]
-          mpv_render_context_render(renderContext, &params)
-        }
-      }
-      needsMPVRender = false
+    guard !forceDraw else {
+      forceDraw = false
+      return
     }
+    guard needsMPVRender else { return }
+
+    // Neither canDraw nor draw(inCGLContext:) were called by AppKit, needs a skip render.
+    // This can happen when IINA is playing in another space, as might occur when just playing
+    // audio. See issue #5025.
+    if let renderContext = mpvRenderContext,
+       shouldRenderUpdateFrame() {
+      var skip: CInt = 1
+      withUnsafeMutablePointer(to: &skip) { skip in
+        var params: [mpv_render_param] = [
+          mpv_render_param(type: MPV_RENDER_PARAM_SKIP_RENDERING, data: .init(skip)),
+          mpv_render_param()
+        ]
+        mpv_render_context_render(renderContext, &params)
+      }
+    }
+    needsMPVRender = false
   }
 
   /// Initialize the `mpv` renderer.
@@ -329,9 +328,7 @@ class GLVideoLayer: CAOpenGLLayer {
 
     func mpvUpdateCallback(_ ctx: UnsafeMutableRawPointer?) {
       let layer = bridge(ptr: ctx!) as GLVideoLayer
-      layer.videoView.$isUninited.withLock { isUninited in
-        layer.videoView.isReadyToRender = true
-      }
+      layer.videoView.isReadyToRender = true
     }
 
     var openGLInitParams = mpv_opengl_init_params(get_proc_address: mpvGetOpenGLFunc,

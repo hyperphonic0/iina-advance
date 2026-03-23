@@ -35,10 +35,8 @@ class VideoView: NSView {
 
 #endif
 
-  /// Roughly equivalent to `player.info.isVideoTrackSelected`, but more performant
-  var isVidEnabled = false
-  var isVidAlbumArt = false
-  var isReadyToRender = false
+  @Atomic var isVidAlbumArt = false
+  @Atomic var isReadyToRender = false
 
   @MainActor
   var displayIdleStartTime: TimeInterval?
@@ -101,17 +99,16 @@ class VideoView: NSView {
     log.verbose("VideoView uninit start")
     stopDisplayLink()
     guard lockAndSetOpenGLContext() else { return }
-    defer { unlockOpenGLContext() }
-    $isUninited.withLock() { [self] isUninited in
+    do {
+      defer { unlockOpenGLContext() }
       guard !isUninited else {
         log.verbose("VideoView uninit already done, skipping")
         return
       }
       isUninited = true
-
-      glLayer?.deinitGLRendering()
-      log.verbose("VideoView uninit done")
     }
+    glLayer?.deinitGLRendering()
+    log.verbose("VideoView uninit done")
   }
 
   // MARK: - Mouse events
@@ -219,7 +216,7 @@ class VideoView: NSView {
   @MainActor
   func needsForcedRedraws() -> Bool {
     guard player.pwc.loaded, !AppDelegate.shared.isTerminating else { return false }
-    guard player.videoView.isVidEnabled, player.videoView.isVidAlbumArt || player.info.isPaused else { return false }
+    guard player.videoView.isVidAlbumArt || player.info.isPaused else { return false }
     return true
   }
 
@@ -290,16 +287,14 @@ class VideoView: NSView {
     } else if let screenColorSpace {
       let name = screenColorSpace.localizedName ?? "unnamed"
       logHDR.verbose("Using the ICC profile of the color space \(name.quoted)")
-      // This MUST be locked via openGLContext
 
+      // This MUST be locked via openGLContext
       guard lockAndSetOpenGLContext() else { return }
       defer { unlockOpenGLContext() }
-      $isUninited.withLock() { isUninited in
-        guard !isUninited else { return }
-        // Set MPV_RENDER_PARAM_ICC_PROFILE before enabling icc-profile-auto to true as mpv requires
-        // that parameter be set in the render context when icc-profile-auto is in use.
-        glLayer.setRenderICCProfile(screenColorSpace)
-      }
+      guard !isUninited else { return }
+      // Set MPV_RENDER_PARAM_ICC_PROFILE before enabling icc-profile-auto to true as mpv requires
+      // that parameter be set in the render context when icc-profile-auto is in use.
+      glLayer.setRenderICCProfile(screenColorSpace)
 
     } else {
       logHDR.warn("Cannot set auto ICC profile; no screen color space")
