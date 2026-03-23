@@ -234,12 +234,20 @@ class GLVideoLayer: CAOpenGLLayer {
         onSuccess()
       }
     }
+
+    // Could this cause a race condition which results in the draw call being off by a frame? Do we care?
+    if !videoView.isUninited {
+      mpvReportSwap()
+    }
   }
 
   /// Although this generates a warning in Xcode, synchronous drawing via the DisplayLink seems far smoother.
   /// Despite Xcode's declarations, no lockup has yet been observed.
   func drawSync(forced: Bool = false, onSuccess: (() -> Void)? = nil) {
+    guard !videoView.isUninited else { return }
     draw(forced: forced)
+    mpvReportSwap()
+
     if let onSuccess {
       onSuccess()
     }
