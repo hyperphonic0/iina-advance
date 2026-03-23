@@ -29,6 +29,18 @@ extension PlayerCore {
     }
   }
 
+  /// Add either video or audio filter, from any DispatchQueue.
+  func addFilter(_ filter: MPVFilter, isVideoNotAudio: Bool,
+                 onSuccess: MainActorSuccessCallback? = nil, onFailure: MainActorCallback? = nil) {
+    mpv.queue.async { [self] in
+      if isVideoNotAudio {
+        addVideoFilter(filter, onSuccess: onSuccess, onFailure: onFailure)
+      } else {
+        addAudioFilter(filter, onSuccess: onSuccess, onFailure: onFailure)
+      }
+    }
+  }
+
   // MARK: - Audio Filters
 
   func afChanged() {
@@ -76,7 +88,24 @@ extension PlayerCore {
   /// - Parameter filter: The filter to add.
   /// - Returns: `true` if the filter was successfully added, `false` otherwise.
   @discardableResult
-  func addAudioFilter(_ filter: MPVFilter) -> Bool { addAudioFilter(filter.stringFormat) }
+  func addAudioFilter(_ filter: MPVFilter, onSuccess: MainActorSuccessCallback? = nil, onFailure: MainActorCallback? = nil) -> Bool {
+    let success = addAudioFilter(filter.stringFormat)
+    if success {
+      if let onSuccess {
+        DispatchQueue.main.async {
+          onSuccess()
+        }
+      }
+    } else {
+      log.verbose("Audio filter \(filter.stringFormat) was not added")
+      if let onFailure {
+        DispatchQueue.main.async {
+          onFailure()
+        }
+      }
+    }
+    return success
+  }
 
   /// Add an audio filter given as a string.
   /// - Parameter filter: The filter to add.
@@ -197,12 +226,24 @@ extension PlayerCore {
   /// - Returns: `true` if the filter was successfully added, `false` otherwise.
   /// 
   /// *MUST* be executed in the `mpv` DispatchQueue.
-  func addVideoFilter(_ filter: MPVFilter) -> Bool {
+  @discardableResult
+  func addVideoFilter(_ filter: MPVFilter, onSuccess: MainActorSuccessCallback? = nil, onFailure: MainActorCallback? = nil) -> Bool {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
 
     let success = addVideoFilter(filter.stringFormat)
-    if !success {
+    if success {
+      if let onSuccess {
+        DispatchQueue.main.async {
+          onSuccess()
+        }
+      }
+    } else {
       log.verbose("Video filter \(filter.stringFormat) was not added")
+      if let onFailure {
+        DispatchQueue.main.async {
+          onFailure()
+        }
+      }
     }
     return success
   }

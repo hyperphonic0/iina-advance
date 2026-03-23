@@ -9,10 +9,11 @@
 import Cocoa
 
 typealias Callback = () -> Void
+typealias MainActorCallback = @MainActor () -> Void
 typealias OnSuccessCallback = () -> Void
 typealias OnErrorCallback = (String) -> Void
 
-typealias MainActorSuccessCallback = @MainActor () -> Void
+typealias MainActorSuccessCallback = MainActorCallback
 
 /// Trying to deprecate this struct. New constants should be added to `Constants` struct.
 struct AppData {

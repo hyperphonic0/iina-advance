@@ -37,13 +37,7 @@ extension MPVController {
       mpvSetOptions(from: player.userOptions)
     }
 
-    queue.async { [self] in
-      // Need to be in mpv queue to get/set player.state variable. But need to set this before setting up
-      // mpv event callback, because that can block for arbitrary time periods.
-      if player.state == .notYetStarted {
-        player.state = .started
-      }
-    }
+    setPlayerStateToStarted()
 
     if player.isDemoPlayer {
       // Do the minimum needed for demo player
@@ -93,6 +87,17 @@ extension MPVController {
     }
 
     player.log.verbose("Init mpv: done")
+  }
+
+  // Workaround to silence Xcode warning: put this in its own function
+  private func setPlayerStateToStarted() {
+    queue.async { [self] in
+      // Need to be in mpv queue to get/set player.state variable. But need to set this before setting up
+      // mpv event callback, because that can block for arbitrary time periods.
+      if player.state == .notYetStarted {
+        player.state = .started
+      }
+    }
   }
 
   /// This is designed to be called again if this mpv core is reused across player sessions.

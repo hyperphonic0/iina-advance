@@ -577,12 +577,17 @@ final class MPVController: NSObject {
       log.verbose("Loading input config file: \(inputConfPath.pii.quoted)")
 
       if mpvQueue {
-        queue.async{ [self] in
-          chkErr(setOptionalOptionString(MPVOption.Input.inputConf, inputConfPath, level: .verbose))
-        }
+        addInputconfInMpvDQ(inputConfPath: inputConfPath)
       } else {
         chkErr(setOptionalOptionString(MPVOption.Input.inputConf, inputConfPath, level: .verbose))
       }
+    }
+  }
+
+  // Put in its own function to get around Xcode warning
+  private func addInputconfInMpvDQ(inputConfPath: String) {
+    queue.async{ [self] in
+      chkErr(setOptionalOptionString(MPVOption.Input.inputConf, inputConfPath, level: .verbose))
     }
   }
 

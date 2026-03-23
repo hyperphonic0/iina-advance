@@ -73,6 +73,10 @@ extension PlayerCore {
   func setCrop(fromLabel newCropLabel: String) {
     let videoGeo = pwc.geo.video
 
+    __setCrop(fromLabel: newCropLabel, videoGeo)
+  }
+
+  private func __setCrop(fromLabel newCropLabel: String, _ videoGeo: VideoGeometry) {
     mpv.queue.async { [self] in
       if newCropLabel == Constants.String.noneCropIdentifier {
         log.verbose("Setting crop to None")
@@ -94,6 +98,7 @@ extension PlayerCore {
       }
     }
   }
+
 
   /// Returns `true` if successful.
   @discardableResult

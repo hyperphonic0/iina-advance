@@ -819,7 +819,6 @@ final class PlayerCore: NSObject {
   ///     that happens while IINA is quitting then this method may be called with the background task still running. If the background
   ///     task is still running this method only changes the player state. When the background task ends it will notice that shutting
   ///     down was in progress and will call this method again to continue the process of shutting down..
-  @MainActor
   func shutdown() {
     mpv.queue.async { [self] in
       _shutdown()
@@ -1228,6 +1227,11 @@ final class PlayerCore: NSObject {
     // It must be running when stepping to avoid slowdowns caused by mpv waiting for IINA to call
     // mpv_render_report_swap.
     videoView.displayActive()
+    __frameStep(backwards: backwards)
+  }
+
+  /// Standalone func to avoid Xcode isolation warning
+  private func __frameStep(backwards: Bool) {
     mpv.queue.async { [self] in
       if backwards {
         mpv.command(.frameBackStep)
@@ -1663,13 +1667,16 @@ final class PlayerCore: NSObject {
 
     let aspectLabel: String = Aspect.bestLabelFor(aspectString)
     guard pwc.geo.video.userAspectLabel != aspectLabel else { return }
-
-    mpv.queue.async { [self] in
-      sendVideoAspectOverrideToMpv(aspectLabel: aspectLabel)
-    }
+    sendVideoAspectOverrideToMpv(aspectLabel: aspectLabel)
   }
 
   func sendVideoAspectOverrideToMpv(aspectLabel: String) {
+    mpv.queue.async { [self] in
+      _sendVideoAspectOverrideToMpv(aspectLabel: aspectLabel)
+    }
+  }
+
+  func _sendVideoAspectOverrideToMpv(aspectLabel: String) {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
     var mpvValue = Aspect.mpvVideoAspectOverride(fromAspectLabel: aspectLabel)
     if mpvValue == Constants.String.mpvNo {

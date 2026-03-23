@@ -162,30 +162,19 @@ class FilterWindowController: WindowController, NSWindowDelegate {
       return
     }
 
-    player.mpv.queue.async { [self] in
-      func onFailure() {
-        DispatchQueue.main.async { [self] in
-          Utility.showAlert("filter.incorrect", sheetWindow: window)
-          reloadTable()
-        }
-      }
-      if filterType == MPVProperty.vf {
-        guard player.addVideoFilter(filter) else {
-          onFailure()
-          return
-        }
-      } else {
-        guard player.addAudioFilter(filter) else {
-          onFailure()
-          return
-        }
-      }
-      DispatchQueue.main.async { [self] in
-        filters.append(filter)
-        reloadTable()
-        onSuccess()
-      }
+    func onSuccessCallback() {
+      filters.append(filter)
+      reloadTable()
+      onSuccess()
     }
+
+    func onFailure() {
+      Utility.showAlert("filter.incorrect", sheetWindow: window)
+      reloadTable()
+    }
+
+    let isVideoNotAudio = filterType == MPVProperty.vf
+    player.addFilter(filter, isVideoNotAudio: isVideoNotAudio, onSuccess: onSuccessCallback, onFailure: onFailure)
   }
 
   private func loadSavedFiltersFromPrefs() {
