@@ -124,7 +124,7 @@ final class MediaPlayerIntegration {
   @MainActor
   private func updateNowPlayingInfo() {
     let center = MPNowPlayingInfoCenter.default()
-    var info = center.nowPlayingInfo ?? [String: Any]()
+    let info = center.nowPlayingInfo ?? [String: Any]()
 
     guard let activePlayer = PlayerManager.shared.lastActivePlayer else {
       center.playbackState = .unknown
@@ -134,33 +134,56 @@ final class MediaPlayerIntegration {
     }
 
     self.lastActivePlayer = activePlayer
+    activePlayer.updateNowPlayingInfo(from: info)
+  }
 
-    activePlayer.mpv.queue.async {
-      guard !activePlayer.isStopping else { return }
+  fileprivate static func updateCommandEnablements(for player: PlayerCore) {
+    player.mpv.queue.async {
+      let canSkipBackward = player.canSkipBackward
+      let canSkipForward = player.canSkipForward
+      let canPlayPrevTrack = player.canPlayPrevTrack
+      let canPlayNextTrack = player.canPlayNextTrack
+      DispatchQueue.main.async {
+        let remoteCommand = MPRemoteCommandCenter.shared()
+        remoteCommand.skipBackwardCommand.isEnabled = canSkipBackward
+        remoteCommand.skipForwardCommand.isEnabled = canSkipForward
+        remoteCommand.previousTrackCommand.isEnabled = canPlayPrevTrack
+        remoteCommand.nextTrackCommand.isEnabled = canPlayNextTrack
+      }
+    }
+  }
+}
 
-      if activePlayer.info.currentMediaAudioStatus.isAudio {
-        info[MPNowPlayingInfoPropertyMediaType] = MPNowPlayingInfoMediaType.audio.rawValue
-        let (title, album, artist) = activePlayer.getMusicMetadata()
-        info[MPMediaItemPropertyTitle] = title
-        info[MPMediaItemPropertyAlbumTitle] = album
-        info[MPMediaItemPropertyArtist] = artist
+extension PlayerCore {
+  fileprivate func updateNowPlayingInfo(from existingInfo: [String: Any]) {
+    var nowPlayingInfo = existingInfo
+    mpv.queue.async { [self] in
+      guard !isStopping else { return }
+
+      if info.currentMediaAudioStatus.isAudio {
+        nowPlayingInfo[MPNowPlayingInfoPropertyMediaType] = MPNowPlayingInfoMediaType.audio.rawValue
+        let (title, album, artist) = getMusicMetadata()
+        nowPlayingInfo[MPMediaItemPropertyTitle] = title
+        nowPlayingInfo[MPMediaItemPropertyAlbumTitle] = album
+        nowPlayingInfo[MPMediaItemPropertyArtist] = artist
       } else {
-        info[MPNowPlayingInfoPropertyMediaType] = MPNowPlayingInfoMediaType.video.rawValue
-        info[MPMediaItemPropertyTitle] = activePlayer.getMediaTitle(withExtension: false)
-        info[MPMediaItemPropertyAlbumTitle] = ""
-        info[MPMediaItemPropertyArtist] = ""
+        nowPlayingInfo[MPNowPlayingInfoPropertyMediaType] = MPNowPlayingInfoMediaType.video.rawValue
+        nowPlayingInfo[MPMediaItemPropertyTitle] = getMediaTitle(withExtension: false)
+        nowPlayingInfo[MPMediaItemPropertyAlbumTitle] = ""
+        nowPlayingInfo[MPMediaItemPropertyArtist] = ""
       }
 
-      let positionSec = activePlayer.info.playbackTime.positionSec
+      let positionSec = info.playbackTime.positionSec
+      let isVideoTrackSelected = info.isVideoTrackSelected
 
-      DispatchQueue.main.async {
+      DispatchQueue.main.async { [self] in
         let artwork: MPMediaItemArtwork?
-        if activePlayer.info.isVideoTrackSelected, (activePlayer.currentMediaThumbnails?.thumbnails.count ?? 0) > 0 {
-          artwork = MPMediaItemArtwork(boundsSize: activePlayer.pwc.geo.video.videoSizeCAR, requestHandler: { displaySize in
+        if isVideoTrackSelected, let currentMediaThumbnails, currentMediaThumbnails.thumbnails.count > 0 {
+          artwork = MPMediaItemArtwork(boundsSize: pwc.geo.video.videoSizeCAR, requestHandler: { displaySize in
             // TODO: figure out a way to use screenshot-raw from mpv instead!
             // Use thumbnail if available
-            if let positionSec, activePlayer.info.isVideoTrackSelected,
-               let thumbImg = activePlayer.currentMediaThumbnails?.getThumbnail(forSecond: positionSec)?.image {
+            if let positionSec,
+               let thumbImg = currentMediaThumbnails.getThumbnail(forSecond: positionSec)?.image {
               // Crop to aspect ratio of requested size, rather than stretching/squeezing. Then resize
               let cropRect = thumbImg.size().getCropRect(withAspect: displaySize.aspect)
               if let previewImg = thumbImg.cropping(to: cropRect)?.resized(newWidth: displaySize.widthInt, newHeight: displaySize.heightInt).toNSImage() {
@@ -173,44 +196,28 @@ final class MediaPlayerIntegration {
         } else {
           artwork = nil
         }
-        info[MPMediaItemPropertyArtwork] = artwork
+        nowPlayingInfo[MPMediaItemPropertyArtwork] = artwork
 
-        let duration = activePlayer.info.playbackTime.durationSec ?? 0
+        let duration = info.playbackTime.durationSec ?? 0
         let time = positionSec ?? 0
-        let speed = activePlayer.info.playSpeed
+        let speed = info.playSpeed
 
-        info[MPMediaItemPropertyPlaybackDuration] = duration
-        info[MPNowPlayingInfoPropertyElapsedPlaybackTime] = time
-        info[MPNowPlayingInfoPropertyPlaybackRate] = speed
-        info[MPNowPlayingInfoPropertyDefaultPlaybackRate] = 1
-        info[MPNowPlayingInfoPropertyAssetURL] = activePlayer.info.currentPlayback?.url
+        nowPlayingInfo[MPMediaItemPropertyPlaybackDuration] = duration
+        nowPlayingInfo[MPNowPlayingInfoPropertyElapsedPlaybackTime] = time
+        nowPlayingInfo[MPNowPlayingInfoPropertyPlaybackRate] = speed
+        nowPlayingInfo[MPNowPlayingInfoPropertyDefaultPlaybackRate] = 1
+        nowPlayingInfo[MPNowPlayingInfoPropertyAssetURL] = info.currentPlayback?.url
 
         let center = MPNowPlayingInfoCenter.default()
-        center.nowPlayingInfo = info
+        center.nowPlayingInfo = nowPlayingInfo
 
-        if activePlayer.info.isFileLoaded {
-          center.playbackState = activePlayer.info.isPaused ? .paused : .playing
+        if info.isFileLoaded {
+          center.playbackState = info.isPaused ? .paused : .playing
         } else {
           center.playbackState = .unknown
         }
 
-        MediaPlayerIntegration.updateCommandEnablements(for: activePlayer)
-      }
-    }
-  }
-
-  private static func updateCommandEnablements(for player: PlayerCore) {
-    player.mpv.queue.async {
-      let canSkipBackward = player.canSkipBackward
-      let canSkipForward = player.canSkipForward
-      let canPlayPrevTrack = player.canPlayPrevTrack
-      let canPlayNextTrack = player.canPlayNextTrack
-      DispatchQueue.main.async {
-        let remoteCommand = MPRemoteCommandCenter.shared()
-        remoteCommand.skipBackwardCommand.isEnabled = canSkipBackward
-        remoteCommand.skipForwardCommand.isEnabled = canSkipForward
-        remoteCommand.previousTrackCommand.isEnabled = canPlayPrevTrack
-        remoteCommand.nextTrackCommand.isEnabled = canPlayNextTrack
+        MediaPlayerIntegration.updateCommandEnablements(for: self)
       }
     }
   }
