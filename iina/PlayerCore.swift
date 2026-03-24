@@ -612,7 +612,10 @@ final class PlayerCore: NSObject {
     if playback.isNetworkResource, isInteractivePlayer {
       AppDelegate.shared.openURLWindow.showLoadingScreen(playerCore: self)
     }
+    __openPlayerWindow(ids, playback, isInteractivePlayer: isInteractivePlayer)
+  }
 
+  private func __openPlayerWindow(_ ids: [PlaybackID], _ playback: Playback, isInteractivePlayer: Bool) {
     /// Put work on top of mpv queue so that prev use of mpv core can finish stopping / drain queue
     mpv.queue.async { [self] in
       let path = playback.path

@@ -1809,7 +1809,7 @@ extension PlayerCore {
           pwc.log.trace("Skipping player state save: player window is not loaded")
           return
         }
-        pwc.animationPipeline.submitInstantTask {
+        pwc.animationPipeline.submitInstantTask { [self] in
           guard !pwc.isAnimatingLayoutTransition, !pwc.isApplyingPWinGeo else {
             /// The transition itself will call `save` when it is done. Just return
             return
@@ -1822,17 +1822,21 @@ extension PlayerCore {
           let log = player.log
           let playerLabel = player.label
 
-          PlayerSaveState.saveQueue.async { [self] in
-            let sw = Utility.Stopwatch()
-            let properties = fillOutPropDict(geo, currentLayout, pwcProps)
-            if Preference.bool(for: .logPlayerSave) {
-              log.trace("Saving player state: \(properties)")
-            }
-            UIState.shared.saveState(forPlayerID: playerLabel, properties: properties)
-            log.verbose("Saved player state in \(sw.secElapsedString)")
-          }
+          finishSave(geo, currentLayout, pwcProps, playerLabel: playerLabel)
         }
       }
+    }
+  }
+
+  private func finishSave(_ geo: GeometrySet, _ currentLayout: LayoutState, _ pwcProps: [String: Any], playerLabel: String) {
+    PlayerSaveState.saveQueue.async { [self] in
+      let sw = Utility.Stopwatch()
+      let properties = fillOutPropDict(geo, currentLayout, pwcProps)
+      if Preference.bool(for: .logPlayerSave) {
+        log.trace("Saving player state: \(properties)")
+      }
+      UIState.shared.saveState(forPlayerID: playerLabel, properties: properties)
+      log.verbose("Saved player state in \(sw.secElapsedString)")
     }
   }
 

@@ -113,36 +113,15 @@ class FilterWindowController: WindowController, NSWindowDelegate {
     }
     player.log.verbose("Reloading \(filterType) table")
     let savedFilters = self.savedFilters
-    player.mpv.queue.async { [self] in
-      // When IINA is terminating player windows are closed, which causes the iinaPlayerWindowChanged
-      // notification to be posted and that results in the observer established above calling this
-      // method. Thus this method may be called after IINA has commanded mpv to shutdown. Once mpv has
-      // been told to shutdown mpv APIs must not be called as it can trigger a crash in mpv.
-      guard !player.isStopping else { return }
-      let latestActiveFilters = (filterType == MPVProperty.af) ? player.updateAudioFiltersFromMpv() : player.updateVideoFiltersFromMpv()
-
-      var filterIsSavedUpdated = [Bool](repeatElement(false, count: latestActiveFilters.count))
-
-      var savedFiltersUpdated: [SavedFilter] = []
-      for savedFilter in savedFilters {
-        if let savedMpvFilter = MPVFilter(rawString: savedFilter.filterString),
-           let freshIndex = latestActiveFilters.firstIndex(of: savedMpvFilter) {
-          filterIsSavedUpdated[freshIndex] = true
-          savedFiltersUpdated.append(savedFilter.clone(enabled: true))
-        } else {
-          savedFiltersUpdated.append(savedFilter.clone(enabled: false))
-        }
-      }
-
-      Task { @MainActor in
-        Logger.log.verbose("Reloading filters UI: active=\(latestActiveFilters.count) saved=\(savedFilters.count) checkboxes=[\(filterIsSavedUpdated.map(\.yn).joined(separator: "-"))]")
-        self.filters = latestActiveFilters
-        self.filterIsSaved = filterIsSavedUpdated
-        self.savedFilters = savedFiltersUpdated
-        currentFiltersTableView.reloadData()
-        savedFiltersTableView.reloadData()
-      }
-    }
+    player.reloadFiltersTable(isVideoNotAudio: filterType == MPVProperty.vf, savedFilters: savedFilters,
+                              onSuccess: { [self] latestActiveFilters, filterIsSavedUpdated, savedFiltersUpdated in
+      Logger.log.verbose("Reloading filters UI: active=\(latestActiveFilters.count) saved=\(savedFilters.count) checkboxes=[\(filterIsSavedUpdated.map(\.yn).joined(separator: "-"))]")
+      self.filters = latestActiveFilters
+      self.filterIsSaved = filterIsSavedUpdated
+      self.savedFilters = savedFiltersUpdated
+      currentFiltersTableView.reloadData()
+      savedFiltersTableView.reloadData()
+    })
   }
 
   private func setFilters() {
@@ -636,6 +615,37 @@ extension NewFilterSheetViewController: NSTextFieldDelegate {
   func controlTextDidChange(_ obj: Notification) {
     if let textField = obj.object as? NSTextField {
       self.addButton.isEnabled = !textField.stringValue.isEmpty
+    }
+  }
+}
+
+extension PlayerCore {
+  fileprivate func reloadFiltersTable(isVideoNotAudio: Bool, savedFilters: [SavedFilter],
+                                      onSuccess: @escaping (([MPVFilter], [Bool], [SavedFilter]) -> Void)) {
+    mpv.queue.async { [self] in
+      // When IINA is terminating player windows are closed, which causes the iinaPlayerWindowChanged
+      // notification to be posted and that results in the observer established above calling this
+      // method. Thus this method may be called after IINA has commanded mpv to shutdown. Once mpv has
+      // been told to shutdown mpv APIs must not be called as it can trigger a crash in mpv.
+      guard !isStopping else { return }
+      let latestActiveFilters = isVideoNotAudio ? updateVideoFiltersFromMpv() : updateAudioFiltersFromMpv()
+
+      var filterIsSavedUpdated = [Bool](repeatElement(false, count: latestActiveFilters.count))
+
+      var savedFiltersUpdated: [SavedFilter] = []
+      for savedFilter in savedFilters {
+        if let savedMpvFilter = MPVFilter(rawString: savedFilter.filterString),
+           let freshIndex = latestActiveFilters.firstIndex(of: savedMpvFilter) {
+          filterIsSavedUpdated[freshIndex] = true
+          savedFiltersUpdated.append(savedFilter.clone(enabled: true))
+        } else {
+          savedFiltersUpdated.append(savedFilter.clone(enabled: false))
+        }
+      }
+
+      DispatchQueue.main.async {
+        onSuccess(latestActiveFilters, filterIsSavedUpdated, savedFiltersUpdated)
+      }
     }
   }
 }

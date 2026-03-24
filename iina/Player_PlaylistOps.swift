@@ -189,19 +189,23 @@ extension PlayerCore {
         // Generally we only want to execute this logic once per operation (not undo or redo), so attach this to `.registerUndoRedo`,
         // and this conveniently will also omit `addAllToPlaylist` because that does not register an undo.
         let itemsNeedingBookmarks = rowList.filter { $0.needsBookmark }
-        let currentTicket = postLoadBGQTicket  // attach to current ticket; should be fine
         if !itemsNeedingBookmarks.isEmpty {
-          PlayerCore.postLoadBGQ.async { [self] in
-            for item in itemsNeedingBookmarks {
-              guard currentTicket == postLoadBGQTicket else { return }
-              if MediaMetaCache.shared.createBookmarkIfNotExist(fromURL: item.url) {
-                log.verbose("Created bookmark data from URL \(item.url.path.pii.quoted)")
-              }
-            }
-          }
+          // attach to current ticket; should be fine
+          processItemsNeedingBookmarks(itemsNeedingBookmarks, currentTicket: postLoadBGQTicket)
         }
       }
     })
+  }
+
+  private func processItemsNeedingBookmarks(_ itemsNeedingBookmarks: [PlaybackID], currentTicket: Int) {
+    PlayerCore.postLoadBGQ.async { [self] in
+      for item in itemsNeedingBookmarks {
+        guard currentTicket == postLoadBGQTicket else { return }
+        if MediaMetaCache.shared.createBookmarkIfNotExist(fromURL: item.url) {
+          log.verbose("Created bookmark data from URL \(item.url.path.pii.quoted)")
+        }
+      }
+    }
   }
 
   /// Insert playlist items at mapped indexes. Contains the backend logic only.
@@ -440,16 +444,14 @@ extension PlayerCore {
   @MainActor
   func removePlaylistRows(_ rowIndexes: IndexSet, _ undoOption: UndoOption) {
     pwc.animationPipeline.submitInstantTask { [self] in
-      removePlaylistRows_TaskBody(rowIndexes, undoOption)
+      guard !rowIndexes.isEmpty else { return }
+      let allItemsOld = displayedPlaylist     // save in case of undo
+      __removePlaylistRow(rowIndexes, allItemsOld: allItemsOld, undoOption)
     }
   }
 
-  @MainActor
-  private func removePlaylistRows_TaskBody(_ rowIndexes: IndexSet, _ undoOption: UndoOption) {
-    guard !rowIndexes.isEmpty else { return }
-
+  private func __removePlaylistRow(_ rowIndexes: IndexSet, allItemsOld: [PlaybackID], _ undoOption: UndoOption) {
     // 1. Build UI update in main queue
-    let allItemsOld = displayedPlaylist     // save in case of undo
     let (tableUIChange, allItemsNew) = TableUIChangeBuilder.shared.buildRemove(rowIndexes, in: allItemsOld,
                                                                                selectNextRowAfterDelete: playlistTableSelectNextRowAfterDelete)
 
@@ -527,6 +529,11 @@ extension PlayerCore {
     let allItemsOld = displayedPlaylist     // save in case of undo
     guard Set(allItemsOld) == Set(allItemsNew) else { return }
     if allItemsOld == allItemsNew { return }
+    __playlistReorder(allItemsOld: allItemsOld, allItemsNew: allItemsNew, undoOption)
+  }
+
+  /// Separate method launched from `playlistReorder` to avoid compiler isolation warning
+  private func __playlistReorder(allItemsOld: [PlaybackID], allItemsNew: [PlaybackID], _ undoOption: UndoOption = .registerUndoRedo) {
     let tableUIChange = TableUIChangeBuilder.shared.buildDiff(oldRows: allItemsOld, newRows: allItemsNew)
 
     // 2. Execute backend update on mpv queue. Validate playlist before & after for consistency
