@@ -56,7 +56,6 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
   // For Pinch To Magnify gesture:
   let magnificationHandler = MagnificationGestureHandler()
 
-  nonisolated(unsafe)
   let animationPipeline: IINAAnimation.Pipeline
 
   /// Need to store this for use by `showWindow` when it is called asynchronously

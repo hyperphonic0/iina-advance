@@ -1819,7 +1819,6 @@ extension PlayerCore {
 
           let player = pwc.player
           guard !player.isShuttingDown else { return }
-          let log = player.log
           let playerLabel = player.label
 
           finishSave(geo, currentLayout, pwcProps, playerLabel: playerLabel)

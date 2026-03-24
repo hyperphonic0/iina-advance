@@ -147,6 +147,7 @@ extension IINAAnimation {
 
 extension IINAAnimation {
   /// Serial queue which executes `Task`s one after another.
+  @MainActor
   class Pipeline {
 
     /// ID of the latest transaction to be generated, but not necessarily run.
@@ -167,8 +168,8 @@ extension IINAAnimation {
     private var gtfQueue = LinkedList<GeometryTransform>()
     let gtfLock = Lock()
     var gtfCurrentlyRunningID: Int? = nil
-    var lastGeneratedID: Int = 0
-    var wantsVideoGeoSync: Bool = false
+    nonisolated(unsafe) var lastGeneratedID: Int = 0
+    nonisolated(unsafe) var wantsVideoGeoSync: Bool = false
 
     var enableRunning = true
 
@@ -183,11 +184,13 @@ extension IINAAnimation {
 
     // Convenience function. Run the task with no animation / zero duration.
     // Useful for updating constraints, etc., which cannot be animated or do not look good animated.
+    nonisolated
     func submitInstantTask(_ runFunc: @escaping TaskFunc, then doAfter: TaskFunc? = nil) {
       submit(.instantTask(runFunc), then: doAfter)
     }
 
     /// Convenience function. Same as `submit(Task)`
+    nonisolated
     func submitTask(duration: CGFloat? = nil, timing timingName: CAMediaTimingFunctionName? = nil,
                     _ runFunc: @escaping TaskFunc, then doAfter: TaskFunc? = nil) {
       let task = Task(duration: duration, timing: timingName, runFunc)
@@ -195,10 +198,12 @@ extension IINAAnimation {
     }
 
     /// Convenience function. Same as `submit([Task])`, but for a single animation.
+    nonisolated
     func submit(_ task: Task, then doAfter: TaskFunc? = nil) {
       submit([task], then: doAfter)
     }
 
+    nonisolated
     func submit(_ tx: Transaction, then doAfter: TaskFunc? = nil) {
       submit(tx.tasks, then: doAfter)
     }
@@ -206,6 +211,7 @@ extension IINAAnimation {
     /// Recursive function which enqueues each of the given `AnimationTask`s for execution, one after another.
     /// Will execute without animation if motion reduction is enabled, or if wrapped in a call to `IINAAnimation.disableAnimation()`.
     /// If animating, it uses either the supplied `duration` for duration, or if that is not provided, uses `Constants.AnimationDuration.standard`.
+    nonisolated
     func submit(_ tasks: [Task], then doAfter: TaskFunc? = nil) {
       SwiftTask { @MainActor in
         // Add tasks to queue.
@@ -345,9 +351,10 @@ extension IINAAnimation {
 
     /// Currently this "work" is always just a reload of the current QuickSettings tab, if shown.
     /// Flattening all requests to this single instance works as a debouncer for reload requests.
-    private var pendingWorkAfterGTFs: TaskFunc? = nil
+    nonisolated(unsafe) private var pendingWorkAfterGTFs: TaskFunc? = nil
     
     // TODO: replace this logic with a simple flag
+    nonisolated
     func doAfterGTFs(_ work: @escaping TaskFunc) {
       gtfLock.withLock{ [self] in
         pendingWorkAfterGTFs = work
@@ -359,7 +366,6 @@ extension IINAAnimation {
     
     /// Checks that the last GeometryTransform is done, and if there is an enqueued GeometryTransform waiting.
     /// If so, pops & returns it.
-    @MainActor
     private func popNextReadyGTF() -> Task? {
       gtfLock.withLock{ [self] in
         guard gtfCurrentlyRunningID == nil else { return nil }
@@ -383,6 +389,7 @@ extension IINAAnimation {
       }
     }
 
+    nonisolated
     func nextID_NoLock() -> Int {
       lastGeneratedID += 1
       return lastGeneratedID
@@ -402,6 +409,7 @@ extension IINAAnimation {
       submitInstantTask{}
     }
 
+    nonisolated
     func enqueueVideoSyncTaskIfNeeded(_ player: PlayerCore) {
       gtfLock.withLock{ [self] in
         guard !wantsVideoGeoSync else { return }

@@ -8,7 +8,7 @@
 
 import SafariServices
 
-class SafariExtensionHandler: SFSafariExtensionHandler {
+final class SafariExtensionHandler: SFSafariExtensionHandler, @unchecked Sendable {
 
   override func toolbarItemClicked(in window: SFSafariWindow) {
     window.getActiveTab {
@@ -22,8 +22,8 @@ class SafariExtensionHandler: SFSafariExtensionHandler {
     }
   }
 
-  override func validateContextMenuItem(withCommand command: String, in page: SFSafariPage, userInfo: [String: Any]? = nil, validationHandler: @escaping (Bool, String?) -> Void)
-  {
+  override func validateContextMenuItem(withCommand command: String, in page: SFSafariPage, userInfo: [String: Any]? = nil,
+                                        validationHandler: @escaping (Bool, String?) -> Void) {
     switch command {
     case "OpenInIINA":
       validationHandler(false, nil)
