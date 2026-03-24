@@ -8,7 +8,7 @@
 
 import Foundation
 
-protocol DraggableObject {
+@MainActor protocol DraggableObject {
   func cancelDrag()
 }
 

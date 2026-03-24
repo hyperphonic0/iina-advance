@@ -19,7 +19,7 @@
 ///     method that does not provide a status code so it will not be obvious when macOS is broken. Should a user report problems
 ///     with sleep prevention review issues [#3842](https://github.com/iina/iina/issues/3842) and
 ///     [#3478](https://github.com/iina/iina/issues/3478) to see if they explain the failure.
-class SleepPreventer: NSObject {
+@MainActor final class SleepPreventer: NSObject {
 
   /// Token returned by [beginActivity](https://developer.apple.com/documentation/foundation/processinfo/1415995-beginactivity).
   static private var activityToken: NSObjectProtocol?
@@ -79,24 +79,22 @@ class SleepPreventer: NSObject {
   /// 2. Prevent display sleep but allow screen saver to start (`ProcessInfo.ActivityOptions.idleSystemSleepDisabled`)
   /// 3. Do not prevent display sleep or screen saver from starting.
   static func updateSleepPrevention() {
-    DispatchQueue.main.async {
-      if Preference.bool(for: .preventScreenSaver) {
-        let activePlayers = PlayerManager.shared.getNonIdle()
-        for player in activePlayers {
-          if !player.info.isPaused {
-            // Either prevent the screen saver from activating or prevent system from sleeping depending
-            // upon user setting.
-            let allowScreenSaver = Preference.bool(for: .allowScreenSaverForAudio) && (player.info.currentMediaAudioStatus.isAudio || player.isInMiniPlayer)
-            SleepPreventer.preventSleep(allowScreenSaver: allowScreenSaver)
-            return
-          }
+    if Preference.bool(for: .preventScreenSaver) {
+      let activePlayers = PlayerManager.shared.getNonIdle()
+      for player in activePlayers {
+        if !player.info.isPaused {
+          // Either prevent the screen saver from activating or prevent system from sleeping depending
+          // upon user setting.
+          let allowScreenSaver = Preference.bool(for: .allowScreenSaverForAudio) && (player.info.currentMediaAudioStatus.isAudio || player.isInMiniPlayer)
+          SleepPreventer.preventSleep(allowScreenSaver: allowScreenSaver)
+          return
         }
-        Logger.log.verbose("[sleep] None of the \(activePlayers.count) active players are playing")
-      } else {
-        Logger.log.trace("[sleep] Skipping: pref preventScreenSaver=N")
       }
-      SleepPreventer.allowSleep()
+      Logger.log.verbose("[sleep] None of the \(activePlayers.count) active players are playing")
+    } else {
+      Logger.log.trace("[sleep] Skipping: pref preventScreenSaver=N")
     }
+    SleepPreventer.allowSleep()
   }
 
 }

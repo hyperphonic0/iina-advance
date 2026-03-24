@@ -9,7 +9,7 @@
 import Cocoa
 
 /// Floating OSC view with flat blended panel
-final class FloatingControlBarVisualEffectView: ClickThroughVisualEffectView, @MainActor DraggableObject {
+final class FloatingControlBarVisualEffectView: ClickThroughVisualEffectView, DraggableObject {
   let controlBar: FloatingControlBar
 
   init(_ controlBar: FloatingControlBar) {
@@ -30,7 +30,7 @@ final class FloatingControlBarVisualEffectView: ClickThroughVisualEffectView, @M
 
 /// Floating OSC view with glass panel
 @available(macOS 26.0, *)
-final class FloatingControlBarGlassEffectView: ClickThroughGlassEffectView, @MainActor DraggableObject {
+final class FloatingControlBarGlassEffectView: ClickThroughGlassEffectView, DraggableObject {
   let controlBar: FloatingControlBar
 
   init(_ controlBar: FloatingControlBar, style desiredStyle: Style) {
@@ -46,10 +46,10 @@ final class FloatingControlBarGlassEffectView: ClickThroughGlassEffectView, @Mai
 }
 
 /// Container & pseudo-controller for the "floating" OSC. Contains the view itself (`view`), its subviews, state & logic
-final class FloatingControlBar {
-  static let barHeight: CGFloat = 70
-  static let minBarWidth: CGFloat = 200
-  private static let margin: CGFloat = CGFloat(max(0, Preference.integer(for: .floatingControlBarMargin)))
+@MainActor final class FloatingControlBar {
+  static nonisolated let barHeight: CGFloat = 70
+  static nonisolated let minBarWidth: CGFloat = 200
+  private static nonisolated let margin: CGFloat = CGFloat(max(0, Preference.integer(for: .floatingControlBarMargin)))
 
   static var preferredBarWidth: CGFloat { max(FloatingControlBar.minBarWidth, CGFloat(Preference.float(for: .floatingControlBarWidth))) }
 

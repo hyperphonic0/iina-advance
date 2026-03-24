@@ -15,7 +15,7 @@ import Foundation
 /// And although it periodically saves "dirty" values to disk, and the interval between writes is unclear, this doesn't appear to cause
 /// a significant performance penalty, and certainly can't be much improved upon by IINA. Also, as playing video is by its nature very
 /// data-intensive, writes to the .plist should be trivial by comparison.
-class UIState {
+final class UIState {
   static let shared = UIState()
 
   enum LaunchLifecycleState: Int {
@@ -32,7 +32,7 @@ class UIState {
     case done = 10
   }
 
-  class LaunchState: CustomStringConvertible {
+  final class LaunchState: CustomStringConvertible {
     /// launch ID
     let id: Int
     /// `none` == pref entry missing
@@ -292,6 +292,7 @@ class UIState {
     return tokens.compactMap{SavedWindow($0)}
   }
 
+  @MainActor
   private func getCurrentOpenWindowNames(excludingWindowName nameToExclude: String? = nil) -> [String] {
     var orderNamePairs: [(Int, String)] = []
     for window in NSApp.windows {
@@ -342,10 +343,11 @@ class UIState {
     }
   }
 
+  @MainActor
   private func saveOpenWindowList(windowNamesBackToFront: [String]) {
     guard isSaveEnabled else { return }
-    //      log.verbose("Saving open windows: \(windowNamesBackToFront)")
-    
+    log.trace("Saving open windows: \(windowNamesBackToFront)")
+
     let csv = windowNamesBackToFront.map{ $0 }.joined(separator: ",")
     let key = makeOpenWindowListKey(forLaunchID: currentLaunchID)
 

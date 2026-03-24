@@ -16,6 +16,15 @@ class VolumeSliderCell: ScrollableSliderCell {
   /// Calls `wc.refreshVolumeSliderHoverEffect` on timeout
   let hoverTimer = TimeoutTimer(timeout: Constants.TimeInterval.seekPreviewHideTimeout)
 
+  override init() {
+    super.init()
+    minValue = 0
+    maxValue = Double(Preference.integer(for: .maxVolume))
+    hoverTimer.action = refreshVolumeSliderHoverEffect
+  }
+  
+  @MainActor required init(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
   override var wantsKnob: Bool {
     guard let pwc else { return false }
     let alwaysShowKnob = Preference.bool(for: .alwaysShowSliderKnob) || !pwc.currentLayout.useSliderFocusEffect
@@ -29,12 +38,6 @@ class VolumeSliderCell: ScrollableSliderCell {
 
   override var currentKnobType: KnobRenderer.KnobType {
     isHighlighted ? .volumeKnobSelected : .volumeKnob
-  }
-
-  override func awakeFromNib() {
-    minValue = 0
-    maxValue = Double(Preference.integer(for: .maxVolume))
-    hoverTimer.action = refreshVolumeSliderHoverEffect
   }
 
   override func drawBar(inside barRect: NSRect, flipped: Bool) {

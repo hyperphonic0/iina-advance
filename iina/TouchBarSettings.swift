@@ -25,7 +25,7 @@ import Foundation
 /// ````
 /// defaults read com.apple.touchbar.agent
 /// ````
-struct TouchBarSettings {
+struct TouchBarSettings: Sendable {
   /// The `TouchBarSettings` singleton object.
   static let shared = TouchBarSettings()
   
@@ -88,7 +88,7 @@ struct TouchBarSettings {
   /// The macOS TouchBar settings.
   ///
   /// This will be `nil` on Macs that do not have a Touch Bar.
-  private let defaults: UserDefaults?
+  private nonisolated(unsafe) let defaults: UserDefaults?
 
   /// Registers the observer object to receive notifications for the specified setting.
   /// - Parameters:

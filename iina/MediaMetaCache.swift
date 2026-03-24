@@ -100,7 +100,7 @@ struct MediaMeta: CustomStringConvertible {
 /// But currently separates meta categories into different lists.
 /// Not retained across app launches.
 class MediaMetaCache {
-  static let shared = MediaMetaCache()
+  static nonisolated(unsafe) let shared = MediaMetaCache()
 
   private let log: any Logger.Subsystem = Logger.makeSubsystem("metaCache")
   private let metaLock = Lock()

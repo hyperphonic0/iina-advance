@@ -76,7 +76,7 @@ final class TopControlBarView: ClickThroughView {
 // MARK: - TopBar
 
 /// Container & pseudo-controller for the "top" OSC. Contains the view itself (`view`), its subviews, state & logic.
-final class TopBar {
+@MainActor final class TopBar {
   /// The top bar root view. Needs to be rebuilt if the style changes, due each style inheriting from different classes.
   var view: NSView
 

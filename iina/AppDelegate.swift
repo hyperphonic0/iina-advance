@@ -336,14 +336,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   /// The notification provides no way to actually know which sheet is being added.
   /// So prior to opening the sheet, the caller must manually add it using `UIState.shared.addOpenSheet`.
   private func windowWillBeginSheet(_ notification: Notification) {
-    guard let window = notification.object as? NSWindow else { return }
-    let activeWindowName = window.savedStateName
-    guard !activeWindowName.isEmpty else { return }
-
     DispatchQueue.main.async { [self] in
-      guard !isTerminating else {
-        return
-      }
+      guard let window = notification.object as? NSWindow else { return }
+      let activeWindowName = window.savedStateName
+      guard !activeWindowName.isEmpty else { return }
+      guard !isTerminating else { return }
+
       guard let sheetNames = UIState.shared.openSheetsDict[activeWindowName] else { return }
 
       for sheetName in sheetNames {
@@ -356,14 +354,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
   /// Sheet window did close
   private func windowDidEndSheet(_ notification: Notification) {
-    guard let window = notification.object as? NSWindow else { return }
-    let activeWindowName = window.savedStateName
-    guard !activeWindowName.isEmpty else { return }
-
     DispatchQueue.main.async { [self] in
-      guard !isTerminating else {
-        return
-      }
+      guard let window = notification.object as? NSWindow else { return }
+      let activeWindowName = window.savedStateName
+      guard !activeWindowName.isEmpty else { return }
+      guard !isTerminating else { return }
+
       // NOTE: not sure how to identify which sheet will end. In the future this could cause problems
       // if we use a window with multiple sheets. But for now we can assume that there is only one sheet,
       // so that is the one being closed.
@@ -381,15 +377,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
   /// Saves an ordered list of current open windows (if configured) each time *any* window becomes the main window.
   private func windowDidBecomeMain(_ notification: Notification) {
-    guard let window = notification.object as? NSWindow else { return }
-    // Assume new main window is the active window. AppKit does not provide an API to notify when a window is opened,
-    // so this notification will serve as a proxy, since a window which becomes active is by definition an open window.
-    let activeWindowName = window.savedStateName
-    guard !activeWindowName.isEmpty else { return }
-
     // Query for the list of open windows and save it.
     // Don't do this too soon, or their orderIndexes may not yet be up to date.
     DispatchQueue.main.async { [self] in
+      guard let window = notification.object as? NSWindow else { return }
+      // Assume new main window is the active window. AppKit does not provide an API to notify when a window is opened,
+      // so this notification will serve as a proxy, since a window which becomes active is by definition an open window.
+      let activeWindowName = window.savedStateName
+      guard !activeWindowName.isEmpty else { return }
+
       // This notification can sometimes happen if the app had multiple windows at shutdown.
       // We will ignore it in this case, because this is exactly the case that we want to save!
       guard !isTerminating else { return }
@@ -411,11 +407,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
   /// A window was minimized. Need to update lists of tracked windows.
   func windowDidMiniaturize(_ notification: Notification) {
-    guard let window = notification.object as? NSWindow else { return }
-    let savedStateName = window.savedStateName
-    guard !savedStateName.isEmpty else { return }
-
     DispatchQueue.main.async { [self] in
+      guard let window = notification.object as? NSWindow else { return }
+      let savedStateName = window.savedStateName
+      guard !savedStateName.isEmpty else { return }
+
       guard !isTerminating else { return }
       Logger.log.verbose("Window did minimize; adding to minimized windows list: \(savedStateName.quoted)")
       if !startupHandler.isDoneLaunching {
@@ -433,11 +429,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
   /// A window was un-minimized. Update state of tracked windows.
   private func windowDidDeminiaturize(_ notification: Notification) {
-    guard let window = notification.object as? NSWindow else { return }
-    let savedStateName = window.savedStateName
-    guard !savedStateName.isEmpty else { return }
-
     DispatchQueue.main.async { [self] in
+      guard let window = notification.object as? NSWindow else { return }
+      let savedStateName = window.savedStateName
+      guard !savedStateName.isEmpty else { return }
+      
       guard !isTerminating else { return }
       Logger.log.verbose("App window did deminiaturize; removing from minimized windows list: \(savedStateName.quoted)")
       UIState.shared.windowsOpen.insert(savedStateName)

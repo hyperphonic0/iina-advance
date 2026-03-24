@@ -545,8 +545,8 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
   /// Container for volume slider & mute button
   var fragVolumeView = ClickThroughView()
   let muteButton = SymButton()
-  let volumeSlider = ScrollableSlider(customCell: VolumeSliderCell())
-  var volumeSliderCell: VolumeSliderCell { volumeSlider.cell as! VolumeSliderCell }
+  @MainActor let volumeSlider = ScrollableSlider(customCell: VolumeSliderCell())
+  @MainActor var volumeSliderCell: VolumeSliderCell { volumeSlider.cell as! VolumeSliderCell }
 
   /// Container for playback buttons
   let fragPlaybackBtnsView = ClickThroughView()

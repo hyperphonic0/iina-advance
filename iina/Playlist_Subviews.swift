@@ -131,7 +131,7 @@ class ChapterTableCellView: NSTableCellView {
   @IBOutlet weak var durationTextField: EditableTextField!
 }
 
-class PlaylistView: NSView, DraggableObject {
+final class PlaylistView: NSView, DraggableObject {
   override func mouseDragged(with event: NSEvent) {
     // Send to view controller (above)
     nextResponder?.mouseDragged(with: event)

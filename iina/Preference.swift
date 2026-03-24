@@ -1417,7 +1417,7 @@ struct Preference {
     case weak
     case strong
 
-    static var defaultValue = GaplessAudioOption.weak
+    static let defaultValue = GaplessAudioOption.weak
 
     init?(key: Key) {
       self.init(rawValue: Preference.integer(for: key))

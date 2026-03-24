@@ -51,12 +51,8 @@ class PlaylistViewController: NSViewController, NSMenuDelegate, SidebarTabGroupV
 
   private var isReloadingMeta = false
 
-  unowned var player: PlayerCore!
-  unowned var pwc: PlayerWindowController! {
-    didSet {
-      player = pwc.player
-    }
-  }
+  var player: PlayerCore { pwc.player }
+  nonisolated(unsafe) unowned var pwc: PlayerWindowController!
 
   struct PlaylistMetaWorkItem {
     let playlistIndex: Int
@@ -725,7 +721,7 @@ extension PlaylistViewController: EditableTableViewDelegate {
 
 // MARK: - NSTableViewDataSource
 
-extension PlaylistViewController: NSTableViewDataSource {
+extension PlaylistViewController: @MainActor NSTableViewDataSource {
 
   func tableView(_ tableView: NSTableView, writeRowsWith rowIndexes: IndexSet, to pboard: NSPasteboard) -> Bool {
     if tableView == playlistTableView {

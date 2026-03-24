@@ -48,7 +48,7 @@ final class BottomBarGradientView: NSView {
   @MainActor required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 }
 
-final class BottomBar {
+@MainActor final class BottomBar {
   /// The bottom bar view
   var view: NSView
 
