@@ -10,6 +10,8 @@ class TimeoutTimer {
   private var scheduledTimer: Timer? = nil
   var timeout: TimeInterval
 
+  private let queue: DispatchQueue
+
   /// nillable because sometimes this needs to be set after the containing class has finished init
   var action: (() -> Void)?
 
@@ -19,29 +21,33 @@ class TimeoutTimer {
   var startCondition: ((_ thisTimer: TimeoutTimer) -> Bool)?
 
   init(timeout: TimeInterval,
+       queue: DispatchQueue = .main,
        startCondition: ((TimeoutTimer) -> Bool)? = nil,
        action: (() -> Void)? = nil) {
     self.timeout = timeout
+    self.queue = queue
     self.startCondition = startCondition
     self.action = action
   }
 
   func restart(withNewTimeout newTimeout: TimeInterval? = nil) {
-    cancel()
-
-    if let newTimeout {
-      timeout = newTimeout
-    }
-
-    if let startCondition {
-      let canProceed = startCondition(self)
-      guard canProceed else {
-        return
+    queue.async { [self] in
+      cancel()
+      
+      if let newTimeout {
+        timeout = newTimeout
       }
+      
+      if let startCondition {
+        let canProceed = startCondition(self)
+        guard canProceed else {
+          return
+        }
+      }
+      scheduledTimer = Timer.scheduledTimer(timeInterval: timeout,
+                                            target: self, selector: #selector(self.timeoutReached),
+                                            userInfo: nil, repeats: false)
     }
-    scheduledTimer = Timer.scheduledTimer(timeInterval: timeout,
-                                          target: self, selector: #selector(self.timeoutReached),
-                                          userInfo: nil, repeats: false)
   }
 
   var isValid: Bool {
@@ -57,15 +63,19 @@ class TimeoutTimer {
 
   /// Convenience method to excute `startCondition` without its boilerplate args.
   func runStartCondition() {
-    if let startCondition {
-      _ = startCondition(self)
+    queue.async { [self] in
+      if let startCondition {
+        _ = startCondition(self)
+      }
     }
   }
 
   @objc private func timeoutReached() {
-    cancel()
-    if let action {
-      action()
+    queue.async { [self] in
+      cancel()
+      if let action {
+        action()
+      }
     }
   }
 }

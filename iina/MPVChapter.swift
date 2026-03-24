@@ -8,14 +8,14 @@
 
 import Foundation
 
-class MPVChapter: CustomStringConvertible {
+struct MPVChapter: Sendable, CustomStringConvertible {
 
   private var privTitle: String?
   var title: String {
     return privTitle ?? "\(Constants.String.chapter) \(index)"
   }
-  var startTime: Double
-  var index: Int
+  let startTime: Double
+  let index: Int
 
   var startTimeString: String {
     return VideoTime.string(from: startTime)

@@ -20,8 +20,8 @@ import JavaScriptCore
   func seek(_ seconds: Double, _ exact: Bool)
   func seekTo(_ seconds: Double)
   func setSpeed(_ speed: Double)
-  func reloadChapters() -> [[String: Any]]
-  func playChapter(index: Int)
+  @MainActor func reloadChapters() -> [[String: Any]]
+  @MainActor func playChapter(index: Int)
   func setUIVisibility(_ visible: Bool)
   func getHistory() -> Any
   func getRecentDocuments() -> Any
@@ -88,6 +88,7 @@ class JavascriptAPICore: JavascriptAPI, JavascriptAPICoreExportable {
     player!.setSpeed(speed)
   }
 
+  @MainActor
   func reloadChapters() -> [[String: Any]] {
     player!.reloadChapters()
     return player!.info.chapters.map{
@@ -95,6 +96,7 @@ class JavascriptAPICore: JavascriptAPI, JavascriptAPICoreExportable {
     }
   }
 
+  @MainActor
   func playChapter(index: Int) {
     player!.playChapter(index)
   }

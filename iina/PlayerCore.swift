@@ -1883,7 +1883,7 @@ final class PlayerCore: NSObject {
     }
   }
 
-  @discardableResult
+  @MainActor @discardableResult
   func playChapter(_ pos: Int) -> MPVChapter? {
     log.verbose("Seeking to chapter \(pos)")
     let chapters = info.chapters
@@ -1891,6 +1891,12 @@ final class PlayerCore: NSObject {
       return nil
     }
     let chapter = chapters[pos]
+    __playChapterAsync(chapter)
+    return chapter
+  }
+
+  /// Separate method to avoid compiler isolation warning
+  private func __playChapterAsync(_ chapter: MPVChapter) {
     mpv.queue.async { [self] in
       // Update playbackPositionSec preemptively, so UI doesn't flash
       // to prev chapter and back
@@ -1899,7 +1905,6 @@ final class PlayerCore: NSObject {
       mpv.command(.seek, args: ["\(chapter.startTime)", "absolute"])
       _resume()
     }
-    return chapter
   }
 
   // MARK: - Other mpv Operations
@@ -2253,10 +2258,13 @@ final class PlayerCore: NSObject {
   }
 
   func chapterChanged() {
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
     guard isActive else { return }
     let chapter = Int(mpv.getInt(MPVProperty.chapter))
-    info.chapter = chapter
-    log.verbose("Δ mpv prop: 'chapter' = \(info.chapter)")
+    DispatchQueue.main.async { [self] in
+      log.verbose("Δ mpv prop: 'chapter' = \(chapter)")
+      info.chapter = chapter
+    }
     syncUIChapterList()
     mediaTitleChanged()
   }
@@ -3045,10 +3053,12 @@ final class PlayerCore: NSObject {
                                index:     index)
       chapters.append(chapter)
     }
-    log.trace("Chapters: \(chapters)")
-    // Instead of modifying existing list, overwrite reference to prev list.
-    // This will avoid concurrent modification crashes
-    info.chapters = chapters
+    DispatchQueue.main.async { [self] in
+      log.trace("Chapters: \(chapters)")
+      // Instead of modifying existing list, overwrite reference to prev list.
+      // This will avoid concurrent modification crashes
+      info.chapters = chapters
+    }
 
     syncUIChapterList()
   }

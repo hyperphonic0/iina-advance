@@ -260,8 +260,8 @@ class PlaybackInfo {
 
   private let infoLock = Lock()
 
-  var chapter = 0
-  var chapters: [MPVChapter] = []
+  @MainActor var chapter = 0
+  @MainActor var chapters: [MPVChapter] = []
 
   private var _audioTracks: [MPVTrack] = []
   private var _videoTracks: [MPVTrack] = []
