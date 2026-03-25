@@ -16,10 +16,7 @@ actor ThumbnailCache {
 
   static let thumbnailQueue = DispatchQueue.newDQ(label: "IINA-PlayerThumbnail", qos: .utility)
   static let executor = SerialDispatchQueueExecutor(queue: thumbnailQueue)
-
-  public nonisolated var unownedExecutor: UnownedSerialExecutor {
-    Self.executor.asUnownedSerialExecutor()
-  }
+  nonisolated var unownedExecutor: UnownedSerialExecutor { Self.executor.asUnownedSerialExecutor() }
 
   private typealias CacheVersion = UInt8
   private typealias FileSize = UInt64
@@ -42,7 +39,7 @@ actor ThumbnailCache {
     return FileManager.default.fileExists(atPath: urlFor(name, width: width).path)
   }
 
-  func fileIsCached(forName name: String, mediaFilePath: String, forWidth width: Int) async -> Bool {
+  private func fileIsCached(forName name: String, mediaFilePath: String, forWidth width: Int) async -> Bool {
     guard let fileAttr = try? FileManager.default.attributesOfItem(atPath: mediaFilePath) else {
       log.error("Cannot get video file attributes")
       return false
@@ -93,11 +90,11 @@ actor ThumbnailCache {
   }
 
   func getCachedThumbs(cacheName: String, mediaFilePath: String, thumbnailWidth: Int) async -> [FFThumbnail]? {
-    let fileIsCached = await ThumbnailCache.shared.fileIsCached(forName: cacheName, mediaFilePath: mediaFilePath, forWidth: thumbnailWidth)
+    let fileIsCached = await fileIsCached(forName: cacheName, mediaFilePath: mediaFilePath, forWidth: thumbnailWidth)
     guard fileIsCached else { return nil }
 
       log.trace("Found matching thumbnail cache name=\(cacheName.quoted), \(thumbnailWidth)px width for: \(mediaFilePath.pii.quoted)")
-    guard let thumbnails = await ThumbnailCache.shared.read(forName: cacheName, forWidth: thumbnailWidth) else {
+    guard let thumbnails = await read(forName: cacheName, forWidth: thumbnailWidth) else {
       log.error("Cannot read thumbnails from cache \(cacheName.quoted), width \(thumbnailWidth)px. Will try to regenerate")
       return nil
     }
@@ -112,7 +109,7 @@ actor ThumbnailCache {
 
   /// Write thumbnail cache to file.
   /// This method is expected to be called when the file doesn't exist.
-  public func write(_ thumbnails: [FFThumbnail], forName name: String, forVideo videoFilePath: String, forWidth width: Int) async {
+  func write(_ thumbnails: [FFThumbnail], forName name: String, forVideo videoFilePath: String, forWidth width: Int) async {
     let maxCacheSize = Preference.integer(for: .maxThumbnailPreviewCacheSize) * FloatingPointByteCountFormatter.PrefixFactor.mi.rawValue
     if maxCacheSize == 0 {
       log.verbose("Aborting write to thumbnail cache: maxCacheSize is 0")

@@ -236,6 +236,18 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
 
     refreshDenialPeriodTimer.action = refreshDenialPeriodDidEnd
 
+    /// If the user interface layout direction is right to left then certain layout constraints that assume a left to right layout will need to be
+    /// replaced. That will be handled by the `viewWillLayout` method. This method will disable these constraints to avoid triggering
+    /// constraint errors before the constraints can be replaced.
+    if speedSlider.userInterfaceLayoutDirection == .rightToLeft {
+      NSLayoutConstraint.deactivate([
+        speedSlider1xLabelCenterXConstraint,
+        speedSlider4xLabelCenterXConstraint,
+        speedSlider1xLabelPrevLabelConstraint,
+        speedSlider4xLabelPrevLabelConstraint,
+        speedSlider16xLabelPrevLabelConstraint])
+    }
+
     updateVerticalConstraints()
 
     withAllTableViews { (tableView, _) in
@@ -319,33 +331,39 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     // EQs
 
     if let data = UserDefaults.standard.data(forKey: Preference.Key.userEQPresets.rawValue),
-       let dict = try? JSONDecoder().decode(Dictionary<String, EQProfile>.self, from: data) {
-      userEQs = dict
+       let dict = try? JSONDecoder().decode(Dictionary<String, UserEQProfile>.self, from: data) {
+      Equalizations.userEQs = dict
     }
 
-    presetEQs.forEach { preset in
+    Equalizations.presetEQs.forEach { preset in
       eqPopUpButton.menu?.addItem(withTitle: preset.name, tag: eqPresetProfileMenuItemTag, obj: preset.localizationKey)
     }
 
-    func observe(_ name: Notification.Name, using callback: @escaping (Notification) -> Void) {
+    func observe(_ name: Notification.Name, using callback: @Sendable @escaping (Notification) -> Void) {
       observers.append(NotificationCenter.default.addObserver(forName: name, object: player, queue: .main, using: callback))
     }
 
     // - Notifications
     // Do not even listen to `iinaTracklistChanged`! The following listeners are finer-grained.
     observe(.iinaVIDChanged) { [self] _ in
-      pwc.animationPipeline.submitInstantTask{ [self] in
-        reloadVideoTabIfShown(using: pwc.geo.video)
+      Task { @MainActor in
+        pwc.animationPipeline.submitInstantTask{ [self] in
+          reloadVideoTabIfShown(using: pwc.geo.video)
+        }
       }
     }
     observe(.iinaAIDChanged) { [self] _ in
-      pwc.animationPipeline.submitInstantTask{ [self] in
-        reloadAudioTabIfShown()
+      Task { @MainActor in
+        pwc.animationPipeline.submitInstantTask{ [self] in
+          reloadAudioTabIfShown()
+        }
       }
     }
-    func subReloadCallback(_ notification: Notification) {
-      pwc.animationPipeline.submitInstantTask{ [self] in
-        reloadSubTabIfShown()
+    @Sendable func subReloadCallback(_ notification: Notification) {
+      Task { @MainActor in
+        pwc.animationPipeline.submitInstantTask{ [self] in
+          reloadSubTabIfShown()
+        }
       }
     }
     observe(.iinaSIDChanged, using: subReloadCallback)
@@ -371,24 +389,6 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     }
 
     player.log.verbose("QuickSettings viewDidLoad done")
-  }
-
-  // MARK: - Right to Left Constraints
-
-  /// Prepares the receiver for service after it has been loaded from an Interface Builder archive, or nib file.
-  ///
-  /// If the user interface layout direction is right to left then certain layout constraints that assume a left to right layout will need to be
-  /// replaced. That will be handled by the `viewWillLayout` method. This method will disable these constraints to avoid triggering
-  /// constraint errors before the constraints can be replaced.
-  override func awakeFromNib() {
-    super.awakeFromNib()
-    guard speedSlider.userInterfaceLayoutDirection == .rightToLeft else { return }
-    NSLayoutConstraint.deactivate([
-      speedSlider1xLabelCenterXConstraint,
-      speedSlider4xLabelCenterXConstraint,
-      speedSlider1xLabelPrevLabelConstraint,
-      speedSlider4xLabelPrevLabelConstraint,
-      speedSlider16xLabelPrevLabelConstraint])
   }
 
   /// Calculate the constraint multiplier for a speed slider label.
@@ -465,12 +465,14 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
   }
 
   deinit {
-    ObjcUtils.silenced { [self] in
-      for observer in observers {
-        NotificationCenter.default.removeObserver(observer)
+    DispatchQueue.main.async { [self] in
+      ObjcUtils.silenced { [self] in
+        for observer in observers {
+          NotificationCenter.default.removeObserver(observer)
+        }
       }
+      observers = []
     }
-    observers = []
   }
 
   func setColors(_ layout: LayoutState) {
@@ -1311,13 +1313,13 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
 
   private func findProfileFromSliders() -> (String, EQProfile)? {
     player.log.trace("EQ Sliders: \(audioEQSliders.map{String($0.doubleValue.truncatedTo1())}.joined(separator: " "))")
-    for presetProfile in presetEQs {
+    for presetProfile in Equalizations.presetEQs {
       if matchesSliders(presetProfile.name, presetProfile) {
         return (presetProfile.name, presetProfile)
       }
     }
 
-    for (name, userProfile) in userEQs {
+    for (name, userProfile) in Equalizations.userEQs {
       if matchesSliders(name, userProfile) {
         return (name, userProfile)
       }
@@ -1579,9 +1581,9 @@ extension QuickSettingViewController {
     var items = menu.items
     items.removeAll { $0.tag == eqUserDefinedProfileMenuItemTag }
     eqPopUpButton.itemArray.forEach { $0.state = .off }
-    if !userEQs.isEmpty {
+    if !Equalizations.userEQs.isEmpty {
       items.append(NSMenuItem.separator())
-      userEQs.forEach { (name, eq) in
+      Equalizations.userEQs.forEach { (name, eq) in
         items.append(menu.addItem(withTitle: name, tag: eqUserDefinedProfileMenuItemTag))
       }
     }
@@ -1657,24 +1659,24 @@ extension QuickSettingViewController {
     switch tag {
     case eqSaveMenuItemTag:
       if let inputString = promptAudioEQProfileName(isNewProfile: true) {
-        let newProfile = EQProfile(fromCurrentSliders: audioEQSliders)
-        userEQs[inputString] = newProfile
+        let newProfile = UserEQProfile(fromCurrentSliders: audioEQSliders)
+        Equalizations.userEQs[inputString] = newProfile
       }
     case eqRenameMenuItemTag:
       if let inputString = promptAudioEQProfileName(isNewProfile: false) {
-        if let profile = userEQs.removeValue(forKey: lastUsedProfileName) {
-          userEQs[inputString] = profile
+        if let profile = Equalizations.userEQs.removeValue(forKey: lastUsedProfileName) {
+          Equalizations.userEQs[inputString] = profile
         }
       }
     case eqDeleteMenuItemTag:
-      userEQs.removeValue(forKey: lastUsedProfileName)
+      Equalizations.userEQs.removeValue(forKey: lastUsedProfileName)
     case eqCustomMenuItemTag:
       break
     case eqPresetProfileMenuItemTag:
-      guard let preset = presetEQs.first(where: { $0.localizationKey == representedObject }) else { break }
+      guard let preset = Equalizations.presetEQs.first(where: { $0.localizationKey == representedObject }) else { break }
       applyEQ(preset)
     default: // user defined EQ Profiles
-      guard let pair = userEQs.first(where: { $0.0 == name }) else { break }
+      guard let pair = Equalizations.userEQs.first(where: { $0.0 == name }) else { break }
       applyEQ(pair.1)
     }
 

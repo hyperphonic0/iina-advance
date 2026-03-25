@@ -28,6 +28,7 @@ fileprivate let nativeWindowRoundedCornerRadius = CGFloat(10.0) * CGFloat(scaleF
 fileprivate let widgetRoundedCornerRadius = CGFloat(10.0) * CGFloat(scaleFactor)
 fileprivate let desktopInset: Int = Int(0.5 * Double(scaleFactor))
 
+@MainActor
 class PWinPreviewImageBuilder {
   static var cgImageCache: [String: CGImage] = [:]
 
@@ -214,9 +215,9 @@ class PWinPreviewImageBuilder {
 
         if oscPosition == .floating {
           // Draw floating OSC panel
-          cgContext.withNestedGState {
-            cgContext.drawRoundedRect(oscRect, cornerRadius: widgetRoundedCornerRadius * 0.5, fillColor: oscPanelColor)
-          }
+          cgContext.saveGState()
+          cgContext.drawRoundedRect(oscRect, cornerRadius: widgetRoundedCornerRadius * 0.5, fillColor: oscPanelColor)
+          cgContext.restoreGState()
 
           // Draw play controls
           iconHeight = CGFloat(oscHeight) * 0.44
@@ -282,9 +283,9 @@ class PWinPreviewImageBuilder {
             let pillHeight = iconHeight * 0.55
             let pillOriginY = iconGroupCenterY - (pillHeight / 2)
             let pillRect = NSRect(x: Int(nextIconMinX), y: Int(pillOriginY), width: Int(pillWidth), height: Int(pillHeight))
-            cgContext.withNestedGState {
-              cgContext.drawRoundedRect(pillRect, cornerRadius: min(pillHeight * 0.5, widgetRoundedCornerRadius * 0.5), fillColor: iconColor.cgColor)
-            }
+            cgContext.saveGState()
+            cgContext.drawRoundedRect(pillRect, cornerRadius: min(pillHeight * 0.5, widgetRoundedCornerRadius * 0.5), fillColor: iconColor.cgColor)
+            cgContext.restoreGState()
           }
         }
       }

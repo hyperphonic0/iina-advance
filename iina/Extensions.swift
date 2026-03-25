@@ -1109,14 +1109,6 @@ extension CALayer {
 
 
 extension CGContext {
-  /// Decorator which encloses `closure` with `saveGState` at start and `restoreGState` at end
-  func withNestedGState<T>(_ closure: () throws -> T) rethrows -> T {
-    saveGState()
-    defer {
-      restoreGState()
-    }
-    return try closure()
-  }
 
   func drawRoundedRect(_ rect: NSRect, cornerRadius: CGFloat, fillColor: CGColor) {
     setFillColor(fillColor)
@@ -1614,7 +1606,7 @@ extension NSTextField {
 
 }
 
-protocol HasContentColor {
+@MainActor protocol HasContentColor {
   func setContentColor(_ contentColor: NSColor?)
 }
 extension NSText: HasContentColor {
@@ -2122,13 +2114,13 @@ extension NSScrollView {
     return false
   }
 
-  // Adds a listener to record scroll position for next launch
+  /// Adds a listener to record scroll position for next launch
   func addVerticalScrollObserver(key: Preference.Key) -> NSObjectProtocol {
     let observer = NotificationCenter.default.addObserver(forName: NSView.boundsDidChangeNotification,
                                                           object: self.contentView, queue: .main) { note in
       if let clipView = note.object as? NSClipView {
         let scrollOffsetY = clipView.bounds.origin.y
-//        Logger.log("Saving Y scroll offset \(key.rawValue.quoted): \(scrollOffsetY)", level: .verbose)
+        Logger.log.trace("Saving Y scroll offset \(key.rawValue.quoted): \(scrollOffsetY)")
         UIState.shared.set(scrollOffsetY, for: key)
       }
     }
