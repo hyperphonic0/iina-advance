@@ -90,11 +90,7 @@ class TableDragDelegate<TableItem> {
     }
     
     log.verbose("User dragged from \(tableLoggingName) to the trash: \(itemList)")
-    // TODO: this is the wrong animation
-    NSAnimationEffect.disappearingItemDefault.show(centeredAt: screenPoint, size: NSSize(width: 50.0, height: 50.0),
-                                                   completionHandler: { [self] in
-      removeRows(draggedRowIndexes)
-    })
+    removeRows(draggedRowIndexes)
   }
   
   /// Validate drop while hovering.

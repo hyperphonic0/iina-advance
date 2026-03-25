@@ -244,11 +244,7 @@ class PrefOSCToolbarCurrentItemsView: NSStackView, NSDraggingSource {
 
   func draggingSession(_ session: NSDraggingSession, endedAt screenPoint: NSPoint, operation: NSDragOperation) {
     if operation == [] || operation == .delete {
-      let sideLength = currentItemsViewDelegate.previewIconSize
-      // Do "poof" animation on item remove
-      NSAnimationEffect.disappearingItemDefault.show(centeredAt: screenPoint, size: NSSize(width: sideLength, height: sideLength), completionHandler: {
-        self.updateItems()
-      })
+      updateItems()
     }
   }
 

@@ -177,6 +177,8 @@ struct Constants {
   /// Lua keybindings require level "debug" or higher, so don't set threshold to be stricter than this level.
   static let minMpvEventLogLevel = MPVLogLevel.debug
 
+  static let maxAttemptsForGetVideoParams = 6
+
   static let unknownProgress: Double = -1.0
 
   static let maxCachedVideoSizes: Int = 100000

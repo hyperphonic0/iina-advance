@@ -312,10 +312,7 @@ extension BindingTableViewController: NSTableViewDataSource {
     }
 
     log.verbose("User dragged to the trash: \(mappings)")
-    // TODO: this is the wrong animation
-    NSAnimationEffect.disappearingItemDefault.show(centeredAt: screenPoint, size: NSSize(width: 50.0, height: 50.0), completionHandler: {
-      self.bindingTableState.removeBindings(at: draggedRowIndexes)
-    })
+    bindingTableState.removeBindings(at: draggedRowIndexes)
   }
 
   /// Validate drop while hovering.

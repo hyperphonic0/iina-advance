@@ -804,7 +804,12 @@ extension PlayerWindowController {
     NSCursor.setHiddenUntilMouseMoves(false) // show if not shown
   }
 
-  func applyCustomCursor(_ newCursorType: CursorType) {
+  @MainActor
+  func applyCustomCursor(_ newCursorType: CursorType, force: Bool = false) {
+    guard (customCursor != .disappearingItem) || force else {
+      log.verbose("Ignoring custom cursor request: disappearingItem cursor is set")
+      return
+    }
     let newCursor: NSCursor
     switch newCursorType {
     case .normalCursor:
@@ -834,6 +839,8 @@ extension PlayerWindowController {
       }
     case .hoveringInSlider:
       newCursor = NSCursor.pointingHand
+    case .disappearingItem:
+      newCursor = .disappearingItem
     }
 
     // Not sure if this is a kludge, but it works great so far for MacOS 15.3.

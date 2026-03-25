@@ -199,6 +199,7 @@ extension PlayerWindowController {
     case resized_AtRightMax
     case resizing_BothDirections
     case hoveringInSlider
+    case disappearingItem
   }
 
   /// Animation state. Used for fadeable views, OSD.

@@ -350,26 +350,20 @@ extension ConfTableViewController: EditableTableViewDelegate {
 // MARK: NSTableViewDataSource
 
 extension ConfTableViewController: NSTableViewDataSource {
-  /*
-   Tell NSTableView the number of rows when it asks
-   */
+  /// Tell NSTableView the number of rows when it asks
   @objc func numberOfRows(in tableView: NSTableView) -> Int {
     return confTableState.confTableRows.count
   }
 
   // MARK: Drag & Drop
 
-  /*
-   Drag start: define which operations are allowed
-   */
+  /// Drag start: define which operations are allowed
   @objc func draggingSession(_ session: NSDraggingSession, sourceOperationMaskFor context: NSDraggingContext) -> NSDragOperation {
     session.draggingFormation = draggingFormation
     return .copy
   }
 
-  /*
-   Drag start: convert tableview rows to clipboard items
-   */
+  /// Drag start: convert tableview rows to clipboard items
   @objc func tableView(_ tableView: NSTableView, pasteboardWriterForRow row: Int) -> NSPasteboardWriting? {
     if let confName = confTableState.getConfName(at: row) {
       let filePath = confTableState.getFilePath(forConfName: confName)
@@ -378,17 +372,13 @@ extension ConfTableViewController: NSTableViewDataSource {
     return nil
   }
 
-  /*
-   Drag start: set session variables.
-   */
+  /// Drag start: set session variables.
   @objc func tableView(_ tableView: NSTableView, draggingSession session: NSDraggingSession,
                        willBeginAt screenPoint: NSPoint, forRowIndexes rowIndexes: IndexSet) {
     self.tableView.setDraggingImageToAllColumns(session, screenPoint, rowIndexes)
   }
 
-  /**
-   This is implemented to support dropping items onto the Trash icon in the Dock
-   */
+  /// This is implemented to support dropping items onto the Trash icon in the Dock
   @objc func tableView(_ tableView: NSTableView, draggingSession session: NSDraggingSession, endedAt screenPoint: NSPoint, operation: NSDragOperation) {
     guard operation == NSDragOperation.delete else {
       return
@@ -401,17 +391,11 @@ extension ConfTableViewController: NSTableViewDataSource {
     let confName = userConfList[0]
 
     Logger.log("User dragged to the trash: \(confName.pii.quoted)", level: .verbose)
-
-    // TODO: this is the wrong animation
-    NSAnimationEffect.disappearingItemDefault.show(centeredAt: screenPoint, size: NSSize(width: 50.0, height: 50.0), completionHandler: {
-      self.deleteConf(confName)
-    })
+    deleteConf(confName)
   }
 
-  /*
-   Validate drop while hovering.
-   Override drag operation to "copy" always, and set drag target to whole table.
-   */
+  /// Validate drop while hovering.
+  /// Override drag operation to "copy" always, and set drag target to whole table.
   @objc func tableView(_ tableView: NSTableView, validateDrop info: NSDraggingInfo, proposedRow row: Int, proposedDropOperation dropOperation: NSTableView.DropOperation) -> NSDragOperation {
 
     info.draggingFormation = draggingFormation
@@ -447,9 +431,7 @@ extension ConfTableViewController: NSTableViewDataSource {
     return []
   }
 
-  /*
-   Accept the drop and execute it, or reject drop.
-   */
+  /// Accept the drop and execute it, or reject drop.
   @objc func tableView(_ tableView: NSTableView, acceptDrop info: NSDraggingInfo, row: Int, dropOperation: NSTableView.DropOperation) -> Bool {
     let dragMask = info.draggingSourceOperationMask
     guard dragMask.contains(.copy) else {
@@ -525,7 +507,7 @@ extension ConfTableViewController:  NSMenuDelegate {
     }
   }
 
-  // Builds context menu each time a row is right-clicked
+  /// Builds context menu each time a row is right-clicked
   @MainActor
   @objc func menuNeedsUpdate(_ contextMenu: NSMenu) {
     // This will prevent menu from showing if no items are added

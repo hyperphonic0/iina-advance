@@ -8,8 +8,6 @@
 // This file encapsulates relevant code for `syncVideoParamsFromMpv()` which is executed as part of most (all?)
 // `GeometryTransform`s. See header comments for `syncVideoParamsFromMpv`.
 
-fileprivate let maxAttemptsForGetVideoParams = 6
-
 extension GeometryTransform.ContextStage2 {
 
   /// An instance of this struct holds a subset of the parsed metadata for one of the following mpv properties
@@ -243,7 +241,7 @@ extension GeometryTransform.ContextStage2 {
   fileprivate func getWithRetries(propName mpvPropertyName: String) -> MpvVideoParams? {
     assert(DispatchQueue.isExecutingIn(player.mpv.queue))
 
-    let maxRetries = maxAttemptsForGetVideoParams
+    let maxRetries = Constants.maxAttemptsForGetVideoParams
     var retryNum = 1
     guard let mpv = player.mpv else {
       return nil
