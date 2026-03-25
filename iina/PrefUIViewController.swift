@@ -194,6 +194,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
   }
 
   override func viewDidLoad() {
+    Logger.log.verbose("PrefUIViewController viewDidLoad: starting")
     super.viewDidLoad()
 
     animationPipeline = AppDelegate.shared.preferenceWindowController.animationPipeline
@@ -220,6 +221,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
       // Initial update: do now to prevent unexpected animations during restore
       updateAllSectionsFromPrefs()
     }
+    Logger.log.verbose("PrefUIViewController viewDidLoad: done")
   }
 
   override func viewWillAppear() {

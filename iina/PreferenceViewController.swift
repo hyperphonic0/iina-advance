@@ -38,8 +38,7 @@ class PreferenceViewController: NSViewController {
       stackView.distribution = .fill
       stackView.idString = "PreferenceViewController.stackView"
       view.addSubview(stackView)
-      Utility.quickConstraints(["H:|[v]|", "V:|[v]|"], ["v": stackView])
-      stackView.views.forEach { Utility.quickConstraints(["H:|[v]|"], ["v": $0]) }
+      stackView.addAllConstraintsToFillSuperview()
     }
 
 

@@ -31,7 +31,7 @@ fileprivate extension NSView {
 }
 
 @MainActor
-protocol PreferenceWindowEmbeddable where Self: NSViewController {
+protocol PreferenceWindowEmbeddable where Self: PreferenceViewController {
   var preferenceTabTitle: String { get }
   var preferenceTabImage: NSImage { get }
   var preferenceContentIsScrollable: Bool { get }
@@ -138,9 +138,7 @@ class PreferenceWindowController: WindowController, NSWindowDelegate {
 
   }
 
-  override var windowNibName: NSNib.Name {
-    return NSNib.Name("PreferenceWindowController")
-  }
+  override var windowNibName: NSNib.Name {NSNib.Name("PreferenceWindowController") }
 
   private var tries: [Trie] = []
   private var searchString: String = ""
@@ -169,12 +167,12 @@ class PreferenceWindowController: WindowController, NSWindowDelegate {
 
   private var detailViewBottomConstraint: NSLayoutConstraint?
 
-  private var viewControllers: [NSViewController & PreferenceWindowEmbeddable]
+  private var viewControllers: [PreferenceViewController & PreferenceWindowEmbeddable]
 
   private var observers: [NSObjectProtocol] = []
 
   init() {
-    var viewControllers: [NSViewController & PreferenceWindowEmbeddable] = [
+    var viewControllers: [PreferenceViewController & PreferenceWindowEmbeddable] = [
       PrefGeneralViewController(),
       PrefUIViewController(),
       PrefDataViewController(),
@@ -267,9 +265,8 @@ class PreferenceWindowController: WindowController, NSWindowDelegate {
     }
   }
 
+  @MainActor
   private func buildIndexAndRestoreSavedSearch() {
-    assert(DispatchQueue.isExecutingIn(.main))
-
     var viewMap = [
       ["general", "PrefGeneralViewController"],
       ["ui", "PrefUIViewController"],
@@ -358,8 +355,8 @@ class PreferenceWindowController: WindowController, NSWindowDelegate {
     searchString = newSearchString
   }
 
+  @MainActor
   private func completeSearchField() {
-    assert(DispatchQueue.isExecutingIn(.main))
     let resultsCount = currentCompletionResults.count
     noResultLabel.isHidden = resultsCount != 0
     if !completionPopover.isShown {

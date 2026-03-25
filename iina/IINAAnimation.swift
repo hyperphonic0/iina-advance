@@ -314,7 +314,7 @@ extension IINAAnimation {
         do {
           try nextTask.runFunc()
         } catch IINAError.cancelAnimationTransaction {
-          log.verbose("[Pipeline] Task was cancelled")
+          log.trace("[Pipeline] Task was cancelled")
           currentTxID += 1  // cancel txn
         } catch {
           log.error("[Pipeline] Unexpected error thrown by task: \(error)")
@@ -334,7 +334,7 @@ extension IINAAnimation {
         }
 
         guard taskTxID >= currentTxID else {
-          log.verbose("[Pipeline] Skipping task with cancelled txID \(taskTxID) (next valid txID: \(currentTxID))")
+          log.verbose("[Pipeline] Skipping task in cancelled transaction (txID=\(taskTxID))")
           continue
         }
         currentTxID = taskTxID
