@@ -314,6 +314,7 @@
 		D11AB83628EEE72A00673A90 /* EditableTableViewDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = D11AB83528EEE72A00673A90 /* EditableTableViewDelegate.swift */; };
 		D11E07B92D1812C200F9FB9F /* SymButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = D11E07B82D1812BE00F9FB9F /* SymButton.swift */; };
 		D11FB5402CB8E4EA0012A45A /* ShutdownHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = D11FB53F2CB8E4E20012A45A /* ShutdownHandler.swift */; };
+		D11FD6702F7002420044C90F /* CustomExecutorsKit in Frameworks */ = {isa = PBXBuildFile; productRef = D11FD66F2F7002420044C90F /* CustomExecutorsKit */; };
 		D126E4422E59BF970099DEA9 /* BottomBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = D126E4412E59BF8F0099DEA9 /* BottomBar.swift */; };
 		D12C074028EAEA4400FA9958 /* AppInputConfigBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = D12C073F28EAEA4400FA9958 /* AppInputConfigBuilder.swift */; };
 		D13209BB2B90596000069C94 /* AspectTokenField.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13209BA2B90596000069C94 /* AspectTokenField.swift */; };
@@ -2250,6 +2251,7 @@
 				34ACAB762C142A0500F871A0 /* libgnutls.30.dylib in Frameworks */,
 				34ACABA62C142A0500F871A0 /* libhogweed.6.dylib in Frameworks */,
 				B4E4470125CE3F930069F06E /* Sparkle in Frameworks */,
+				D11FD6702F7002420044C90F /* CustomExecutorsKit in Frameworks */,
 				34ACABA92C142A0500F871A0 /* libxcb-shm.0.dylib in Frameworks */,
 				34ACAB9D2C142A0500F871A0 /* libavutil.59.dylib in Frameworks */,
 				D13912642F29547200540624 /* OrderedCollections in Frameworks */,
@@ -3147,6 +3149,7 @@
 				B4E4470025CE3F930069F06E /* Sparkle */,
 				8451E6D82604AEFC009A15D7 /* Just */,
 				D13912632F29547200540624 /* OrderedCollections */,
+				D11FD66F2F7002420044C90F /* CustomExecutorsKit */,
 			);
 			productName = mpvx;
 			productReference = 84EB1ED61D2F51D3004FA5A1 /* IINA Advance.app */;
@@ -3264,6 +3267,7 @@
 				B4E446FF25CE3F930069F06E /* XCRemoteSwiftPackageReference "Sparkle" */,
 				8451E6D72604AEFC009A15D7 /* XCRemoteSwiftPackageReference "Just" */,
 				D13912622F29547200540624 /* XCRemoteSwiftPackageReference "swift-collections" */,
+				D11FD66E2F7002420044C90F /* XCRemoteSwiftPackageReference "dm-swift-concurrency-custom-executors" */,
 			);
 			productRefGroup = 84EB1ED71D2F51D3004FA5A1 /* Products */;
 			projectDirPath = "";
@@ -5110,7 +5114,7 @@
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = PG2MG2559L;
 				GCC_PREPROCESSOR_DEFINITIONS = "GL_SILENCE_DEPRECATION=1";
-				MACOSX_DEPLOYMENT_TARGET = 13.5;
+				MACOSX_DEPLOYMENT_TARGET = 14.6;
 				MARKETING_VERSION = 1.5;
 				SKIP_INSTALL = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -5173,7 +5177,7 @@
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = PG2MG2559L;
 				GCC_PREPROCESSOR_DEFINITIONS = "GL_SILENCE_DEPRECATION=1";
-				MACOSX_DEPLOYMENT_TARGET = 13.5;
+				MACOSX_DEPLOYMENT_TARGET = 14.6;
 				MARKETING_VERSION = 1.5;
 				SKIP_INSTALL = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -5236,7 +5240,7 @@
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = PG2MG2559L;
 				GCC_PREPROCESSOR_DEFINITIONS = "GL_SILENCE_DEPRECATION=1";
-				MACOSX_DEPLOYMENT_TARGET = 13.5;
+				MACOSX_DEPLOYMENT_TARGET = 14.6;
 				MARKETING_VERSION = 1.5;
 				SKIP_INSTALL = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -5256,7 +5260,7 @@
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = PG2MG2559L;
 				GCC_PREPROCESSOR_DEFINITIONS = "GL_SILENCE_DEPRECATION=1";
-				MACOSX_DEPLOYMENT_TARGET = 13.5;
+				MACOSX_DEPLOYMENT_TARGET = 14.6;
 				MARKETING_VERSION = 1.5;
 				SKIP_INSTALL = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -5682,6 +5686,14 @@
 				minimumVersion = 2.7.0;
 			};
 		};
+		D11FD66E2F7002420044C90F /* XCRemoteSwiftPackageReference "dm-swift-concurrency-custom-executors" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/dambertmunoz/dm-swift-concurrency-custom-executors";
+			requirement = {
+				branch = main;
+				kind = branch;
+			};
+		};
 		D13912622F29547200540624 /* XCRemoteSwiftPackageReference "swift-collections" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/apple/swift-collections.git";
@@ -5712,6 +5724,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = B4E446FF25CE3F930069F06E /* XCRemoteSwiftPackageReference "Sparkle" */;
 			productName = Sparkle;
+		};
+		D11FD66F2F7002420044C90F /* CustomExecutorsKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = D11FD66E2F7002420044C90F /* XCRemoteSwiftPackageReference "dm-swift-concurrency-custom-executors" */;
+			productName = CustomExecutorsKit;
 		};
 		D13912632F29547200540624 /* OrderedCollections */ = {
 			isa = XCSwiftPackageProductDependency;

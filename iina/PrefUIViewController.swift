@@ -923,10 +923,12 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
   }
 
   private func reloadThumbnailCacheStat() {
-    let cacheSizeBytes = ThumbnailCache.shared.getCacheSize()
-    let newString = "\(FloatingPointByteCountFormatter.string(fromByteCount: cacheSizeBytes, countStyle: .binary))B"
-    DispatchQueue.main.async { [self] in
-      currentThumbCacheSizeTextField.stringValue = newString
+    Task {
+      let cacheSizeBytes = await ThumbnailCache.shared.getCacheSize()
+      let newString = "\(FloatingPointByteCountFormatter.string(fromByteCount: cacheSizeBytes, countStyle: .binary))B"
+      Task { @MainActor [self] in
+        currentThumbCacheSizeTextField.stringValue = newString
+      }
     }
   }
 

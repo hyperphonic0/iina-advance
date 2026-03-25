@@ -765,7 +765,7 @@ extension PlayerCore {
   }
 
   private func playlistErrorDidOccur() {
-    SwiftTask { @MainActor in
+    Task { @MainActor in
       undoHelper.clearUndoes()
       reloadPlaylist(savePlayerState: false)
       // Emit the system beep

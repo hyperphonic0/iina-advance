@@ -196,7 +196,7 @@ extension PlayerCore {
         */
 
         // Run the following in the background (`thumbnailQueue`) at lower priority, so the UI is not slowed down.
-        ThumbnailCache.shared.thumbnailQueue.async { [self] in
+        ThumbnailCache.thumbnailQueue.async { [self] in
           log.trace("Thumbnails reload requested")
           newMediaThumbnailLoader.loadThumbnails()
         }
@@ -217,18 +217,14 @@ final class SingleMediaThumbnailsLoader: NSObject, FFmpegControllerDelegate {
   let videoTrackID: Int
   let thumbnailWidth: Int
 
+  let ffmpegController: FFmpegController
+
   @Atomic var isCancelled = false
   @MainActor var thumbnailsProgress: Double = 0
   @MainActor var ffThumbnails: [FFThumbnail] = []
   @MainActor var thumbnails: [Thumbnail] = []
 
   var currentDisplayedThumbFFTimestamp: Double = -1
-
-  lazy var ffmpegController: FFmpegController = {
-    let controller = FFmpegController()
-    controller.delegate = self
-    return controller
-  }()
 
   var log: any Logger.Subsystem {
     return player.log
@@ -240,38 +236,41 @@ final class SingleMediaThumbnailsLoader: NSObject, FFmpegControllerDelegate {
     self.mediaFilePathMD5 = mediaFilePathMD5
     self.videoTrackID = videoTrackID
     self.thumbnailWidth = thumbnailWidth
+    self.ffmpegController = FFmpegController()
+    super.init()
+    ffmpegController.delegate = self
   }
 
   func loadThumbnails() {
-    assert(DispatchQueue.isExecutingIn(ThumbnailCache.shared.thumbnailQueue))
+    assert(DispatchQueue.isExecutingIn(ThumbnailCache.thumbnailQueue))
 
     guard FileManager.default.fileExists(atPath: mediaFilePath) else {
       log.debug("Aborting thumbnails load. File does not exist: \(mediaFilePath.pii.quoted)")
       return
     }
 
-    let cacheName = mediaFilePathMD5
-    if ThumbnailCache.shared.fileIsCached(forName: cacheName, forVideo: mediaFilePath, forWidth: thumbnailWidth) {
-      log.trace("Found matching thumbnail cache name=\(cacheName.quoted), \(thumbnailWidth)px width for: \(mediaFilePath.pii.quoted)")
-      if let thumbnails = ThumbnailCache.shared.read(forName: cacheName, forWidth: thumbnailWidth) {
-        if thumbnails.count >= Constants.minThumbnailsPerFile {
-          // Already done
-          DispatchQueue.main.async { [self] in
-            addThumbnails(thumbnails)
-            thumbnailsProgress = 1
-            player.refreshTouchBarSlider()
-          }
-          return
-        } else {
-          log.error("Expected at least \(Constants.minThumbnailsPerFile) thumbnails, but found only \(thumbnails.count) (width \(thumbnailWidth)px). Will try to regenerate")
+    Task {
+      let cacheName = mediaFilePathMD5
+      let thumbnails = await ThumbnailCache.shared.getCachedThumbs(cacheName: cacheName, mediaFilePath: mediaFilePath,
+                                                                   thumbnailWidth: thumbnailWidth)
+      if let thumbnails {
+        // Already done
+        await MainActor.run {
+          addThumbnails(thumbnails)
+          thumbnailsProgress = 1
+          player.refreshTouchBarSlider()
         }
-      } else {
-        log.error("Cannot read thumbnails from cache \(cacheName.quoted), width \(thumbnailWidth)px. Will try to regenerate")
+        return
+      }
+
+      log.debug("Generating new thumbnails for file \(mediaFilePath.pii.quoted), width=\(thumbnailWidth)")
+      nonisolated(unsafe) let controller = ffmpegController
+      let filePath = mediaFilePath
+      let width = thumbnailWidth
+      ThumbnailCache.thumbnailQueue.async {
+        controller.generateThumbnail(forFile: filePath, thumbWidth: Int32(width))
       }
     }
-
-    log.debug("Generating new thumbnails for file \(mediaFilePath.pii.quoted), width=\(thumbnailWidth)")
-    ffmpegController.generateThumbnail(forFile: mediaFilePath, thumbWidth:Int32(thumbnailWidth))
   }
 
   @MainActor
@@ -312,7 +311,7 @@ final class SingleMediaThumbnailsLoader: NSObject, FFmpegControllerDelegate {
   // MARK: - FFmpegControllerDelegate implementation
 
   func didUpdate(_ thumbnails: [FFThumbnail]?, forFile filename: String, thumbWidth width: Int32, withProgress progress: Int) {
-    ThumbnailCache.shared.thumbnailQueue.async { [self] in
+    ThumbnailCache.thumbnailQueue.async { [self] in
       // quick & dirty workaround for indexing method discrepancy: just add 1
       let progress = progress + 1
       guard !isCancelled else {
@@ -327,7 +326,7 @@ final class SingleMediaThumbnailsLoader: NSObject, FFmpegControllerDelegate {
 
       guard !isCancelled else { return }
 
-      DispatchQueue.main.async { [self] in
+      Task { @MainActor in
         if let thumbnails, thumbnails.count > 0 {
           addThumbnails(thumbnails)
         }
@@ -349,7 +348,7 @@ final class SingleMediaThumbnailsLoader: NSObject, FFmpegControllerDelegate {
 
     guard !isCancelled else { return }
 
-    DispatchQueue.main.async { [self] in
+    Task { @MainActor in
       if thumbnails.count > 0 {
         log.trace("Got final count of \(thumbnails.count) thumbs, width=\(width)px")
         addThumbnails(thumbnails)
@@ -365,10 +364,8 @@ final class SingleMediaThumbnailsLoader: NSObject, FFmpegControllerDelegate {
       let ffThumbnailsToWrite = ffThumbnails
       ffThumbnails = []  // clear reference - not needed anymore
 
-      ThumbnailCache.shared.thumbnailQueue.async { [self] in
-        ThumbnailCache.shared.write(ffThumbnailsToWrite, forName: mediaFilePathMD5,
-                                    forVideo: mediaFilePath, forWidth: Int(width))
-      }
+      await ThumbnailCache.shared.write(ffThumbnailsToWrite, forName: mediaFilePathMD5,
+                                        forVideo: mediaFilePath, forWidth: Int(width))
 
       player.events.emit(.thumbnailsReady)
     }

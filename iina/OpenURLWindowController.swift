@@ -140,23 +140,7 @@ class OpenURLWindowController: WindowController, NSWindowDelegate, NSTextFieldDe
     let username = usernameField.stringValue
     let password = passwordField.stringValue
     let trimmedUrlString = urlField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
-    // For apps built with Xcode 15 or later the behavior of the URL initializer has changed when
-    // running under macOS Sonoma or later. The behavior now matches URLComponents and will
-    // automatically percent encode characters. Must not apply percent encoding to the string
-    // passed to the URL initializer if the new new behavior is active.
-    var performPercentEncoding = true
-#if compiler(>=5.9)
-    if #available(macOS 14, *) {
-      performPercentEncoding = false
-    }
-#endif
     var pstr = trimmedUrlString
-    if performPercentEncoding {
-      guard let urlValue = trimmedUrlString.addingPercentEncoding(withAllowedCharacters: .urlAllowed) else {
-        return (nil, false)
-      }
-      pstr = urlValue
-    }
     var hasScheme = true
     if let url = URL(string: pstr), url.scheme == nil {
       pstr = "http://" + pstr

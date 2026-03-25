@@ -8,7 +8,7 @@
 
 import Foundation
 
-typealias SwiftTask = Task  // workaround for conflict with our Task type, epp
+fileprivate typealias SwiftTask = Task  // workaround for conflict with our Task type, epp
 class IINAAnimation {
   typealias TaskFunc = (@Sendable @MainActor () throws -> Void)
 

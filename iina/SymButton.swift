@@ -7,17 +7,15 @@
 
 /// Replacement for `NSButton` (which seems to be de-facto deprecated) because that class does not support using symbol animations in newer versions of MacOS.
 class SymButton: NSImageView, @MainActor NSAccessibilityButton, DraggableObject {
-  var actionSymbolEffectFunc: (@MainActor (SymButton) -> Void) = SymButton.bounceEffectFunc
+  var actionSymbolEffectFunc: ((SymButton) -> Void) = SymButton.bounceEffectFunc
 
   /// Does nothing
   static func nullEffectFunc(_ btn: SymButton) {}
 
   static func bounceEffectFunc(_ btn: SymButton) {
-    if #available(macOS 14.0, *) {
-      btn.addSymbolEffect(.bounce.down.wholeSymbol, options:
-          .speed(Constants.symButtonImageTransitionSpeed)
-          .nonRepeating, animated: true)
-    }
+    btn.addSymbolEffect(.bounce.down.wholeSymbol, options:
+        .speed(Constants.symButtonImageTransitionSpeed)
+        .nonRepeating, animated: true)
   }
 
   static func rotateEffectFunc(_ btn: SymButton) {
@@ -143,7 +141,7 @@ class SymButton: NSImageView, @MainActor NSAccessibilityButton, DraggableObject 
       pressureStage = 0
       pwc.currentDragObject = nil
 
-      if #available(macOS 14.0, *), IINAAnimation.isAnimationEnabled {
+      if IINAAnimation.isAnimationEnabled {
         actionSymbolEffectFunc(self)
       }
 

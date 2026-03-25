@@ -7,13 +7,19 @@
 //
 
 import Cocoa
+import CustomExecutorsKit
 
 fileprivate let thumbCacheSubsystem = Logger.makeSubsystem("thumbcache")
 
-class ThumbnailCache {
+actor ThumbnailCache {
   static let shared = ThumbnailCache()
 
-  let thumbnailQueue = DispatchQueue.newDQ(label: "IINA-PlayerThumbnail", qos: .utility)
+  static let thumbnailQueue = DispatchQueue.newDQ(label: "IINA-PlayerThumbnail", qos: .utility)
+  static let executor = SerialDispatchQueueExecutor(queue: thumbnailQueue)
+
+  public nonisolated var unownedExecutor: UnownedSerialExecutor {
+    Self.executor.asUnownedSerialExecutor()
+  }
 
   private typealias CacheVersion = UInt8
   private typealias FileSize = UInt64
@@ -36,8 +42,8 @@ class ThumbnailCache {
     return FileManager.default.fileExists(atPath: urlFor(name, width: width).path)
   }
 
-  func fileIsCached(forName name: String, forVideo videoFilePath: String, forWidth width: Int) -> Bool {
-    guard let fileAttr = try? FileManager.default.attributesOfItem(atPath: videoFilePath) else {
+  func fileIsCached(forName name: String, mediaFilePath: String, forWidth width: Int) async -> Bool {
+    guard let fileAttr = try? FileManager.default.attributesOfItem(atPath: mediaFilePath) else {
       log.error("Cannot get video file attributes")
       return false
     }
@@ -86,9 +92,27 @@ class ThumbnailCache {
     return true
   }
 
+  func getCachedThumbs(cacheName: String, mediaFilePath: String, thumbnailWidth: Int) async -> [FFThumbnail]? {
+    let fileIsCached = await ThumbnailCache.shared.fileIsCached(forName: cacheName, mediaFilePath: mediaFilePath, forWidth: thumbnailWidth)
+    guard fileIsCached else { return nil }
+
+      log.trace("Found matching thumbnail cache name=\(cacheName.quoted), \(thumbnailWidth)px width for: \(mediaFilePath.pii.quoted)")
+    guard let thumbnails = await ThumbnailCache.shared.read(forName: cacheName, forWidth: thumbnailWidth) else {
+      log.error("Cannot read thumbnails from cache \(cacheName.quoted), width \(thumbnailWidth)px. Will try to regenerate")
+      return nil
+    }
+
+    guard thumbnails.count >= Constants.minThumbnailsPerFile else {
+      log.error("Expected at least \(Constants.minThumbnailsPerFile) thumbnails, but found only \(thumbnails.count) (width \(thumbnailWidth)px). Will try to regenerate")
+      return nil
+    }
+
+    return thumbnails
+  }
+
   /// Write thumbnail cache to file.
   /// This method is expected to be called when the file doesn't exist.
-  func write(_ thumbnails: [FFThumbnail], forName name: String, forVideo videoFilePath: String, forWidth width: Int) {
+  public func write(_ thumbnails: [FFThumbnail], forName name: String, forVideo videoFilePath: String, forWidth width: Int) async {
     let maxCacheSize = Preference.integer(for: .maxThumbnailPreviewCacheSize) * FloatingPointByteCountFormatter.PrefixFactor.mi.rawValue
     if maxCacheSize == 0 {
       log.verbose("Aborting write to thumbnail cache: maxCacheSize is 0")
@@ -96,7 +120,7 @@ class ThumbnailCache {
     }
     log.debug("Writing \(thumbnails.count) thumbnails width=\(width) to cache file \(name.pii) (videoFile=\(videoFilePath.pii))")
 
-    let cacheSize = getCacheSize()
+    let cacheSize = await getCacheSize()
     if cacheSize > maxCacheSize {
       log.debug("Thumbnail cache size (\(cacheSize)) is larger than max allowed (\(maxCacheSize)) and will be cleared")
       clearOldCache()
@@ -176,7 +200,7 @@ class ThumbnailCache {
 
   /// Read thumbnail cache to file.
   /// This method is expected to be called when the file exists.
-  func read(forName name: String, forWidth width: Int) -> [FFThumbnail]? {
+  func read(forName name: String, forWidth width: Int) async -> [FFThumbnail]? {
     let pathURL = urlFor(name, width: width)
     let sw = Utility.Stopwatch()
     guard let file = try? FileHandle(forReadingFrom: pathURL) else {
@@ -264,7 +288,7 @@ class ThumbnailCache {
     return cachedContents
   }
 
-  func getCacheSize() -> Int {
+  func getCacheSize() async -> Int {
     return cacheFolderContents()?.reduce(0 as Int) { totalSize, url in
       let size = (try? url.resourceValues(forKeys: [.fileSizeKey]))?.fileSize ?? 0
       return totalSize + size

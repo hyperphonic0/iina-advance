@@ -103,14 +103,14 @@ struct GeometryTransform: Sendable {
 
   /// Convenience method which enqueues this GeometryTransform for execution.
   func submit() {
-    SwiftTask { @MainActor in
+    Task { @MainActor in
       pwc.animationPipeline.submitGTF(self)
     }
   }
 
   /// Aborts the transform (`animationPipeline` must always be notified for either success or failure).
   private func abort(_ reasonDebugMsg: String) {
-    SwiftTask { @MainActor in
+    Task { @MainActor in
       log.verbose("[GTF:\(name)] Aborting GTF: \(reasonDebugMsg)")
       pwc.animationPipeline.geoTransformDidFinish(self, success: false)
     }

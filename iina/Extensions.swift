@@ -9,6 +9,15 @@
 import Cocoa
 import UniformTypeIdentifiers
 import CryptoKit
+import CustomExecutorsKit
+
+extension SerialDispatchQueueExecutor {
+  /// Uses `DispatchQueue.newDQ` to register detection of the `DispatchQueue`, so that `DispatchQueue.isExecutingIn()` can be used to test for current execution
+  static func newRegisteredExecutor(label: String, qos: DispatchQoS = .userInitiated, attributes: DispatchQueue.Attributes = []) -> SerialDispatchQueueExecutor {
+    let queue = DispatchQueue.newDQ(label: label, qos: qos, attributes: attributes)
+    return SerialDispatchQueueExecutor(queue: queue)
+  }
+}
 
 infix operator %%
 
@@ -2633,7 +2642,6 @@ extension DispatchQueue {
     }
   }
 }
-
 
 // MARK: - Other
 

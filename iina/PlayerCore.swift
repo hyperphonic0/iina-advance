@@ -165,7 +165,7 @@ final class PlayerCore: NSObject {
     didSet {
       log.verbose("Δ lifecycleState ≔ \(state)")
       if state == .started {
-        SwiftTask { @MainActor in
+        Task { @MainActor in
           SleepPreventer.updateSleepPrevention()
         }
       }

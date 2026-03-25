@@ -1,6 +1,15 @@
 {
-  "originHash" : "923a4bee2df629676dd82938e85680655ca18fd06a44c4285e416bed56524766",
+  "originHash" : "ed402310faadf5a631a0d759ae51f5483cfc8b136912642dd8a0d197314c03ef",
   "pins" : [
+    {
+      "identity" : "dm-swift-concurrency-custom-executors",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/dambertmunoz/dm-swift-concurrency-custom-executors",
+      "state" : {
+        "branch" : "main",
+        "revision" : "4cb25f82b4f7f7b4e0f89bd3782fe74cd40e40fc"
+      }
+    },
     {
       "identity" : "grmustache.swift",
       "kind" : "remoteSourceControl",
