@@ -342,7 +342,7 @@ final class CustomTitleBar {
   static let shared = CustomTitleBar()
 
   func configureTitleBarButton(_ button: SymButton, _ image: NSImage, identifier: String, target: AnyObject, action: Selector,
-                               actionSymbolEffectFunc: @escaping (SymButton) -> Void) {
+                               actionSymbolEffectFunc: @MainActor @escaping (SymButton) -> Void) {
     button.image = image
     button.target = target
     button.action = action

@@ -19,7 +19,7 @@ import Foundation
 ///
 /// A similar issue exists for the mpv properties that provide the mpv and libass version numbers, which IINA would like log near the
 /// start of the log file. So this class also provides the version numbers.
-class MPVOptionDefaults {
+final class MPVOptionDefaults {
   /// The `MPVDefaults` singleton object.
   static var shared: MPVOptionDefaults!
 

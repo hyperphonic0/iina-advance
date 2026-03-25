@@ -348,6 +348,21 @@ final class StartupHandler {
     return totalFilesOpened + totalExistingFilesShown
   }
 
+  @MainActor
+  func droppedText(withURLString urlString: String) {
+    guard let player = PlayerManager.shared.activePlayer else { return }
+    let isStartingUp = !isDoneLaunching
+    if isStartingUp {
+      isAwaitingNewWindowsForOpenedFile = true
+    }
+    if player.openURLString(urlString) == 0 {
+      abortWaitForOpenFilePlayerStartup()
+    } else if isStartingUp {
+      pwcsForOpenFiles = [player.pwc]
+    }
+    showWindowsIfReady()
+  }
+
   // MARK: - Restore From Prev Launch
 
   /// Returns `true` if any windows were restored; `false` otherwise.

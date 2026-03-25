@@ -9,7 +9,7 @@
 import Cocoa
 import Sparkle
 
-@NSApplicationMain
+@main
 class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
   /// The `AppDelegate` singleton object.
@@ -59,7 +59,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
   static let iinaPluginSystemEnabled = Preference.bool(for: .iinaEnablePluginSystem)
 
-  var startupHandler: StartupHandler!
+  @MainActor let startupHandler = StartupHandler()
   private let shutdownHandler = ShutdownHandler()
   private var notiHandler: NotificationHandler!
 
@@ -92,16 +92,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     case PK.enableAdvancedSettings, PK.enableLogging, PK.logLevel:
       Task { @MainActor in
         Logger.updateEnablement()
-        // depends on advanced being enabled:
-        menuController.refreshCmdNStatus()
-        menuController.refreshStaticMenuItemBindings()
       }
+      // depends on advanced being enabled:
+      menuController.refreshCmdNStatus()
+      menuController.refreshStaticMenuItemBindings()
 
     case PK.enableCmdN:
-      Task { @MainActor in
-        menuController.refreshCmdNStatus()
-        menuController.refreshStaticMenuItemBindings()
-      }
+      menuController.refreshCmdNStatus()
+      menuController.refreshStaticMenuItemBindings()
 
     case PK.resumeLastPosition:
       HistoryController.shared.async {
@@ -125,9 +123,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       //      }
 
     case .killRequest:
-      Task { @MainActor in
-        appDidReceiveKillRequest()
-      }
+      AppDelegate.appDidReceiveKillRequest()
 
     case .screenshotUseRAMDisk, .screenshotRAMDiskSizeMB:
       // Reload screenshot storage when RAM disk settings change
@@ -155,9 +151,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       } else {
         Logger.log("Detected change to this instance's lifecycle state pref (\(keyPath.quoted)), but save is disabled; ignoring")
       }
-      Task { @MainActor in
-        NotificationCenter.default.post(Notification(name: .savedWindowStateDidChange, object: self))
-      }
+      NotificationCenter.default.post(Notification(name: .savedWindowStateDidChange, object: self))
 
     default:
       return
@@ -181,8 +175,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   func applicationWillFinishLaunching(_ notification: Notification) {
     // Must setup preferences before logging so log level is set correctly.
     registerUserDefaultValues()
-
-    startupHandler = StartupHandler()
 
     // Parse & process command line arguments, if any.
     // Do this *before* loading history or even initLogging, because both can be disabled by CLI args.
@@ -624,20 +616,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   @objc
   func droppedText(_ pboard: NSPasteboard, userData: String, error: NSErrorPointer) {
     Logger.log.verbose("Text dropped on app's Dock icon")
-    guard let url = pboard.string(forType: .string) else { return }
-
-    DispatchQueue.main.async { [self] in
-      guard let player = PlayerManager.shared.activePlayer else { return }
-      let isStartingUp = !startupHandler.isDoneLaunching
-      if isStartingUp {
-        startupHandler.isAwaitingNewWindowsForOpenedFile = true
-      }
-      if player.openURLString(url) == 0 {
-        startupHandler.abortWaitForOpenFilePlayerStartup()
-      } else if isStartingUp {
-        startupHandler.pwcsForOpenFiles = [player.pwc]
-      }
-      startupHandler.showWindowsIfReady()
+    guard let urlString = pboard.string(forType: .string) else { return }
+    Task { @MainActor in
+      startupHandler.droppedText(withURLString: urlString)
     }
   }
 
@@ -785,7 +766,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     Preference.set(Preference.integer(for: .killRequest) + 1, for: .killRequest)
 
     // Start our own shutdown immediately
-    appDidReceiveKillRequest()
+    AppDelegate.appDidReceiveKillRequest()
     return true
   }
 
@@ -811,8 +792,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     }
   }
 
-  @MainActor
-  private func appDidReceiveKillRequest() {
+  private static func appDidReceiveKillRequest() {
     guard Preference.bool(for: .killNonInteractiveLaunchesAtReopen) else {
       Logger.log.debug("Received killRequest but killNonInteractiveLaunchesAtReopen is disabled; ignoring")
       return

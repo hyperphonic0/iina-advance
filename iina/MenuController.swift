@@ -370,7 +370,6 @@ class MenuController: NSObject, NSMenuDelegate {
     miniPlayer.action = #selector(PlayerWindowController.menuSwitchToMiniPlayer(_:))
   }
 
-  @MainActor
   func refreshCmdNStatus() {
     let isEnabled = Preference.isAdvancedEnabled && Preference.bool(for: .enableCmdN)
     newWindowSeparator.isHidden = !isEnabled
