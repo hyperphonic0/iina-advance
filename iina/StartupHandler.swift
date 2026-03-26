@@ -68,7 +68,7 @@ final class StartupHandler {
   @MainActor let launchStartTime = CFAbsoluteTimeGetCurrent()
 
   @Atomic private(set) var state: OpenWindowsState = .stillEnqueuing
-  var isDoneLaunching: Bool { state == .doneOpening }
+  nonisolated var isDoneLaunching: Bool { state == .doneOpening }
 
   // - Properties: Opening Files Manually
 
@@ -926,7 +926,7 @@ final class StartupHandler {
         if let remountURL = URL(string: volRemountURLString), isMounted(remountURL: remountURL) {
           log.verbose("[Remount] Volume is already mounted: remountURL=\(volRemountURLString.pii.quoted)")
           mountedSet.insert(volRemountURLString)
-          DispatchQueue.main.async { [self] in
+          Task { @MainActor in
             didProcessRemountURLString(volRemountURLString, isMounted: true, log)
           }
         }
@@ -940,7 +940,7 @@ final class StartupHandler {
           return log.debug("[Remount] Aborting restore of remaining players; startup was marked as done despite remount URLs not completing")
         }
         let isMounted = processVolRemount(volRemountURLString, dependentItems, log)
-        DispatchQueue.main.async { [self] in
+        Task { @MainActor in
           didProcessRemountURLString(volRemountURLString, isMounted: isMounted, log)
         }
       }

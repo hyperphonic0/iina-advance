@@ -77,7 +77,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     HistoryController.shared.start()
   }
 
-  var isTerminating: Bool {
+  @MainActor var isTerminating: Bool {
     return shutdownHandler.isTerminating
   }
 
@@ -141,18 +141,20 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     switch keyPath {
     case UIState.shared.currentLaunchName:
       guard let newLaunchLifecycleState = change[.newKey] as? Int else { return }
-      guard !isTerminating else { return }
-      guard newLaunchLifecycleState != UIState.LaunchLifecycleState.missingOrInvalid.rawValue else { return }
+      Task { @MainActor in
+        guard !isTerminating else { return }
+        guard newLaunchLifecycleState != UIState.LaunchLifecycleState.missingOrInvalid.rawValue else { return }
 
-      if UIState.shared.isSaveEnabled {
-        Logger.log("Detected change to this instance's lifecycle state pref (\(keyPath.quoted)). Probably a younger instance of IINA has started and is attempting to restore")
-        Logger.log("Changing our lifecycle state back to 'stillRunning' so the other launch will skip this instance.")
-        UserDefaults.standard.setValue(UIState.LaunchLifecycleState.stillRunning.rawValue, forKey: keyPath)
-      } else {
-        Logger.log("Detected change to this instance's lifecycle state pref (\(keyPath.quoted)), but save is disabled; ignoring")
+        if UIState.shared.isSaveEnabled {
+          Logger.log("Detected change to this instance's lifecycle state pref (\(keyPath.quoted)). Probably a younger instance of IINA has started and is attempting to restore")
+          Logger.log("Changing our lifecycle state back to 'stillRunning' so the other launch will skip this instance.")
+          UserDefaults.standard.setValue(UIState.LaunchLifecycleState.stillRunning.rawValue, forKey: keyPath)
+        } else {
+          Logger.log("Detected change to this instance's lifecycle state pref (\(keyPath.quoted)), but save is disabled; ignoring")
+        }
+        NotificationCenter.default.post(Notification(name: .savedWindowStateDidChange, object: self))
       }
-      NotificationCenter.default.post(Notification(name: .savedWindowStateDidChange, object: self))
-
+      
     default:
       return
     }

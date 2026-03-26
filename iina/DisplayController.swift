@@ -10,7 +10,8 @@ import Foundation
 
 /// Controller that keeps track of displays discovered using
 /// [CGGetActiveDisplayList](https://developer.apple.com/documentation/coregraphics/cggetactivedisplaylist(_:_:_:)).
-class DisplayController {
+@globalActor
+actor DisplayController {
   /// The `DisplayController` singleton object.
   static let shared = DisplayController()
 
@@ -22,7 +23,7 @@ class DisplayController {
   /// and records any previously unknown displays.
   ///
   /// The details of any newly discovered displays will be logged.
-  func addNewDisplays() {
+  func addNewDisplays() async {
     // Get the number of displays.
     var maxDisplays: CGDisplayCount = 0
     var result = CGGetOnlineDisplayList(0, nil, &maxDisplays)

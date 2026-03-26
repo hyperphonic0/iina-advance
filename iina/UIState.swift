@@ -15,7 +15,8 @@ import Foundation
 /// And although it periodically saves "dirty" values to disk, and the interval between writes is unclear, this doesn't appear to cause
 /// a significant performance penalty, and certainly can't be much improved upon by IINA. Also, as playing video is by its nature very
 /// data-intensive, writes to the .plist should be trivial by comparison.
-final class UIState {
+@globalActor
+actor UIState {
   static let shared = UIState()
 
   enum LaunchLifecycleState: Int {
@@ -100,11 +101,11 @@ final class UIState {
   /// The unique name for this launch, used as a pref key
   let currentLaunchName: String
 
-  var windowsOpen = Set<String>()
-  var windowsMinimized = Set<String>()
-  var openSheetsDict: [String: Set<String>] = [:]
+  @MainActor var windowsOpen = Set<String>()
+  @MainActor var windowsMinimized = Set<String>()
+  @MainActor var openSheetsDict: [String: Set<String>] = [:]
 
-  var cachedScreens: [UInt32: ScreenMeta] = [:]
+  @MainActor var cachedScreens: [UInt32: ScreenMeta] = [:]
 
   /// Animation configurations for opening & closing windows, by window type. Scope does not include application launch.
   ///
@@ -137,7 +138,7 @@ final class UIState {
     // Do not call updateCachedScreens() here - it can cause a recursive lock call
   }
 
-  func updateCachedScreens() {
+  @MainActor func updateCachedScreens() {
     let newScreenMap = NSScreen.screens.map{ScreenMeta.from($0)}.reduce(Dictionary<UInt32, ScreenMeta>(), {(dict, screenMeta) in
       var dict = dict
       dict[screenMeta.displayID] = screenMeta
@@ -154,7 +155,7 @@ final class UIState {
   }
 
   /// See comments in `AppDelegqate.windowWillBeginSheet`
-  func addOpenSheet(_ sheetName: String, toWindow windowName: String) {
+  @MainActor func addOpenSheet(_ sheetName: String, toWindow windowName: String) {
     if var sheets = openSheetsDict[windowName] {
       sheets.insert(sheetName)
       openSheetsDict[windowName] = sheets
@@ -163,7 +164,7 @@ final class UIState {
     }
   }
 
-  func flattenOpenSheets() -> [String] {
+  @MainActor func flattenOpenSheets() -> [String] {
     return openSheetsDict.values.reduce(Array<String>(), { arr, valSet in
       var arr = arr
       arr.append(contentsOf: valSet)
@@ -171,11 +172,15 @@ final class UIState {
     })
   }
 
-  func removeOpenSheets(fromWindow windowName: String) {
+  @MainActor func removeOpenSheets(fromWindow windowName: String) {
     openSheetsDict.removeValue(forKey: windowName)
   }
 
-  func makeOpenWindowListKey(forLaunchID launchID: Int) -> String {
+  nonisolated func label(forPlayerCore playerCoreCounter: Int) -> String {
+    return "\(currentLaunchID)c\(playerCoreCounter)"
+  }
+
+  static func makeOpenWindowListKey(forLaunchID launchID: Int) -> String {
     return String(format: Constants.String.openWindowListFmt, launchID)
   }
 
@@ -183,12 +188,8 @@ final class UIState {
     return "\(Constants.String.iinaLaunchPrefix)\(launchID)"
   }
 
-  func label(forPlayerCore playerCoreCounter: Int) -> String {
-    return "\(currentLaunchID)c\(playerCoreCounter)"
-  }
-
   /// Example input=`"PWin-1032c0"` → output=`"1032c0"`
-  func playerID(fromPlayerWindowKey key: String) -> String? {
+  static func playerID(fromPlayerWindowKey key: String) -> String? {
     if key.starts(with: WindowAutosaveName.playerWindowPrefix) {
       let splitted = key.split(separator: "-")
       if splitted.count == 2 {
@@ -199,14 +200,14 @@ final class UIState {
   }
 
   /// Example input=`"PWin-1032c0"` → output=`"1032"`
-  func launchID(fromPlayerWindowKey key: String) -> Int? {
+  static func launchID(fromPlayerWindowKey key: String) -> Int? {
     if let pid = playerID(fromPlayerWindowKey: key) {
       return WindowAutosaveName.playerWindowLaunchID(from: pid)
     }
     return nil
   }
 
-  func launchID(fromOpenWindowListKey key: String) -> Int? {
+  static func launchID(fromOpenWindowListKey key: String) -> Int? {
     if key.starts(with: Constants.String.iinaLaunchPrefix) && key.hasSuffix("Windows") {
       let splitted = key.split(separator: "-")
       if splitted.count == 3 {
@@ -216,7 +217,7 @@ final class UIState {
     return nil
   }
 
-  func launchID(fromLegacyOpenWindowListKey key: String) -> Int? {
+  static func launchID(fromLegacyOpenWindowListKey key: String) -> Int? {
     if key.starts(with: "OpenWindows-") {
       let splitted = key.split(separator: "-", maxSplits: 1)
       if splitted.count == 2 {
@@ -226,7 +227,7 @@ final class UIState {
     return nil
   }
 
-  func launchID(fromLaunchName launchName: String) -> Int? {
+  static func launchID(fromLaunchName launchName: String) -> Int? {
     if launchName.starts(with: Constants.String.iinaLaunchPrefix) {
       let splitted = launchName.split(separator: "-")
       if splitted.count == 2 {
@@ -239,24 +240,26 @@ final class UIState {
   /// This value, when set to true, disables state loading & saving for the remaining lifetime of this instance of IINA
   /// (overriding any user settings); calls to `set()` will not be saved for the next launch, and any new get() requests
   /// will return the default values.
-  private var disableForThisInstance = false
+  @MainActor private var disableForThisInstance = false
 
-  var isSaveEnabled: Bool {
+  @MainActor var isSaveEnabled: Bool {
     return isRestoreEnabled
   }
 
-  var isRestoreEnabled: Bool {
+  @MainActor var isRestoreEnabled: Bool {
     return !disableForThisInstance && Preference.bool(for: .enableRestoreUIState)
   }
 
-  func disableSaveAndRestoreUntilNextLaunch() {
-    log.verbose("Disabling save & restore until next app launch")
-    disableForThisInstance = true
+  nonisolated func disableSaveAndRestoreUntilNextLaunch() {
+    Task { @MainActor in
+      log.verbose("Disabling save & restore until next app launch")
+      disableForThisInstance = true
+    }
   }
 
   /// Convenience method. If restoring UI state is enabled, returns the saved value; otherwise returns the default value.
   /// * Note: doesn't work for enums.
-  func getSavedValue<T>(for key: Preference.Key) -> T {
+  @MainActor func getSavedValue<T>(for key: Preference.Key) -> T {
     if isRestoreEnabled {
       if let val = Preference.value(for: key) as? T {
         return val
@@ -266,7 +269,7 @@ final class UIState {
   }
 
   // Convenience method. If saving UI state is enabled, saves the given value. Otherwise does nothing.
-  func set<T: Equatable>(_ value: T, for key: Preference.Key) {
+  @MainActor func set<T: Equatable>(_ value: T, for key: Preference.Key) {
     guard isSaveEnabled else { return }
     if let existing = Preference.object(for: key) as? T, existing == value {
       return
@@ -276,14 +279,14 @@ final class UIState {
 
   /// Returns the autosave names of windows which have been saved in the set of open windows
   /// Value is a comma-separated string containing the list of open windows, back to front
-  private func getSavedOpenWindowsBackToFront(forLaunchID launchID: Int) -> [SavedWindow] {
-    let key = makeOpenWindowListKey(forLaunchID: launchID)
+  nonisolated private func getSavedOpenWindowsBackToFront(forLaunchID launchID: Int) -> [SavedWindow] {
+    let key = UIState.makeOpenWindowListKey(forLaunchID: launchID)
     let windowList = parseSavedOpenWindowsBackToFront(fromPrefValue: UserDefaults.standard.string(forKey: key))
     log.verbose("Loaded list of open windows for launchID \(launchID): \(windowList.map{$0.saveName.string})")
     return windowList
   }
 
-  private func parseSavedOpenWindowsBackToFront(fromPrefValue prefValue: String?) -> [SavedWindow] {
+  nonisolated private func parseSavedOpenWindowsBackToFront(fromPrefValue prefValue: String?) -> [SavedWindow] {
     let csv = prefValue?.trimmingCharacters(in: .whitespaces) ?? ""
     if csv.isEmpty {
       return []
@@ -349,7 +352,7 @@ final class UIState {
     log.trace("Saving open windows: \(windowNamesBackToFront)")
 
     let csv = windowNamesBackToFront.map{ $0 }.joined(separator: ",")
-    let key = makeOpenWindowListKey(forLaunchID: currentLaunchID)
+    let key = UIState.makeOpenWindowListKey(forLaunchID: currentLaunchID)
 
     let csvOld = UserDefaults.standard.string(forKey: key)
     guard csvOld != csv else { return }
@@ -358,26 +361,26 @@ final class UIState {
     postSavedWindowStateDidChange()
   }
 
-  private func postSavedWindowStateDidChange() {
-    DispatchQueue.main.async { [self] in
+  nonisolated private func postSavedWindowStateDidChange() {
+    Task { @MainActor [self] in
       guard !AppDelegate.shared.isTerminating else { return }
       NotificationCenter.default.post(Notification(name: .savedWindowStateDidChange, object: self))
     }
   }
 
-  func clearSavedLaunchForThisLaunch(silent: Bool = false) {
+  @MainActor func clearSavedLaunchForThisLaunch(silent: Bool = false) {
     clearSavedLaunch(launchID: currentLaunchID, silent: silent)
   }
 
-  func clearSavedLaunch(withName launchName: String, silent: Bool = false) {
-    guard let launchID = launchID(fromLaunchName: launchName) else {
+  @MainActor func clearSavedLaunch(withName launchName: String, silent: Bool = false) {
+    guard let launchID = UIState.launchID(fromLaunchName: launchName) else {
       log.error("Failed to parse launchID from launchName: \(launchName.quoted)")
       return
     }
     clearSavedLaunch(launchID: launchID, silent: silent)
   }
 
-  func clearSavedLaunch(launchID: Int, force: Bool = false, silent: Bool = false) {
+  @MainActor func clearSavedLaunch(launchID: Int, force: Bool = false, silent: Bool = false) {
     guard isSaveEnabled || force else { return }
     let launchName = UIState.launchName(forID: launchID)
 
@@ -388,7 +391,7 @@ final class UIState {
       }
     }
 
-    let windowListKey = makeOpenWindowListKey(forLaunchID: launchID)
+    let windowListKey = UIState.makeOpenWindowListKey(forLaunchID: launchID)
     log.debug("Clearing saved list of open windows (pref key: \(windowListKey.quoted))")
     UserDefaults.standard.removeObject(forKey: windowListKey)
 
@@ -446,14 +449,14 @@ final class UIState {
       log.error("Could not find stored UI state for \(key.quoted)")
       return nil
     }
-    guard let pid = playerID(fromPlayerWindowKey: key) else {
+    guard let pid = UIState.playerID(fromPlayerWindowKey: key) else {
       log.error("Bad player key: \(key.quoted)")
       return nil
     }
     return PlayerSaveState(propDict, playerID: pid)
   }
 
-  func saveState(forPlayerID playerID: String, properties: [String: Any]) {
+  @MainActor func saveState(forPlayerID playerID: String, properties: [String: Any]) {
     guard isSaveEnabled else { return }
     guard properties[PlayerSaveState.urlProp] != nil else {
       // This can happen if trying to save while changing tracks, or at certain brief periods during shutdown.
@@ -466,14 +469,14 @@ final class UIState {
     UserDefaults.standard.setValue(properties, forKey: key)
   }
 
-  func clearPlayerSaveState(forPlayerID playerID: String, force: Bool = false) {
+  @MainActor func clearPlayerSaveState(forPlayerID playerID: String, force: Bool = false) {
     guard isSaveEnabled || force else { return }
     let key = WindowAutosaveName.playerWindow(id: playerID).string
     log.verbose("Deleting stored UI state for player, pref key: \(key.quoted)")
     UserDefaults.standard.removeObject(forKey: key)
   }
 
-  private func launchStatus(fromAny value: Any, launchName: String) -> LaunchLifecycleState {
+  nonisolated private func launchStatus(fromAny value: Any, launchName: String) -> LaunchLifecycleState {
     guard let lifecycleStateInt = value as? Int else {
       log.errorDebugAlert("Failed to parse lifecycleState int from pref entry! (entry: \(launchName.quoted), value: \(value))")
       return .missingOrInvalid
@@ -487,19 +490,19 @@ final class UIState {
   }
 
   /// Builds a raw launch dict, but the data returned still needs some cleaning up.
-  private func buildLaunchDict(migrateLegacyPrefEntries: Bool = false) -> [Int: LaunchState] {
+  nonisolated private func buildLaunchDict(migrateLegacyPrefEntries: Bool = false) -> [Int: LaunchState] {
     var launchDict: [Int: LaunchState] = [:]
 
     // It is easier & less bug-prone to just to iterate over all entries in the plist than to try to guess key names
     for (key, value) in UserDefaults.standard.dictionaryRepresentation() {
-      if let launchID = launchID(fromLaunchName: key) {
+      if let launchID = UIState.launchID(fromLaunchName: key) {
         // Entry is type: Launch Status
         let launch = launchDict[launchID] ?? LaunchState(launchID)
 
         launch.lifecycleState = launchStatus(fromAny: value, launchName: key)
         launchDict[launchID] = launch
 
-      } else if let launchID = launchID(fromPlayerWindowKey: key) {
+      } else if let launchID = UIState.launchID(fromPlayerWindowKey: key) {
         // Entry is type: PlayerWindow
         let launch = launchDict[launchID] ?? LaunchState(launchID)
 
@@ -509,7 +512,7 @@ final class UIState {
         launch.playerKeys.insert(key)
         launchDict[launchID] = launch
 
-      } else if let launchID = launchID(fromOpenWindowListKey: key) {
+      } else if let launchID = UIState.launchID(fromOpenWindowListKey: key) {
         // Entry is type: Open Windows List
         let launch = launchDict[launchID] ?? LaunchState(launchID)
 
@@ -518,7 +521,7 @@ final class UIState {
         }
         launchDict[launchID] = launch
 
-      } else if let launchID = launchID(fromLegacyOpenWindowListKey: key) {
+      } else if let launchID = UIState.launchID(fromLegacyOpenWindowListKey: key) {
         // Entry is type: Legacy Open Windows List
         let launch = launchDict[launchID] ?? LaunchState(launchID)
 
@@ -530,7 +533,7 @@ final class UIState {
 
         if migrateLegacyPrefEntries {
           // Cleanup: migrate legacy key to modern key
-          let newKey = makeOpenWindowListKey(forLaunchID: launch.id)
+          let newKey = UIState.makeOpenWindowListKey(forLaunchID: launch.id)
           UserDefaults.standard.setValue(value, forKey: newKey)
           log.warn("Copied legacy pref entry: \(key.quoted) → \(newKey)")
           UserDefaults.standard.removeObject(forKey: key)
@@ -565,7 +568,7 @@ final class UIState {
           // Remember that we are iterating backwards, so all data should be accounted for.
 
           if launch.savedWindows != nil {
-            let key = makeOpenWindowListKey(forLaunchID: launch.id)
+            let key = UIState.makeOpenWindowListKey(forLaunchID: launch.id)
             log.errorDebugAlert("Deleting orphaned pref entry \(key.quoted) (value=\(launch.savedWindowsDescription))")
             UserDefaults.standard.removeObject(forKey: key)
             countEntriesDeleted += 1
@@ -692,7 +695,7 @@ final class UIState {
       let launchName = UIState.launchName(forID: launch.id)
 
       if launch.savedWindows != nil {
-        let windowListKey = makeOpenWindowListKey(forLaunchID: launch.id)
+        let windowListKey = UIState.makeOpenWindowListKey(forLaunchID: launch.id)
         log.debug("Clearing saved list of open windows (pref key: \(windowListKey.quoted))")
         UserDefaults.standard.removeObject(forKey: windowListKey)
       }

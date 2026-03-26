@@ -141,9 +141,11 @@ struct AppDetailsLogging {
   /// Log all the available [screens](https://developer.apple.com/documentation/appkit/nsscreen) and all the
   /// connected displays.
   private func logScreenDetails() {
-    DisplayController.shared.addNewDisplays()
-    NSScreen.screens.enumerated().forEach { screen in
-      NSScreen.log("NSScreen.screens[\(screen.offset)]" , screen.element)
+    Task {
+      await DisplayController.shared.addNewDisplays()
+      NSScreen.screens.enumerated().forEach { screen in
+        NSScreen.log("NSScreen.screens[\(screen.offset)]" , screen.element)
+      }
     }
   }
 

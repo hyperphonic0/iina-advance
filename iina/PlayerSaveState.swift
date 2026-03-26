@@ -1622,9 +1622,6 @@ extension PlayerCore {
     /// `videoGeo`: use supplied GeometrySet for most up-to-date data (avoiding complex logic to derive it)
     props[PropName.videoGeo.rawValue] = geo.video.toCSV()
 
-    let screenMetaCSVList: [String] = UIState.shared.cachedScreens.values.map{$0.toCSV()}
-    props[PropName.screens.rawValue] = screenMetaCSVList
-
     // - Misc window state
 
     if Preference.bool(for: .autoSwitchToMusicMode) {
@@ -1784,15 +1781,30 @@ extension PlayerCore {
     return props
   }
 
-  // Saves this player's state asynchronously
-  func saveState() {
-    guard isSaveEnabled else { return }
-    guard pwc.loaded else { return }
-    guard !isRestoring else {
-      log.trace("Skipping player state save: still restoring previous state")
-      return
+  nonisolated func saveStatePeriodicallyForPlayback() {
+    Task { @MainActor in
+      if isSaveEnabled {
+        // Ensure user can resume playback by periodically saving
+        let now = Date().timeIntervalSince1970
+        let secSinceLastSave = now - lastStateSaveTime
+        if secSinceLastSave >= Constants.TimeInterval.playTimeSaveStateFrequency {
+          log.trace("SyncUI: another \(Constants.TimeInterval.playTimeSaveStateFrequency)s has passed: saving player state")
+          saveStateFromMainActor()
+          lastStateSaveTime = now
+        }
+      }
     }
+  }
 
+  // Saves this player's state asynchronously
+  nonisolated func saveState() {
+    Task { @MainActor in
+      saveStateFromMainActor()
+    }
+  }
+
+  @MainActor
+  private func saveStateFromMainActor() {
     /// Runs asynchronously in background queue to avoid blocking UI.
     /// Cuts down on duplicate work via delay and ticket check.
     saveUIStateDebouncer.run { [self] in
@@ -1804,9 +1816,18 @@ extension PlayerCore {
       }
 
       guard let pwc = self.pwc else { return }
-      DispatchQueue.main.async {
+      DispatchQueue.main.async { [self] in
         guard pwc.loaded else {
           pwc.log.trace("Skipping player state save: player window is not loaded")
+          return
+        }
+        guard UIState.shared.isSaveEnabled else {
+          log.verbose("Player state save is disabled. Disabling saveUIStateDebouncer")
+          saveUIStateDebouncer.enabled = false
+          return
+        }
+        guard !isRestoring else {
+          log.trace("Skipping player state save: still restoring previous state")
           return
         }
         pwc.animationPipeline.submitInstantTask { [self] in
@@ -1834,8 +1855,10 @@ extension PlayerCore {
       if Preference.bool(for: .logPlayerSave) {
         log.trace("Saving player state: \(properties)")
       }
-      UIState.shared.saveState(forPlayerID: playerLabel, properties: properties)
-      log.verbose("Saved player state in \(sw.secElapsedString)")
+      Task { @MainActor in
+        UIState.shared.saveState(forPlayerID: playerLabel, properties: properties)
+        log.verbose("Saved player state in \(sw.secElapsedString)")
+      }
     }
   }
 
@@ -1892,6 +1915,9 @@ extension PlayerWindowController {
       isPausedPriorToInteractiveMode.yn,
       isZoomedViaGesture.yn,
     ].joined(separator: ",")
+
+    let screenMetaCSVList: [String] = UIState.shared.cachedScreens.values.map{$0.toCSV()}
+    props[PropName.screens.rawValue] = screenMetaCSVList
 
     return (geo, currentLayout, props)
   }

@@ -11,6 +11,7 @@ class Debouncer {
   private let delay: TimeInterval
   private let queue: DispatchQueue
   private var lastRunTS: Date = Date(timeIntervalSince1970: 0)
+  var enabled: Bool = true
 
 #if DEBUG
   // Measuring the number of dropped tasks indicates the amount of work saved, so is helpful in quantifying the
@@ -24,6 +25,7 @@ class Debouncer {
   }
 
   func run(_ taskFunc: @escaping () -> Void) {
+    guard enabled else { return }
     let currentTicket = $ticketCount.withLock {
       $0 += 1
       return $0

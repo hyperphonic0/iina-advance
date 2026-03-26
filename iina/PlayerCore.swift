@@ -60,10 +60,10 @@ final class PlayerCore: NSObject {
   /// If `false`, has player functionality without use of a player window. Must be `true` to show a player window.
   var isInteractivePlayer = false
 
-  var isSaveEnabled: Bool { isInteractivePlayer && UIState.shared.isSaveEnabled }
+  @MainActor var isSaveEnabled: Bool { isInteractivePlayer && UIState.shared.isSaveEnabled }
 
   /// Time of the last player state save when called by `updatePlaybackInfo`.
-  private var lastStateSaveTime = Date().timeIntervalSince1970
+  var lastStateSaveTime = Date().timeIntervalSince1970
 
   /// After mpvInit, contains both the user options in Settings > Advanced, + commandLineArgs
   var userOptions: [MPVOptPair]
@@ -2963,25 +2963,13 @@ final class PlayerCore: NSObject {
 
       rangesDidChange = cacheStateOld.cachedRanges.count != cacheStateNew.cachedRanges.count
       || zip(cacheStateNew.cachedRanges, cacheStateOld.cachedRanges).contains(where: { $0.0 != $1.0 || $0.1 != $1.1 })
-//      if rangesDidChange {
-//        NSLog("   *** CACHED RANGES: \(cachedRanges.count): \(cachedRanges)")
-//      }
     } else {
       cacheState = nil
       rangesDidChange = false
     }
 
-    if isSaveEnabled {
-      // Ensure user can resume playback by periodically saving
-      let now = Date().timeIntervalSince1970
-      let secSinceLastSave = now - lastStateSaveTime
-      if secSinceLastSave >= Constants.TimeInterval.playTimeSaveStateFrequency {
-        log.trace("SyncUI: another \(Constants.TimeInterval.playTimeSaveStateFrequency)s has passed: saving player state")
-        saveState()
-        lastStateSaveTime = now
-      }
-    }
-
+    saveStatePeriodicallyForPlayback()
+    
     return (timeInfo, cacheState, rangesDidChange)
   }
 

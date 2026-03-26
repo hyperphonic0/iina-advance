@@ -10,7 +10,7 @@ import Combine
 
 /// Handles application shutdown
 class ShutdownHandler {
-  private(set) var isTerminating = false
+  @MainActor private(set) var isTerminating = false
 
   /// Whether the shutdown sequence timed out.
   private var shutdownTimedOut = false
