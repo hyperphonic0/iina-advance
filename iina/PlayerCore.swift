@@ -2392,6 +2392,11 @@ final class PlayerCore: NSObject {
   func setQuickSettingsViewNeedsUpdate() {
     guard let pwc, pwc.loaded else { return }
     pwc.animationPipeline.doAfterGTFs{ [self] in
+      // Bit of a kludge: often we are called in response to video settings changes (e.g. sub-scale changed),
+      // which may need to do a forced draw if paused to show the changes. But since `displayActive` needs
+      // to be called via the main actor, just call it here instead of trying to add a separate animation task
+      // to every case, which clutters the code and has higher risk of bugs from missing something.
+      pwc.videoView.displayActive()
       reloadQuickSettingsViewNow()
     }
   }
@@ -2399,7 +2404,6 @@ final class PlayerCore: NSObject {
   @MainActor
   func reloadQuickSettingsViewNow() {
     guard !isStopping else { return }
-
     pwc.quickSettingView.reloadCurrentTab()
   }
 
