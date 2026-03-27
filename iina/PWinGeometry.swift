@@ -402,57 +402,53 @@ struct PWinGeometry: Equatable, CustomStringConvertible, Sendable {
   ///
   var offsetsToKeepVideoAwayFromInsideBars: MarginQuad {
     // Start with equal margins for calculation, despite whatever the actual distribution is
-    let vpMarginsTotalWidth = viewportMargins.totalWidth
-    let vpMarginsTotalHeight = viewportMargins.totalHeight
+    let vpMarginsTotalWidth = max(0, viewportMargins.totalWidth)
+    let vpMarginsTotalHeight = max(0, viewportMargins.totalHeight)
     let isLetterboxed = vpMarginsTotalHeight > vpMarginsTotalWidth
 
     if isLetterboxed {
       // Has black margins on top and bottom. No free space on the sides.
+
+      // First allocate:
+      // - (up to) all of the top margin to offset the top inside bar,
+      // - (up to) all of the bottom margin to offset the bottom inside bar
       let vpMarginForTopOrBtm = vpMarginsTotalHeight * 0.5
-      let topDeficit = max(0, insideBars.top - vpMarginForTopOrBtm)
-      let btmDeficit = max(0, insideBars.bottom - vpMarginForTopOrBtm)
+      let vpMarginTop = vpMarginForTopOrBtm.rounded(.up)
+      let vpMarginBtm = vpMarginForTopOrBtm.rounded(.down)
+      var topAdjustment = min(insideBars.top, vpMarginTop)
+      var btmAdjustment = min(insideBars.bottom, vpMarginBtm)
+      assert(topAdjustment >= 0 && btmAdjustment >= 0, "Either topAdjustment (\(topAdjustment)) or btmAdjustment (\(btmAdjustment)) is negative!")
 
-      let needsMoreAtBtm = btmDeficit > topDeficit
-
-      if topDeficit > 0 && btmDeficit > 0 {
-        let avgDeficit = min((topDeficit + btmDeficit), vpMarginsTotalHeight) * 0.5
-        if needsMoreAtBtm {
-          return .init(bottom: avgDeficit)
-        } else {
-          return .init(top: avgDeficit)
-        }
-      } else if needsMoreAtBtm {
-        // Adding to btm (shifting upwards). Use surplus from top
-        let topSurplus = max(0, vpMarginForTopOrBtm - insideBars.top)
-        return .init(bottom: min(btmDeficit, topSurplus) * 2)
+      // Now, if either top or btm still needs more space, and the opposing side has not used up all its space,
+      // then allocate the remainder to the side in need:
+      let remainingTopDeficit = insideBars.top - topAdjustment
+      let remainingBtmDeficit = insideBars.bottom - btmAdjustment
+      let remainingSpaceToDistribute = vpMarginsTotalHeight - topAdjustment - btmAdjustment
+      if remainingTopDeficit > 0 {
+        topAdjustment += min(remainingTopDeficit, remainingSpaceToDistribute)
       } else {
-        let btmSurplus = max(0, vpMarginForTopOrBtm - insideBars.bottom)
-        return .init(top: min(topDeficit, btmSurplus) * 2)
+        btmAdjustment += min(remainingBtmDeficit, remainingSpaceToDistribute)
       }
-
+      return .init(top: topAdjustment, bottom: btmAdjustment)
     } else {  // Pillar boxed
       // Has black margins on leading & trailing. No free space on the top or bottom.
+      // Do the same for handling of pillar box & leading/trailing as for letter box & top/bottom (see above).
       let vpMarginForLeadingOrTrailing = vpMarginsTotalWidth * 0.5
-      let leadingDeficit = max(0, insideBars.leading - vpMarginForLeadingOrTrailing)
-      let trailingDeficit = max(0, insideBars.trailing - vpMarginForLeadingOrTrailing)
+      let vpMarginLead = vpMarginForLeadingOrTrailing.rounded(.up)
+      let vpMarginTrail = vpMarginForLeadingOrTrailing.rounded(.down)
+      var leadAdjustment = min(insideBars.leading, vpMarginLead)
+      var trailAdjustment = min(insideBars.trailing, vpMarginTrail)
+      assert(leadAdjustment >= 0 && trailAdjustment >= 0, "Either leadAdjustment (\(leadAdjustment)) or trailAdjustment (\(trailAdjustment)) is negative!")
 
-      let needsMoreAtTrailing = trailingDeficit > leadingDeficit
-
-      if leadingDeficit > 0 && trailingDeficit > 0 {
-        let avgDeficit = min((leadingDeficit + trailingDeficit), vpMarginsTotalWidth) * 0.5
-        if needsMoreAtTrailing {
-          return .init(trailing: avgDeficit)
-        } else {
-          return .init(leading: avgDeficit)
-        }
-      } else if needsMoreAtTrailing {
-        // Adding to trailing (shifting leading-wards). Use surplus from leading
-        let leadingSurplus = max(0, vpMarginForLeadingOrTrailing - insideBars.leading)
-        return .init(trailing: min(trailingDeficit, leadingSurplus) * 2)
+      let remainingLeadDeficit = insideBars.leading - leadAdjustment
+      let remainingTrailDeficit = insideBars.trailing - trailAdjustment
+      let remainingSpaceToDistribute = vpMarginsTotalWidth - leadAdjustment - trailAdjustment
+      if remainingLeadDeficit > 0 {
+        leadAdjustment += min(remainingLeadDeficit, remainingSpaceToDistribute)
       } else {
-        let trailingSurplus = max(0, vpMarginForLeadingOrTrailing - insideBars.trailing)
-        return .init(leading: min(leadingDeficit, trailingSurplus) * 2)
+        trailAdjustment += min(remainingTrailDeficit, remainingSpaceToDistribute)
       }
+      return .init(trailing: trailAdjustment, leading: leadAdjustment)
     }
   }
 
