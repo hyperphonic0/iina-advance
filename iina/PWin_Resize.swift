@@ -42,7 +42,7 @@ extension PlayerWindowController {
 
   func windowDidResize(_ notification: Notification) {
     // Trigger forced draws (plugs loophole for window resize when not covered by windowWillResize):
-    videoView.activateForcedRedraws()
+    videoView.enterAsynchronousMode()
   }
 
   /// NSWindowDelegate: `windowWillResize`: pretty important. Called by AppKit when it wants to resize the window.
@@ -230,7 +230,7 @@ extension PlayerWindowController {
                                     _ transitionCategory: TransitionCategory = .none) {
 
     // Trigger forced draws so that mpv can [try its best to] redraw the video without distortion during window resize:
-    videoView.activateForcedRedraws()
+    videoView.enterAsynchronousMode()
 
     // These may no longer be aligned correctly. Just hide them
     hideSeekPreviewImmediately()

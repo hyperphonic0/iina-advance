@@ -411,7 +411,7 @@ extension PlayerWindowController {
     }
 
     if transition.isOpeningViewport {
-      videoView.activateForcedRedraws()
+      videoView.enterAsynchronousMode()
 
       // Show default album art if no video track selected
       if let currentPlayback = player.info.currentPlayback, currentPlayback.state.isAtLeast(.loaded), !player.info.isVideoTrackSelected {

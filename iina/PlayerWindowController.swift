@@ -921,7 +921,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
         // Need to call this here, or else when opening directly to fullscreen, window title is just "Window"
         updateTitle()
         window?.isExcludedFromWindowsMenu = false
-        videoView.activateForcedRedraws()  // needed if restoring while paused
+        videoView.enterAsynchronousMode()  // needed if restoring while paused
       })
 
       let pendingTasks = pendingVideoGeoUpdateTasks
@@ -1261,7 +1261,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
   func windowDidChangeOcclusionState(_ notification: Notification) {
     log.verbose("WndDidChangeOcclusionState received")
     // In case OpenGL buffer was emptied while window was hidden:
-    videoView.forceDraw()
+    videoView.enterAsynchronousMode()
   }
 
   func colorSpaceDidChange(_ notification: Notification) {

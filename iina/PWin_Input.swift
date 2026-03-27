@@ -74,7 +74,7 @@ extension PlayerWindowController {
     // Some script bindings will draw to the video area. We don't know which will, but
     // if the DisplayLink is not active the updates will not be displayed.
     // So start the DisplayLink temporily if not already running:
-    videoView.forceDraw()
+    videoView.enterAsynchronousMode()
 
     if keyBinding.isIINACommand {
       // - IINA command (exact)

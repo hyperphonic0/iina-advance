@@ -31,7 +31,7 @@ class GLVideoLayer: CAOpenGLLayer {
   private var fbo: GLint = 1
 
   private var needsMPVRender = false
-  private var forceDraw = false
+  private var forceRender = false
   var asynchronousModeStartTime: TimeInterval?
 
   /// To enable `LOG_VIDEO_LAYER`:
@@ -148,9 +148,9 @@ class GLVideoLayer: CAOpenGLLayer {
     }
     printStats()
 #endif
-    // Prevent crash if trying to use forceDraw when vid=0 (usually when toggling video on or off)
+    // Prevent crash if trying to use forceRender when vid=0 (usually when toggling video on or off)
     guard videoView.isReadyToRender else { return false }
-    if forceDraw { return true }
+    if forceRender { return true }
     return shouldRenderUpdateFrame()
   }
 
@@ -268,11 +268,11 @@ class GLVideoLayer: CAOpenGLLayer {
       guard lockAndSetOpenGLContext() else { return }
       defer { unlockOpenGLContext() }
 
-      // The properties forceDraw and needsMPVRender are always accessed while holding isUninited's
+      // The properties forceRender and needsMPVRender are always accessed while holding openGLContext's
       // lock. This avoids the need for separate locks to avoid data races with these flags. No need
       // to check isUninited at this point.
       needsMPVRender = true
-      if forced { forceDraw = true }
+      if forced { forceRender = true }
     }
 
     // Must not call display while holding isUninited's lock as that method will attempt to acquire
@@ -296,11 +296,7 @@ class GLVideoLayer: CAOpenGLLayer {
     defer { unlockOpenGLContext() }
     guard !videoView.isUninited else { return }
 
-    guard !forceDraw else {
-      forceDraw = false
-      return
-    }
-    guard needsMPVRender else { return }
+    guard needsMPVRender || forceRender else { return }
 
     // Neither canDraw nor draw(inCGLContext:) were called by AppKit, needs a skip render.
     // This can happen when IINA is playing in another space, as might occur when just playing
@@ -317,6 +313,7 @@ class GLVideoLayer: CAOpenGLLayer {
       }
     }
     needsMPVRender = false
+    forceRender = false
   }
 
   /// Initialize the `mpv` renderer.

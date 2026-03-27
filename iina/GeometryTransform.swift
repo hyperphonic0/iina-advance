@@ -137,7 +137,7 @@ struct GeometryTransform: Sendable {
     let prevSessionState = pwc.sessionState
 
     // In case video is paused...
-    pwc.videoView.activateForcedRedraws()
+    pwc.videoView.enterAsynchronousMode()
 
     // MARK: - STAGE 2
     // -- mpv queue -------------------------------------------------------------------------
@@ -612,7 +612,7 @@ struct GeometryTransform: Sendable {
       // Must force drawing to cover the case where this player was previously used to play a video
       // and is now playing an audio file without an album cover and without using music mode.
       // See issue #5403.
-      pwc.videoView.forceDraw()
+      pwc.videoView.enterAsynchronousMode()
 
       if let onSuccess = tf.onSuccess {
         onSuccess()
@@ -761,7 +761,7 @@ struct GeometryTransform: Sendable {
 
         /// This will fire a notification to `AppDelegate` which will respond by calling `showWindow` when all windows are ready. Post this always.
         log.verbose("[GTF:\(name)] Done with initial layout: posting windowIsReadyToShow")
-        pwc.videoView.activateForcedRedraws()  // needed if restoring while paused
+        pwc.videoView.enterAsynchronousMode()  // needed if restoring while paused
         pwc.postWindowIsReadyToShow()
       }
     }

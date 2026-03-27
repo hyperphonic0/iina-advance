@@ -315,7 +315,7 @@ extension MPVController {
       guard let pwc = player.pwc, pwc.loaded else { return }
       player.sendOSD(.videoZoom(zoom))
       DispatchQueue.main.async { [self] in
-        player.videoView.activateForcedRedraws()
+        player.videoView.enterAsynchronousMode()
       }
 
     case MPVOption.Video.videoPanX:
@@ -323,7 +323,7 @@ extension MPVController {
       player.info.videoPanX = panX
       guard let pwc = player.pwc, pwc.loaded else { return }
       DispatchQueue.main.async { [self] in
-        player.videoView.activateForcedRedraws()
+        player.videoView.enterAsynchronousMode()
       }
 
     case MPVOption.Video.videoPanY:
@@ -331,7 +331,7 @@ extension MPVController {
       player.info.videoPanY = panY
       guard let pwc = player.pwc, pwc.loaded else { return }
       DispatchQueue.main.async { [self] in
-        player.videoView.activateForcedRedraws()
+        player.videoView.enterAsynchronousMode()
       }
 
     case MPVProperty.dwidth:

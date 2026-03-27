@@ -220,14 +220,7 @@ class VideoView: NSView {
     return true
   }
 
-  func activateForcedRedraws() {
-    guard needsForcedRedraws() else { return }
-    log.trace("Activating forced redraws")
-    enterAsynchronousMode()
-    displayActive()
-  }
-
-  /// Deprecated! Use `activateForcedRedraws` instead.
+  /// Deprecated! Use `enterAsynchronousMode` instead.
   @MainActor
   func forceDraw() {
     guard needsForcedRedraws() else { return }
