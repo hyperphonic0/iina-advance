@@ -213,20 +213,6 @@ class VideoView: NSView {
 
   // MARK: - Misc
 
-  @MainActor
-  func needsForcedRedraws() -> Bool {
-    guard player.pwc.loaded, !AppDelegate.shared.isTerminating else { return false }
-    guard player.videoView.isVidAlbumArt || player.info.isPaused else { return false }
-    return true
-  }
-
-  /// Deprecated! Use `enterAsynchronousMode` instead.
-  @MainActor
-  func forceDraw() {
-    guard needsForcedRedraws() else { return }
-    glLayer?.draw(forced: true)
-  }
-
   func addShadowForInteractiveMode() {
     guard let videoLayer = layer else { return }
     videoLayer.shadowColor = .black

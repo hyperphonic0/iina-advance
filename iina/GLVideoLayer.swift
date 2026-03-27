@@ -31,7 +31,6 @@ class GLVideoLayer: CAOpenGLLayer {
   private var fbo: GLint = 1
 
   private var needsMPVRender = false
-  private var forceRender = false
   var asynchronousModeStartTime: TimeInterval?
 
   /// To enable `LOG_VIDEO_LAYER`:
@@ -150,7 +149,7 @@ class GLVideoLayer: CAOpenGLLayer {
 #endif
     // Prevent crash if trying to use forceRender when vid=0 (usually when toggling video on or off)
     guard videoView.isReadyToRender else { return false }
-    if forceRender { return true }
+    if isAsynchronous { return true }
     return shouldRenderUpdateFrame()
   }
 
@@ -224,7 +223,7 @@ class GLVideoLayer: CAOpenGLLayer {
     isAsynchronous = true
   }
 
-  func drawAsync(forced: Bool = false, onSuccess: (() -> Void)? = nil) {
+  func drawAsync(onSuccess: (() -> Void)? = nil) {
     $currentQueueSize.withLock { $0 += 1 }
     mpvGLQueue.async { [self] in
       let queueSize = $currentQueueSize.withLock {
@@ -237,7 +236,7 @@ class GLVideoLayer: CAOpenGLLayer {
       // the video's FPS already. And it makes no sense to fall behind because that just creates video latency.
       guard queueSize <= 1 else { return }
 
-      draw(forced: forced)
+      draw()
       if let onSuccess {
         onSuccess()
       }
@@ -251,9 +250,9 @@ class GLVideoLayer: CAOpenGLLayer {
 
   /// Although this generates a warning in Xcode, synchronous drawing via the DisplayLink seems far smoother.
   /// Despite Xcode's declarations, no lockup has yet been observed.
-  func drawSync(forced: Bool = false, onSuccess: (() -> Void)? = nil) {
+  func drawSync(onSuccess: (() -> Void)? = nil) {
     guard !videoView.isUninited else { return }
-    draw(forced: forced)
+    draw()
     mpvReportSwap()
 
     if let onSuccess {
@@ -261,7 +260,7 @@ class GLVideoLayer: CAOpenGLLayer {
     }
   }
 
-  func draw(forced: Bool = false) {
+  func draw() {
     assert(DispatchQueue.current == nil || DispatchQueue.current!.qos == DispatchQoS.userInteractive,
            "Unexpected DQ priority for: \(DispatchQueue.current!.label)")
     do {
@@ -272,7 +271,6 @@ class GLVideoLayer: CAOpenGLLayer {
       // lock. This avoids the need for separate locks to avoid data races with these flags. No need
       // to check isUninited at this point.
       needsMPVRender = true
-      if forced { forceRender = true }
     }
 
     // Must not call display while holding isUninited's lock as that method will attempt to acquire
@@ -296,7 +294,7 @@ class GLVideoLayer: CAOpenGLLayer {
     defer { unlockOpenGLContext() }
     guard !videoView.isUninited else { return }
 
-    guard needsMPVRender || forceRender else { return }
+    guard needsMPVRender || isAsynchronous else { return }
 
     // Neither canDraw nor draw(inCGLContext:) were called by AppKit, needs a skip render.
     // This can happen when IINA is playing in another space, as might occur when just playing
@@ -313,7 +311,6 @@ class GLVideoLayer: CAOpenGLLayer {
       }
     }
     needsMPVRender = false
-    forceRender = false
   }
 
   /// Initialize the `mpv` renderer.
