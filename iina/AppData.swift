@@ -199,7 +199,7 @@ struct TimeConstants {
   static let keyBindingsSearchDebounceDelay: TimeInterval = 0.1
 
   static let pastLaunchResponseTimeout = 1.0
-  static let asynchronousModeTimeout: TimeInterval = 2.0
+  static let asynchronousModeTimeout: TimeInterval = 1.5
   static let dislpayLinkStatusCheckInterval: TimeInterval = 0.5
 
   // TimeoutTimer timeouts

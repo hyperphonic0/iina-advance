@@ -252,12 +252,18 @@ func displayLinkCallback(
   _ context: UnsafeMutableRawPointer?) -> CVReturn {
     let glVideoLayer = unsafeBitCast(context, to: GLVideoLayer.self)
 
-    glVideoLayer.drawAsync(onSuccess: {
+    let onSuccessCallback = {
       do {
         guard !glVideoLayer.videoView.isUninited else { return }
         glVideoLayer.videoView.displayLinkDidFire()
       }
-    })
+    }
+
+    if glVideoLayer.isAsynchronous {
+      glVideoLayer.drawSync(onSuccess: onSuccessCallback)
+    } else {
+      glVideoLayer.drawAsync(onSuccess: onSuccessCallback)
+    }
 
     return kCVReturnSuccess
   }

@@ -31,6 +31,7 @@ extension PlayerWindowController {
     // Shut down all animations for the duration of live resize!
     // This way the asynchrounous unprotected updates in `windowWillResize` will (hopefully) not interfere with other animations.
     animationPipeline.enableRunning = false
+    videoView.enterAsynchronousMode()
   }
 
   func windowDidEndLiveResize(_ notification: Notification) {

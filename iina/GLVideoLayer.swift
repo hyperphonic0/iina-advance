@@ -21,17 +21,19 @@ class GLVideoLayer: CAOpenGLLayer {
   var openGLContext: CGLContextObj! = nil
 
   private var bufferDepth: GLint = 8
-  @Atomic var currentQueueSize: Int = 0
 
   private let cglContext: CGLContextObj
   private let cglPixelFormat: CGLPixelFormatObj
 
   private let mpvGLQueue = DispatchQueue(label: "com.iina_advance.mpvgl", qos: .userInteractive)
+  @Atomic var currentQueueSize: Int = 0
 
   private var fbo: GLint = 1
 
   private var needsMPVRender = false
   var asynchronousModeStartTime: TimeInterval?
+
+  var lastRenderTime: TimeInterval = CFAbsoluteTimeGetCurrent()
 
   /// To enable `LOG_VIDEO_LAYER`:
   /// 1. In Xcode, go to `iina` project > select `iina` target > Build Settings > search for `Custom Flags` (under `Swift Compiler`)
@@ -78,7 +80,7 @@ class GLVideoLayer: CAOpenGLLayer {
     isOpaque = true
     /// Do not set to `[.layerWidthSizable, .layerHeightSizable]` resizable! It messes up during window resize if the trailing inside sidebar is open.
     /// HOWEVER: the above mask *is* needed when in PiP so that it resizes with the PiP panel.
-    autoresizingMask = []
+    autoresizingMask = [.layerWidthSizable, .layerHeightSizable]
     if bufferDepth > 8 {
       contentsFormat = .RGBA16Float
     }
@@ -196,6 +198,9 @@ class GLVideoLayer: CAOpenGLLayer {
               mpv_render_param(type: MPV_RENDER_PARAM_DEPTH, data:.init(bufferDepth)),
               mpv_render_param()
             ]
+            /// # IGNORE THIS XCODE HANG RISK WARNING!
+            /// Calling this directly from the DisplayLink instead of enqueuing in its own DispatchQueue results in reduced draw latency, but
+            /// it is only used for brief periods during animations which include a timeout.
             mpv_render_context_render(context, &params)
             ignoreGLError()
           }
@@ -224,6 +229,10 @@ class GLVideoLayer: CAOpenGLLayer {
   }
 
   func drawAsync(onSuccess: (() -> Void)? = nil) {
+    // Playback is noticeable smoother for ≥30fps videos if this is called immediately instead of enqueued…
+    // Could this cause a race condition which results in the draw call being off by a frame? Do we care?
+    mpvReportSwap()
+
     $currentQueueSize.withLock { $0 += 1 }
     mpvGLQueue.async { [self] in
       let queueSize = $currentQueueSize.withLock {
@@ -236,46 +245,22 @@ class GLVideoLayer: CAOpenGLLayer {
       // the video's FPS already. And it makes no sense to fall behind because that just creates video latency.
       guard queueSize <= 1 else { return }
 
-      draw()
+      display()
       if let onSuccess {
         onSuccess()
       }
-    }
-
-    // Could this cause a race condition which results in the draw call being off by a frame? Do we care?
-    if !videoView.isUninited {
-      mpvReportSwap()
     }
   }
 
   /// Although this generates a warning in Xcode, synchronous drawing via the DisplayLink seems far smoother.
   /// Despite Xcode's declarations, no lockup has yet been observed.
   func drawSync(onSuccess: (() -> Void)? = nil) {
-    guard !videoView.isUninited else { return }
-    draw()
     mpvReportSwap()
+    display()
 
     if let onSuccess {
       onSuccess()
     }
-  }
-
-  func draw() {
-    assert(DispatchQueue.current == nil || DispatchQueue.current!.qos == DispatchQoS.userInteractive,
-           "Unexpected DQ priority for: \(DispatchQueue.current!.label)")
-    do {
-      guard lockAndSetOpenGLContext() else { return }
-      defer { unlockOpenGLContext() }
-
-      // The properties forceRender and needsMPVRender are always accessed while holding openGLContext's
-      // lock. This avoids the need for separate locks to avoid data races with these flags. No need
-      // to check isUninited at this point.
-      needsMPVRender = true
-    }
-
-    // Must not call display while holding isUninited's lock as that method will attempt to acquire
-    // the lock and our locks do not support recursion.
-    display()
   }
 
   override func display() {
@@ -372,6 +357,7 @@ class GLVideoLayer: CAOpenGLLayer {
 
   /// Called repeated by DisplayLink callback
   func mpvReportSwap() {
+    guard !videoView.isUninited else { return }
     guard let mpvRenderContext = mpvRenderContext else { return }
     mpv_render_context_report_swap(mpvRenderContext)
   }
