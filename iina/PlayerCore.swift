@@ -2129,16 +2129,10 @@ final class PlayerCore: NSObject {
         let shouldPause = getPauseFromUserOptions() ?? Preference.bool(for: .pauseWhenOpen)
         log.verbose("FileLoaded: in existing session: setting pause=\(shouldPause.yn)")
         mpv.setFlag(MPVOption.PlaybackControl.pause, shouldPause)
+      }
 
-        if !shouldPause {
-          // Normally the display link is started when finishLoading() calls initVideo.
-          // However if this player is being reused then the window will have already been loaded and
-          // windowDidLoad will not be called. If playback is not paused make sure the display link is
-          // active.
-          DispatchQueue.main.async {
-            pwc.videoView.displayActive()
-          }
-        }
+      DispatchQueue.main.async {
+        pwc.videoView.displayActive()
       }
     }
 
