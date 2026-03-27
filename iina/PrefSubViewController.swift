@@ -85,7 +85,9 @@ class PrefSubViewController: PreferenceViewController, PreferenceWindowEmbeddabl
     refreshSubSourceAccessoryView()
 
     NotificationCenter.default.addObserver(forName: .iinaPluginChanged, object: nil, queue: .main) { [unowned self] _ in
-      self.refreshSubSources()
+      Task { @MainActor [self] in
+        refreshSubSources()
+      }
     }
   }
 

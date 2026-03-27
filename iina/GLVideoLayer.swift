@@ -21,6 +21,7 @@ class GLVideoLayer: CAOpenGLLayer {
   var openGLContext: CGLContextObj! = nil
 
   private var bufferDepth: GLint = 8
+  @Atomic var currentQueueSize: Int = 0
 
   private let cglContext: CGLContextObj
   private let cglPixelFormat: CGLPixelFormatObj
@@ -196,10 +197,6 @@ class GLVideoLayer: CAOpenGLLayer {
               mpv_render_param(type: MPV_RENDER_PARAM_DEPTH, data:.init(bufferDepth)),
               mpv_render_param()
             ]
-            /// # IGNORE THIS XCODE HANG RISK WARNING!
-            /// Calling this directly from the DisplayLink instead of enqueuing in its own DispatchQueue results in reduced draw latency.
-            /// And we do not call `mpvReportSwap` until after this method returns, so mpv should detect buffer underruns and skip frames
-            /// appropriately.
             mpv_render_context_render(context, &params)
             ignoreGLError()
           }
@@ -228,7 +225,18 @@ class GLVideoLayer: CAOpenGLLayer {
   }
 
   func drawAsync(forced: Bool = false, onSuccess: (() -> Void)? = nil) {
+    $currentQueueSize.withLock { $0 += 1 }
     mpvGLQueue.async { [self] in
+      let queueSize = $currentQueueSize.withLock {
+        $0 -= 1
+        return $0
+      }
+
+      // Drop DQ tasks aggressively if under any load. Remember that one task is enqueued for each
+      // DisplayLink callback, which occurs at the rate of the display's FPS, which may be much higher than
+      // the video's FPS already. And it makes no sense to fall behind because that just creates video latency.
+      guard queueSize <= 1 else { return }
+
       draw(forced: forced)
       if let onSuccess {
         onSuccess()
