@@ -125,7 +125,7 @@ final class OSDState {
   fileprivate var lastDisplayedMsg: OSDMessage? = nil {
     didSet {
       guard lastDisplayedMsg != nil else { return }
-      lastDisplayedMsgTS = Date().timeIntervalSince1970
+      lastDisplayedMsgTS = CFAbsoluteTimeGetCurrent()
     }
   }
   var currentlyDisplayedMsg: OSDMessage? {
@@ -133,10 +133,10 @@ final class OSDState {
   }
   /// "Recently" here is defined as: having been shown in the last 0.25 sec.
   fileprivate func didShowLastMsgRecently() -> Bool {
-    return Date().timeIntervalSince1970 - lastDisplayedMsgTS < 0.25
+    return CFAbsoluteTimeGetCurrent() - lastDisplayedMsgTS < 0.25
   }
   fileprivate func didShowLastMsgSomewhatRecently() -> Bool {
-    return Date().timeIntervalSince1970 - lastDisplayedMsgTS < 0.5
+    return CFAbsoluteTimeGetCurrent() - lastDisplayedMsgTS < 0.5
   }
 
   fileprivate var textSizeLast: CGFloat = 0

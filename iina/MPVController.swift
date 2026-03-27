@@ -82,7 +82,7 @@ final class MPVController: NSObject {
   let mpvLogScanner: MPVLogScanner!
 
   var needRecordSeekTime: Bool = false
-  var recordedSeekStartTime: CFTimeInterval = 0
+  var recordedSeekStartTime: TimeInterval = 0
   var recordedSeekTimeListener: ((Double) -> Void)?
 
   @Atomic var hooks: [UInt64: MPVHookValue] = [:]

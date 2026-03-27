@@ -38,7 +38,7 @@ final class HistoryController {
 
   private let fileExistsDQ = DispatchQueue.newDQ(label: "History-File-BG", qos: .background)
   private(set) var fileExistsMap: [URL: Bool] = [:]
-  private var lastCompleteStatusReloadTime = Date(timeIntervalSince1970: 0)
+  private var lastCompleteStatusReloadTime: TimeInterval = 0
   /// See `stop` func
   private(set) var fileExistsDQ_ShutdownAck = false
 
@@ -255,7 +255,7 @@ final class HistoryController {
       return
     }
     // Force a timeout to trigger full status reload prior to calling historyListDidUpdate()
-    lastCompleteStatusReloadTime = Date(timeIntervalSince1970: 0)
+    lastCompleteStatusReloadTime = 0
     historyListDidUpdate()
 
     log.verbose("ReloadAll: done reading history file. Loading recentDocumentURLs")
@@ -629,7 +629,7 @@ final class HistoryController {
     guard !isAppTerminating else { return }
 
     // Do a full reload if too much time has gone by since the last full reload
-    let forceFullStatusReload = Date().timeIntervalSince(lastCompleteStatusReloadTime) > Constants.TimeInterval.historyTableCompleteFileStatusReload
+    let forceFullStatusReload = (CFAbsoluteTimeGetCurrent() - lastCompleteStatusReloadTime) > Constants.TimeInterval.historyTableCompleteFileStatusReload
     let sw = Utility.Stopwatch()
 
     var fileExistsMapUpdated: [URL: Bool] = forceFullStatusReload ? [:] : fileExistsMap
@@ -666,7 +666,7 @@ final class HistoryController {
     self.fileExistsMap = fileExistsMapUpdated
     log.trace("Filled in fileExists for \(processedCount) / \(examinedCount) histories (\(historyList.count - examinedCount - startIndex) remaining) in \(sw.secElapsedString), fullReload=\(forceFullStatusReload.yn) watchLater=\(watchLaterCount)")
     if forceFullStatusReload {
-      lastCompleteStatusReloadTime = Date()
+      lastCompleteStatusReloadTime = CFAbsoluteTimeGetCurrent()
     }
 
     guard !isAppTerminating else {

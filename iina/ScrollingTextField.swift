@@ -52,7 +52,7 @@ class ScrollingTextField: NSTextField {
       // Just return if already paused
       if pauseTime == nil {
         // Not already paused. Pause the animation now
-        pauseTime = Date().timeIntervalSince1970
+        pauseTime = CFAbsoluteTimeGetCurrent()
       }
       return
     }
@@ -62,7 +62,7 @@ class ScrollingTextField: NSTextField {
       // Need to mimic the elapsed time (between old baseTime & old pause time) to ensure offset continuity
       let elapsedTime = lastPauseTime - lastBaseTime
       pauseTime = nil
-      baseTime = Date().timeIntervalSince1970 - elapsedTime
+      baseTime = CFAbsoluteTimeGetCurrent() - elapsedTime
     }
     // Else if not paused but not yet started, just allow `draw()` to set `baseTime` whenever that happens.
 
@@ -70,7 +70,7 @@ class ScrollingTextField: NSTextField {
   }
 
   private func pauseAnimation() {
-    pauseTime = Date().timeIntervalSince1970
+    pauseTime = CFAbsoluteTimeGetCurrent()
   }
 
   private func resumeAnimation() {
@@ -78,9 +78,9 @@ class ScrollingTextField: NSTextField {
       let elapsedTime = lastPauseTime - lastBaseTime
       pauseTime = nil
       // Need to preserve the interval between now & baseTime to ensure offset continuity
-      baseTime = Date().timeIntervalSince1970 - elapsedTime
+      baseTime = CFAbsoluteTimeGetCurrent() - elapsedTime
     } else {
-      baseTime = Date().timeIntervalSince1970
+      baseTime = CFAbsoluteTimeGetCurrent()
     }
   }
 
@@ -101,7 +101,7 @@ class ScrollingTextField: NSTextField {
       reset()
     }
 
-    let baseTime: TimeInterval = self.baseTime ?? Date().timeIntervalSince1970
+    let baseTime: TimeInterval = self.baseTime ?? CFAbsoluteTimeGetCurrent()
     if self.baseTime == nil {
       self.baseTime = baseTime
     }
@@ -115,12 +115,12 @@ class ScrollingTextField: NSTextField {
       attributedStringValue.draw(at: drawPoint)
     } else {
       let initialWait = Constants.TimeInterval.scrollingLabelInitialWaitSec
-      let endTime = pauseTime ?? Date().timeIntervalSince1970
+      let endTime = pauseTime ?? CFAbsoluteTimeGetCurrent()
       let scrollOffsetSecs = max(0, endTime - baseTime - initialWait)
       let scrollOffset = scrollOffsetSecs * Constants.TimeInterval.scrollingLabelOffsetPerSec
       /// Loop back to beginning, but fudge the numbers to exclude the pause
       if appendedStringCopyWidth - scrollOffset < 0 {
-        self.baseTime = Date().timeIntervalSince1970 - initialWait
+        self.baseTime = CFAbsoluteTimeGetCurrent() - initialWait
         return
       } else {
         /// Subtract from X to scroll leftwards:

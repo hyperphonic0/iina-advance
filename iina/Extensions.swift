@@ -141,7 +141,7 @@ extension URL {
 
 extension Date {
   var timeIntervalToNow: TimeInterval {
-    return Date().timeIntervalSince(self)
+    return CFAbsoluteTimeGetCurrent() - timeIntervalSince1970
   }
 }
 

@@ -1785,7 +1785,7 @@ extension PlayerCore {
     Task { @MainActor in
       if isSaveEnabled {
         // Ensure user can resume playback by periodically saving
-        let now = Date().timeIntervalSince1970
+        let now = CFAbsoluteTimeGetCurrent()
         let secSinceLastSave = now - lastStateSaveTime
         if secSinceLastSave >= Constants.TimeInterval.playTimeSaveStateFrequency {
           log.trace("SyncUI: another \(Constants.TimeInterval.playTimeSaveStateFrequency)s has passed: saving player state")

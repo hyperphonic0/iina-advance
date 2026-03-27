@@ -72,6 +72,7 @@ struct AppData {
 }  /// end `struct AppData`
 
 
+// Need these to work around namespace conflicts
 typealias Str = String
 typealias TimeInt = TimeInterval
 

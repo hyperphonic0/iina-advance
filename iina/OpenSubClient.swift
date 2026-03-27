@@ -79,7 +79,7 @@ class OpenSubClient {
   /// token expired before 24 hours is reached in order to reduce the chance of a request failing with a 406 `invalid token` error.
   var loggedIn: Bool {
     guard token != nil, let tokenExpiration = tokenExpiration else { return false }
-    guard Date() < tokenExpiration else {
+    guard CFAbsoluteTimeGetCurrent() < tokenExpiration else {
       log("User session has expired")
       abandonUserSession()
       return false
@@ -147,7 +147,7 @@ class OpenSubClient {
   private var token: String?
 
   /// Time when the JWT will be considered expired by the client.
-  private var tokenExpiration: Date?
+  private var tokenExpiration: TimeInterval?
 
   /// Length of time a JWT is considered valid.
   ///
@@ -297,7 +297,7 @@ class OpenSubClient {
             // Use a fresh rate limiter to avoid delaying the next request.
             rateLimiter = RateLimiter()
             token = response.token
-            tokenExpiration = Date() + tokenLifetime
+            tokenExpiration = CFAbsoluteTimeGetCurrent() + tokenLifetime
             // Open Subtitles may direct the client to use a different host for further requests.
             guard let hostname = response.baseUrl else {
               return
@@ -675,7 +675,7 @@ class OpenSubClient {
         return
       }
       // Save the time at which current window ends and the quota resets.
-      resets = Date().timeIntervalSince1970 + Double(reset)
+      resets = CFAbsoluteTimeGetCurrent() + Double(reset)
       self.remaining = remaining
     }
   }

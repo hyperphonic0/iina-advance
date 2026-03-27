@@ -48,8 +48,8 @@ class ScrollSession {
   var rawDeltaTotal: CGFloat = 0
   var totalEventCount: Int = 0
   var actionCount: Int = 0
-  let startTime = Date()
-  var momentumStartTime: Date? = nil
+  let startTime: TimeInterval = CFAbsoluteTimeGetCurrent()
+  var momentumStartTime: TimeInterval? = nil
 #endif
   
   func addPendingEvent(_ event: NSEvent) {
@@ -219,7 +219,7 @@ class VirtualScrollWheel {
     guard wasScrolling else { return }
 
     scrollSessionDidEnd(session)
-    lastSessionEndTime = Date().timeIntervalSince1970
+    lastSessionEndTime = CFAbsoluteTimeGetCurrent()
 #if DEBUG
     if DebugConfig.enableScrollWheelDebug {
       log.verbose("ScrollWheel session ended")
@@ -271,7 +271,7 @@ class VirtualScrollWheel {
       case .smoothScrollMayBegin(let intentStartTime):
         guard let currentSession else { Logger.fatal("No current session for state \(state) → \(newState)") }
 
-        let now = Date().timeIntervalSince1970
+        let now = CFAbsoluteTimeGetCurrent()
         var startScrolling = false
 
         let timeElapsedSinceLastSessionEnd = now - lastSessionEndTime
@@ -279,7 +279,7 @@ class VirtualScrollWheel {
           startScrolling = true
           log.verbose("Time elapsed since last scroll (\(timeElapsedSinceLastSessionEnd.stringTrunc3f)) < instantConsecutiveScrollStartWindow (\(timeElapsedSinceLastSessionEnd.logStr)): starting new scroll session immediately")
         } else {
-          let timeElapsedSinceIntentStart = Date().timeIntervalSince1970 - intentStartTime
+          let timeElapsedSinceIntentStart = CFAbsoluteTimeGetCurrent() - intentStartTime
           if timeElapsedSinceIntentStart >= Constants.TimeInterval.minQualifyingScrollWheelDuration {
             if scrollSessionShouldBegin(currentSession) {
               startScrolling = true
@@ -321,7 +321,7 @@ class VirtualScrollWheel {
         scrollSessionTimer.cancel()
         state = .momentumScrollJustStarted
 #if DEBUG
-        currentSession?.momentumStartTime = Date()
+        currentSession?.momentumStartTime = CFAbsoluteTimeGetCurrent()
 #endif
       default:
         notScrolling()

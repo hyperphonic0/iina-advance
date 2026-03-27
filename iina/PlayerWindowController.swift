@@ -140,10 +140,10 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
   /// Make sure the event loop is emptied before setting to false again. Otherwise a simple click can result in a resize.
   /// Very kludgey, but nothing better discovered yet.
   /// See: `restartWindowResizeDenialPeriod()`
-  var denyWindowResizePeriodStartTime = Date()
+  var denyWindowResizePeriodStartTime: TimeInterval = 0
   var pendingResizeForScreenChange = false
 
-  var denyWindowScrollPeriodStartTime = Date()
+  var denyWindowScrollPeriodStartTime: TimeInterval = 0
 
   var modeToSetAfterExitingFullScreen: PlayerWindowMode? = nil
 
@@ -155,7 +155,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
   // - Mouse: see PWin_Input.swift
 
   /// When the speed arrow buttons were last clicked.
-  var lastForceTouchClick = Date()
+  var lastForceTouchClick: TimeInterval = 0
   /// The maximum pressure recorded when clicking on the speed arrow buttons.
   var maxPressure: Int = 0
   /// The value of speedValueIndex before Force Touch.
@@ -2362,7 +2362,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
 
           if maxPressure == 1 &&
               ((left ? currentSpeedIndex < indexSpeed1x - 1 : currentSpeedIndex > indexSpeed1x + 1) ||
-               Date().timeIntervalSince(lastForceTouchClick) < Constants.TimeInterval.minimumPressDuration) { // Single click ended
+               (CFAbsoluteTimeGetCurrent() - lastForceTouchClick) < Constants.TimeInterval.minimumPressDuration) { // Single click ended
             newSpeedIndex = oldSpeedValueIndex + directionUnit
           } else { // Force Touch or long press ended
             newSpeedIndex = indexSpeed1x
@@ -2372,7 +2372,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
           if clickPressure == 1 && maxPressure == 0 { // First press
             oldSpeedValueIndex = currentSpeedIndex
             newSpeedIndex = currentSpeedIndex + directionUnit
-            lastForceTouchClick = Date()
+            lastForceTouchClick = CFAbsoluteTimeGetCurrent()
           } else { // Force Touch
             newSpeedIndex = oldSpeedValueIndex + (clickPressure * directionUnit)
           }

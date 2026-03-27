@@ -33,12 +33,13 @@ class SliderScrollWheelDelegate: VirtualScrollWheel {
   override func scrollSessionDidEnd(_ session: ScrollSession) {
 #if DEBUG
     if DebugConfig.enableScrollWheelDebug, let player = slider.associatedPlayer {
-      let timeTotal = session.startTime.timeIntervalToNow
+      let timeTotal = CFAbsoluteTimeGetCurrent() - session.startTime
       let timeUser: TimeInterval
       let timeMsg: String
-      if let momTime = session.momentumStartTime?.timeIntervalToNow {
-        timeUser = timeTotal - momTime
-        timeMsg = "\(timeUser.string2FractionDigits)s user  +  \(momTime.string2FractionDigits)s inertia  =  \(timeTotal.string2FractionDigits)s"
+      if let momStartTime = session.momentumStartTime {
+        let momDuration = CFAbsoluteTimeGetCurrent() - momStartTime
+        timeUser = timeTotal - momDuration
+        timeMsg = "\(timeUser.string2FractionDigits)s user  +  \(momDuration.string2FractionDigits)s inertia  =  \(timeTotal.string2FractionDigits)s"
       } else {
         timeUser = timeTotal
         timeMsg = "\(timeTotal.string2FractionDigits)s"

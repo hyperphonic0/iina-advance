@@ -10,7 +10,7 @@ class Debouncer {
   @Atomic private(set) var ticketCount: Int = 0
   private let delay: TimeInterval
   private let queue: DispatchQueue
-  private var lastRunTS: Date = Date(timeIntervalSince1970: 0)
+  private var lastRunTS: TimeInterval = CFAbsoluteTimeGetCurrent()
   var enabled: Bool = true
 
 #if DEBUG
@@ -36,14 +36,14 @@ class Debouncer {
       // has a chance to run, it will invalidate the previous ticket, and as long as the pattern continues,
       // no tasks would run. Keep track of last run's timestamp, and ensure that in the case of heavy request
       // load, a task runs at least every `delay` seconds.
-      guard (currentTicket == ticketCount) || Date().timeIntervalSince(lastRunTS) > delay else {
+      guard (currentTicket == ticketCount) || (CFAbsoluteTimeGetCurrent() - lastRunTS) > delay else {
 #if DEBUG
         droppedCount += 1;
 #endif
         return
       }
       taskFunc()
-      lastRunTS = Date()
+      lastRunTS = CFAbsoluteTimeGetCurrent()
     }
   }
 

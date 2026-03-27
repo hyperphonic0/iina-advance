@@ -38,7 +38,7 @@ class GLVideoLayer: CAOpenGLLayer {
   /// 2. Set flag using -D prefix (without white spaces), for Debug, Release, etc. So this is: `-DLOG_VIDEO_LAYER`
 #if LOG_VIDEO_LAYER
   // For measuring frames per second
-  var lastPrintTime = Date().timeIntervalSince1970
+  var lastPrintTime = CFAbsoluteTimeGetCurrent()
   var displayCountTotal: Int = 0
   var displayCountLastPrint: Int = 0
   var canDrawCountTotal: Int = 0
@@ -51,7 +51,7 @@ class GLVideoLayer: CAOpenGLLayer {
   var lastHeight: Int32 = 0
 
   func printStats() {
-    let now = Date().timeIntervalSince1970
+    let now = CFAbsoluteTimeGetCurrent()
     let secsSinceLastPrint = now - lastPrintTime
     if secsSinceLastPrint >= 1.0 {  // print at most once per sec
       let displaysSinceLastPrint = displayCountTotal - displayCountLastPrint
@@ -213,7 +213,7 @@ class GLVideoLayer: CAOpenGLLayer {
   /// throw off the timing of each draw.
   @MainActor
   func enterAsynchronousMode() {
-    asynchronousModeStartTime = Date().timeIntervalSince1970
+    asynchronousModeStartTime = CFAbsoluteTimeGetCurrent()
     if !isAsynchronous {
       videoView.player.log.verbose("Entering asynchronous mode")
     }

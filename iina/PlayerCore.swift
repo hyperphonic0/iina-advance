@@ -63,7 +63,7 @@ final class PlayerCore: NSObject {
   @MainActor var isSaveEnabled: Bool { isInteractivePlayer && UIState.shared.isSaveEnabled }
 
   /// Time of the last player state save when called by `updatePlaybackInfo`.
-  var lastStateSaveTime = Date().timeIntervalSince1970
+  var lastStateSaveTime: TimeInterval = CFAbsoluteTimeGetCurrent()
 
   /// After mpvInit, contains both the user options in Settings > Advanced, + commandLineArgs
   var userOptions: [MPVOptPair]
@@ -2078,7 +2078,7 @@ final class PlayerCore: NSObject {
 
     // set "date last opened" attribute
     if let url = info.currentURL, url.isFileURL, !info.isMediaOnRemoteDrive {
-      let time = Date().timeIntervalSince1970
+      let time = CFAbsoluteTimeGetCurrent()
       var ts = timespec()
       ts.tv_sec = Int(time)
       ts.tv_nsec = Int(time.truncatingRemainder(dividingBy: 1) * 1_000_000_000)
