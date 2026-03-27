@@ -379,7 +379,7 @@ extension PlayerWindowController {
       let dragDistance = mouseDownLocationInWindow.distance(to: event.locationInWindow)
       guard dragDistance > Constants.Window.minInitialDragThreshold else { return }
 
-      log.verbose("PWin MouseDrag: minimum dragging distance was met (\(dragDistance))")
+      log.verbose("PWin MouseDrag: minimum dragging distance was met (\(Double(dragDistance).twoDecimalPlaces)")
       isDragging = true
     }
 

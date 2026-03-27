@@ -415,7 +415,7 @@ struct PlaybackTimeInfo {
       if let durationSec, positionSec > durationSec {
         pos = max(0.0, durationSec)
       } else {
-        pos = max(0.0, positionSec)
+        pos = max(0.0, positionSec.roundedTo6())
       }
     } else {
       pos = nil

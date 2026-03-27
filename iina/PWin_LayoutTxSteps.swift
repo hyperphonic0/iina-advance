@@ -1273,7 +1273,7 @@ extension PlayerWindowController {
   /// effectively swaps the whole title bar in or out), and (2) in native windowed mode, *always* show the title bar when
   /// the mouse hovers over it, because even if we set the document icon's alpha to 0, the user can still click on it.
   func hideNativeTitleBarViews(andSetAlpha setAlpha: Bool) {
-    log.verbose("Hiding native title bar views, setAlpha\(setAlpha.yn)")
+    log.verbose("Hiding native title bar views, setAlpha=\(setAlpha.yn)")
     if setAlpha {
       documentIconButton?.alphaValue = 0
       titleTextField?.alphaValue = 0

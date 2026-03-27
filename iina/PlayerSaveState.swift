@@ -1678,7 +1678,7 @@ extension PlayerCore {
 
       let volRemountURLs: [String] = playlist.compactMap{ $0.url.volumeRemountURL?.absoluteString ?? "" }
       props[PropName.playlistVolRemountURLs.rawValue] = volRemountURLs
-      log.verbose("Saved bookmarks & remountURLs for \(playlistBookmarks.reduce(0, { count, datum in count + (datum.isEmpty ? 0 : 1) } ))"
+      log.trace("Saved bookmarks & remountURLs for \(playlistBookmarks.reduce(0, { count, datum in count + (datum.isEmpty ? 0 : 1) } ))"
                   + " of \(playlistPaths.count) playlist items in \(sw.secElapsedString)")
     }
 
