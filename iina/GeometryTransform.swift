@@ -77,7 +77,7 @@ struct GeometryTransform: Sendable {
   private let onSuccess: (() -> Void)?
 
   init(_ name: String,
-       id pregeneratedID: Int? = nil,
+       pregeneratedID: Int? = nil,
        _ player: PlayerCore,
        currentPlayback: Playback? = nil,
        syncVideoParams: Bool = true,
@@ -87,9 +87,7 @@ struct GeometryTransform: Sendable {
        buildPWinGeoTransformTasks: ((GeometryTransform.ContextStage3) -> [IINAAnimation.Task])? = nil,
        onSuccess: (() -> Void)? = nil) {
     let pipeline = player.pwc.animationPipeline
-    self.id = pregeneratedID ?? pipeline.gtfLock.withLock {
-      pipeline.nextID_NoLock()
-    }
+    self.id = pregeneratedID ?? pipeline.gtfNextID()
     self.name = "\(name)-\(id)"
     self.player = player
     self.currentPlayback = currentPlayback ?? player.info.currentPlayback
@@ -103,9 +101,7 @@ struct GeometryTransform: Sendable {
 
   /// Convenience method which enqueues this GeometryTransform for execution.
   func submit() {
-    Task { @MainActor in
-      pwc.animationPipeline.submitGTF(self)
-    }
+    pwc.animationPipeline.submitGTF(self)
   }
 
   /// Aborts the transform (`animationPipeline` must always be notified for either success or failure).
@@ -120,6 +116,7 @@ struct GeometryTransform: Sendable {
   /// Use `IINAAnimation.Pipeline.submit` to execute a `GeometryTransform`.
   @MainActor
   func execute() {
+    log.verbose("[GTF:\(name)] Starting execution")
     // MARK: - STAGE 1
 
     /// Get a copy of videoGeo inside animationPipeline to ensure serial access.

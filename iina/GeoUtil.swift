@@ -8,7 +8,6 @@
 
 /// Utility functions for calculating window/view geometry.
 /// See: `PWinGeometry.swift`
-/// See: `MusicModeGeo.swift`
 struct GeoUtil {
 
   static func isWindowMaximized(windowFrame: NSRect, in screen: NSScreen) -> Bool {

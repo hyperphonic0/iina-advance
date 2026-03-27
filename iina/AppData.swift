@@ -177,6 +177,14 @@ struct Constants {
   /// Lua keybindings require level "debug" or higher, so don't set threshold to be stricter than this level.
   static let minMpvEventLogLevel = MPVLogLevel.debug
 
+  /// Setting this to `true` means that `vid`, `aid`, and track list can only be loaded after receiving `fileLoaded`
+  /// from mpv for the current media. This prevents IINA's default album art from being displayed while changing tracks,
+  /// but video might be briefly frozen instead.
+  ///
+  /// If set to `false`, `vid` can change to `0` while loading, and possibly the media's tracklist can be briefly
+  /// inaccurate or missing. Note that the IINA default album art will be shown while `vid=0`.
+  static let requireFileLoadedForTrackReload: Bool = false
+
   static let maxAttemptsForGetVideoParams = 6
 
   static let unknownProgress: Double = -1.0

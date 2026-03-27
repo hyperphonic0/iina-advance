@@ -377,7 +377,8 @@ extension IINAAnimation {
         if isDoneWithAllGTFs {
           if wantsVideoGeoSync, let player {
             wantsVideoGeoSync = false
-            let gtf = GeometryTransform("SyncVidGeo", id: nextID_NoLock(), player)
+            let nextID = gtfNextID_NoLock()
+            let gtf = GeometryTransform("SyncVidGeo", pregeneratedID: nextID, player)
             return Task.instantTask{gtf.execute()}
           } else if let workAfterGTFs = pendingWorkAfterGTFs {
             pendingWorkAfterGTFs = nil
@@ -389,8 +390,13 @@ extension IINAAnimation {
       }
     }
 
-    nonisolated
-    func nextID_NoLock() -> Int {
+    nonisolated func gtfNextID() -> Int {
+      gtfLock.withLock{ [self] in
+        gtfNextID_NoLock()
+      }
+    }
+
+    nonisolated func gtfNextID_NoLock() -> Int {
       lastGeneratedID += 1
       return lastGeneratedID
     }
@@ -399,14 +405,17 @@ extension IINAAnimation {
     /// This is a safety feature. The transform's work takes place asynchronously via multiple tasks across
     /// multiple `DispatchQueue`s, while drawing from disparate state variables, so if they overlapped they
     /// could interfere with each other in difficult-to-predict ways.
-    func submitGTF(_ gtf: GeometryTransform) {
-      gtfLock.withLock{ [self] in
-        gtfQueue.append(gtf)
-        log.verbose("[Pipeline] Enqueued GTF: \(gtf.name.quoted); queue size: \(gtfQueue.count)")
-      }
+    nonisolated func submitGTF(_ gtf: GeometryTransform) {
+      SwiftTask { @MainActor [self] in
 
-      // Kick the queue if it's idle:
-      submitInstantTask{}
+        gtfLock.withLock{ [self] in
+          gtfQueue.append(gtf)
+          log.verbose("[Pipeline] Enqueued GTF: \(gtf.name.quoted); queue size: \(gtfQueue.count)")
+        }
+
+        // Kick the queue if it's idle:
+        submitInstantTask{}
+      }
     }
 
     nonisolated
@@ -423,9 +432,7 @@ extension IINAAnimation {
     func geoTransformDidFinish(_ gtf: GeometryTransform, success: Bool) {
       let postWork: TaskFunc? = gtfLock.withLock{ [self] in
         gtfCurrentlyRunningID =  nil
-        if success {
-          log.verbose("[Pipeline] GTF done: \(gtf.name.quoted); queue size: \(gtfQueue.count)")
-        }
+        log.verbose("[Pipeline] GTF done: \(gtf.name.quoted); success=\(success.yn) queueSize=\(gtfQueue.count)")
 
         if let workFunc = pendingWorkAfterGTFs, isDoneWithAllGTFs {
           pendingWorkAfterGTFs = nil

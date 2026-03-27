@@ -109,7 +109,7 @@ final class PlayerManager {
   }
 
   func getNonIdle() -> [PlayerCore] {
-    playerCores.filter { $0.isActive && ($0.state != .started) }
+    playerCores.filter { !$0.isIdleOrUnused }
   }
 
   func getIdleOrCreateNew(loadAdditionalMpvOptionsFromPrefs: Bool = true) -> PlayerCore {

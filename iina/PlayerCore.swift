@@ -2142,6 +2142,7 @@ final class PlayerCore: NSObject {
       }
     }
 
+    log.verbose("FileLoaded: getting playback time info")
     info.playbackTime = mpv.getPlaybackTimeInfo()
 
     triedUsingExactSeekForCurrentFile = false
@@ -2177,6 +2178,7 @@ final class PlayerCore: NSObject {
       }
     }
 
+    log.verbose("FileLoaded: reloading track info")
     if !reloadTrackInfo() {
       // TODO: can this ever happen here?! May need to terminate player if so
       log.error("FileLoaded: no tracks returned by mpv! Returning early…")
@@ -3116,9 +3118,19 @@ final class PlayerCore: NSObject {
     // No need to process track list changes if playback is being stopped. Must not process track
     // list changes if mpv is terminating as accessing mpv once shutdown has been initiated can
     // trigger a crash.
-    guard !isStopping, info.isFileLoaded else {
-      log.verbose("Aborting tracklist reload: player or file not ready (player=\(state), file=\(info.currentPlayback?.state.description ?? "nil"))")
+    guard !isStopping else {
+      log.verbose("Aborting tracklist reload: player not ready (state=\(state))")
       return false
+    }
+    if Constants.requireFileLoadedForTrackReload {
+      guard let currentPlayback = info.currentPlayback else {
+        log.verbose("Aborting tracklist reload: currentPlayback is nil")
+        return false
+      }
+      guard currentPlayback.state.isAtLeast(.loaded) else {
+        log.verbose("Aborting tracklist reload: currentPlayback not yet loaded (state=\(currentPlayback.state.description))")
+        return false
+      }
     }
 
     log.verbose("Reloading tracklist from mpv")
@@ -3195,9 +3207,11 @@ final class PlayerCore: NSObject {
     guard let pwc, pwc.loaded, !isRestoring, !isStopping else { return }
     let aid = aid ?? Int(mpv.getInt(MPVOption.TrackSelection.aid))
     guard aid != info.aid else { return }
-    guard info.isFileLoaded else {
-      log.verbose("Audio track changed to \(aid) but file is not loaded; ignoring")
-      return
+    if Constants.requireFileLoadedForTrackReload {
+      guard info.isFileLoaded else {
+        log.verbose("Audio track changed to \(aid) but file is not loaded; ignoring")
+        return
+      }
     }
     info.aid = aid
 
@@ -3231,6 +3245,12 @@ final class PlayerCore: NSObject {
   func vidChanged(silent: Bool = false) {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
     guard let pwc, pwc.loaded, !isRestoring, !isStopping else { return }
+    if Constants.requireFileLoadedForTrackReload {
+      guard info.isFileLoaded else {
+        log.verbose("Video track changed but file not loaded; skipping")
+        return
+      }
+    }
 
     /// Grab & reset `isShowViewportPendingInMiniPlayer` in mpv queue right away to avoid race
     let pendingAction = pendingActionOnVidChange
@@ -3293,7 +3313,6 @@ final class PlayerCore: NSObject {
                               syncVideoParams: false,   // does the syncing itself
                               sessionState: sessionStateTF,
                               video: videoGeoTF)
-      gtf.submit()
 
     case .showViewportInMusicMode:
       gtf = GeometryTransform("ShowViewportOnVidChange", self,
@@ -3327,7 +3346,6 @@ final class PlayerCore: NSObject {
         let exitMusicModeTransitionTasks = ctx.pwc.buildTasksToExitMusicMode(from: ctx.inputLayout, outputGeoSet)
         return exitMusicModeTransitionTasks
       })
-      gtf.submit()
     }
 
     gtf.submit()
