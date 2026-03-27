@@ -30,7 +30,7 @@ struct VideoGeometry: Equatable, CustomStringConvertible, Sendable {
                          rawHeight: Constants.DefaultVideoSize.rawHeight,
                          decodedAspectLabel: Constants.DefaultVideoSize.aspectLabel, userAspectLabel: "",
                          streamRotation: 0, userRotation: 0,
-                         selectedCropLabel: Constants.String.noneCropIdentifier,
+                         selectedCropLabel: StringConstants.noneCropIdentifier,
                          videoSizeDisplayOverride: nil,
                          log: log)
   }
@@ -41,7 +41,7 @@ struct VideoGeometry: Equatable, CustomStringConvertible, Sendable {
     return VideoGeometry(rawWidth: Constants.AlbumArt.rawWidth, rawHeight: Constants.AlbumArt.rawHeight,
                          decodedAspectLabel: "1:1", userAspectLabel: "",
                          streamRotation: 0, userRotation: 0,
-                         selectedCropLabel: Constants.String.noneCropIdentifier,
+                         selectedCropLabel: StringConstants.noneCropIdentifier,
                          videoSizeDisplayOverride: nil,
                          log: log)
   }
@@ -115,7 +115,7 @@ struct VideoGeometry: Equatable, CustomStringConvertible, Sendable {
   }
 
   func removingCrop() -> VideoGeometry {
-    return clone(selectedCropLabel: Constants.String.noneCropIdentifier, videoSizeDisplayOverride: nil)
+    return clone(selectedCropLabel: StringConstants.noneCropIdentifier, videoSizeDisplayOverride: nil)
   }
 
   // MARK: - TRANSFORMATION 1: Crop
@@ -127,7 +127,7 @@ struct VideoGeometry: Equatable, CustomStringConvertible, Sendable {
   let selectedCropLabel: String
 
   var hasCrop: Bool {
-    return selectedCropLabel != Constants.String.noneCropIdentifier
+    return selectedCropLabel != StringConstants.noneCropIdentifier
   }
 
   /// This is derived from `selectedCropLabel`, but has its Y value flipped so that it works with Cocoa views.
@@ -153,7 +153,7 @@ struct VideoGeometry: Equatable, CustomStringConvertible, Sendable {
   }
 
   func buildCropFilter(from cropLabel: String) -> MPVFilter? {
-    if cropLabel.isEmpty || cropLabel == Constants.String.noneCropIdentifier {
+    if cropLabel.isEmpty || cropLabel == StringConstants.noneCropIdentifier {
       return nil
     }
 
@@ -312,7 +312,7 @@ struct VideoGeometry: Equatable, CustomStringConvertible, Sendable {
   // MARK: Static util functions
 
   static func makeCropRect(fromCropLabel cropLabel: String, rawWidth: Int, rawHeight: Int) -> CGRect? {
-    if cropLabel.isEmpty || cropLabel == Constants.String.noneCropIdentifier {
+    if cropLabel.isEmpty || cropLabel == StringConstants.noneCropIdentifier {
       return nil
     }
 

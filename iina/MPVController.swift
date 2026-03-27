@@ -730,7 +730,7 @@ final class MPVController: NSObject {
   func updateKeepOpenOptionFromPrefs() {
     let keepOpen = Preference.bool(for: PK.keepOpenOnFileEnd)
     let keepOpenPl = !Preference.bool(for: PK.playlistAutoPlayNext)
-    let newValue = keepOpenPl ? "always" : (keepOpen ? Constants.String.mpvYes : Constants.String.mpvNo)
+    let newValue = keepOpenPl ? "always" : (keepOpen ? StringConstants.mpvYes : StringConstants.mpvNo)
     setOptionString(MPVOption.Window.keepOpen, newValue, level: .verbose)
   }
 
@@ -850,7 +850,7 @@ final class MPVController: NSObject {
 
   func setOptionFlag(_ name: String, _ flag: Bool, level: Logger.Level = .debug,
                      verboseIfDefault: Bool = false) -> Int32 {
-    let value = flag ? Constants.String.mpvYes : Constants.String.mpvNo
+    let value = flag ? StringConstants.mpvYes : StringConstants.mpvNo
     return setOptionString(name, value, level: level, verboseIfDefault: verboseIfDefault)
   }
 

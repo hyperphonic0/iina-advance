@@ -135,7 +135,7 @@ extension PlayerCore {
   func reloadThumbnails() {
     guard let pwc, pwc.loaded else { return }
     guard !isDemoPlayer else { return }
-    DispatchQueue.main.asyncAfter(deadline: .now() + Constants.TimeInterval.thumbnailRegenerationDelay) { [self] in
+    DispatchQueue.main.asyncAfter(deadline: .now() + TimeConstants.thumbnailRegenerationDelay) { [self] in
       let videoGeo = pwc.geo.video
 
       mpv.queue.async { [self] in

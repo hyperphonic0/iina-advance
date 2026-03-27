@@ -462,7 +462,7 @@ final class OSDState {
 
   static func osdTimeoutFromPrefs() -> Double {
     // Timer and animation APIs require Double, but we must support legacy prefs, which store as Float
-    return max(Constants.TimeInterval.osdTimeoutMin, Double(Preference.float(for: .osdAutoHideTimeout)))
+    return max(TimeConstants.osdTimeoutMin, Double(Preference.float(for: .osdAutoHideTimeout)))
   }
 
   fileprivate func getSliderBarHeight(forOSDTextSize osdTextSize: CGFloat) -> CGFloat {
@@ -1109,7 +1109,7 @@ extension PlayerWindowController {
       osd.lastPlaybackDuration = player.info.playbackTime.durationSec
 
     case .crop(let newCropLabel):
-      if newCropLabel == Constants.String.noneCropIdentifier && !isInInteractiveMode && player.info.videoFiltersDisabled[Constants.FilterLabel.crop] != nil {
+      if newCropLabel == StringConstants.noneCropIdentifier && !isInInteractiveMode && player.info.videoFiltersDisabled[Constants.FilterLabel.crop] != nil {
         log.verbose("[OSD] Ignoring request for Crop 'None': looks like user starting to edit an existing crop")
         return
       }
@@ -1178,7 +1178,7 @@ extension PlayerWindowController {
     osd.animationState = .shown
 
     if autoHide {
-      let forcedTimeout = msg.alwaysEnabled ? Constants.TimeInterval.osdTimeoutForAlwaysEnabledMessages : nil
+      let forcedTimeout = msg.alwaysEnabled ? TimeConstants.osdTimeoutForAlwaysEnabledMessages : nil
       let timeout: Double = forcedTimeout ?? OSDState.osdTimeoutFromPrefs()
       log.verbose("[OSD] Showing '\(msg)' timeout=\(timeout)\(forcedTimeout != nil ? " (forced)" : "")")
       osd.hideOSDTimer.restart(withNewTimeout: timeout)

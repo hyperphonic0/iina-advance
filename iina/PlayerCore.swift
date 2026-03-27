@@ -94,8 +94,8 @@ final class PlayerCore: NSObject {
   /// **See also**: `autoLoadFilesInCurrentFolder(ticket:)`
   @Atomic var postLoadBGQTicket = 0
 
-  let saveUIStateDebouncer = Debouncer(delay: Constants.TimeInterval.playerStateSaveDelay, queue: PlayerSaveState.saveQueue)
-  let sliderSeekDebouncer = Debouncer(delay: Constants.TimeInterval.sliderSeekThrottlingInterval)
+  let saveUIStateDebouncer = Debouncer(delay: TimeConstants.playerStateSaveDelay, queue: PlayerSaveState.saveQueue)
+  let sliderSeekDebouncer = Debouncer(delay: TimeConstants.sliderSeekThrottlingInterval)
 
   var uiTimeDebouncer: Debouncer!
 
@@ -198,7 +198,7 @@ final class PlayerCore: NSObject {
     pendingActionOnVidChange != .none
   }
   /// Calls `self.miniPlayerShowViewportTimerAction`
-  let miniPlayerShowVideoTimer = TimeoutTimer(timeout: Constants.TimeInterval.musicModeChangeTrackTimeout)
+  let miniPlayerShowVideoTimer = TimeoutTimer(timeout: TimeConstants.musicModeChangeTrackTimeout)
 
   enum PendingActionOnVidChange {
     case none
@@ -280,7 +280,7 @@ final class PlayerCore: NSObject {
     set {
       guard info.abLoopStatus == .aSet || info.abLoopStatus == .bSet else { return }
       guard !isStopping else { return }
-      mpv.setDouble(MPVOption.PlaybackControl.abLoopA, max(Constants.TimeInterval.minLoopPointTime, newValue))
+      mpv.setDouble(MPVOption.PlaybackControl.abLoopA, max(TimeConstants.minLoopPointTime, newValue))
     }
   }
 
@@ -303,7 +303,7 @@ final class PlayerCore: NSObject {
     set {
       guard info.abLoopStatus == .bSet else { return }
       guard !isStopping else { return }
-      mpv.setDouble(MPVOption.PlaybackControl.abLoopB, max(Constants.TimeInterval.minLoopPointTime, newValue))
+      mpv.setDouble(MPVOption.PlaybackControl.abLoopB, max(TimeConstants.minLoopPointTime, newValue))
     }
   }
 
@@ -325,7 +325,7 @@ final class PlayerCore: NSObject {
     super.init()
     self.videoView = VideoView(player: self)
     self.mpv = MPVController(playerCore: self)
-    self.uiTimeDebouncer = Debouncer(delay: Constants.TimeInterval.uiTimeDebouncerDelay, queue: mpv.queue)
+    self.uiTimeDebouncer = Debouncer(delay: TimeConstants.uiTimeDebouncerDelay, queue: mpv.queue)
     self.keyBindingContext = PlayerInputContext(playerCore: self)
     self.touchBarSupport = TouchBarSupport(playerCore: self)
 
@@ -355,7 +355,7 @@ final class PlayerCore: NSObject {
   /// Demo player has `pwc == nil`.
   @MainActor
   static func buildDemoPlayer() -> PlayerCore {
-    let player = PlayerCore(Constants.String.demoPlayerIdentifier, isDemoPlayer: true)
+    let player = PlayerCore(StringConstants.demoPlayerIdentifier, isDemoPlayer: true)
 
     player.log.verbose("PlayerCore init (demo): done")
     return player
@@ -387,7 +387,7 @@ final class PlayerCore: NSObject {
     for opt in userOptions.reversed() {
       if opt.key == MPVOption.PlaybackControl.pause {
         // User option or cmd line option, if provided, takes priority over pauseOnOpen pref
-        let shouldPause = opt.val.isEmpty || opt.val == Constants.String.mpvYes
+        let shouldPause = opt.val.isEmpty || opt.val == StringConstants.mpvYes
         log.debug("Found in user options: pause=\(shouldPause.yesno)")
         return shouldPause
       }
@@ -1684,7 +1684,7 @@ final class PlayerCore: NSObject {
   func _sendVideoAspectOverrideToMpv(aspectLabel: String) {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
     var mpvValue = Aspect.mpvVideoAspectOverride(fromAspectLabel: aspectLabel)
-    if mpvValue == Constants.String.mpvNo {
+    if mpvValue == StringConstants.mpvNo {
       /// mpv doc says that `-1` means: `strictly prefer the container aspect ratio`.
       // Note that the mpv doc says this value is deprecated, and that "no" should be used instead,
       // but that does not work properly for some videos.
@@ -2193,7 +2193,7 @@ final class PlayerCore: NSObject {
       /// Need to manually clear this, because mpv will try to seek to this time when any item in playlist
       /// is started. Run this on the mpv queue to ensure proper ordering.
       log.verbose("Clearing mpv 'start' option now that restore is complete")
-      mpv.setString(MPVOption.PlaybackControl.start, Constants.String.mpvArgNone)
+      mpv.setString(MPVOption.PlaybackControl.start, StringConstants.mpvArgNone)
 
       /// Will complete restore when `transformGeometry` is done
     }
@@ -2227,7 +2227,7 @@ final class PlayerCore: NSObject {
       latestTicket += 1
       return latestTicket
     }
-    PlayerCore.postLoadBGQ.asyncAfter(deadline: DispatchTime.now() + Constants.TimeInterval.autoLoadDelay) { [self] in
+    PlayerCore.postLoadBGQ.asyncAfter(deadline: DispatchTime.now() + TimeConstants.autoLoadDelay) { [self] in
       fileLoaded_doPostLoadBGQWork(for: currentPlayback, currentTicket: currentTicket,
                                    shouldAutoLoadFiles: shouldAutoLoadFiles,
                                    priorStateIfRestoring: priorStateIfRestoring)

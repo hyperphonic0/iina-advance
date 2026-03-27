@@ -82,7 +82,7 @@ final class HistoryWindowController: WindowController, NSOutlineViewDelegate, NS
   private var bgDQ = DispatchQueue.newDQ(label: "HistoryWindow-BG", qos: .background)
 
   /// Calls `self.showLoadingUI` on timeout.
-  private let showLoadingMsgTimer = TimeoutTimer(timeout: Constants.TimeInterval.historyTableDelayBeforeLoadingMsgDisplay)
+  private let showLoadingMsgTimer = TimeoutTimer(timeout: TimeConstants.historyTableDelayBeforeLoadingMsgDisplay)
 
   // - State
 

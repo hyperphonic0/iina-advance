@@ -246,8 +246,8 @@ class MenuController: NSObject, NSMenuDelegate {
 
     // -- aspect
     let aspectRatioIdentifiers = [Aspect.defaultIdentifier] + Aspect.aspectsInMenu
-    /// we need to set the represented object separately, since `Constants.String.default` may be localized.
-    let aspectRatioMenuItemTitles = [Constants.String.default] + Aspect.aspectsInMenu
+    /// we need to set the represented object separately, since `StringConstants.default` may be localized.
+    let aspectRatioMenuItemTitles = [StringConstants.default] + Aspect.aspectsInMenu
     bind(menu: aspectMenu, withOptions: aspectRatioMenuItemTitles, objects: aspectRatioIdentifiers, objectMap: nil,
          action: #selector(PlayerWindowController.menuChangeAspect(_:))) {
       /// return `true` if menu item should be checked (i.e. if current aspect matches menu item)
@@ -255,9 +255,9 @@ class MenuController: NSObject, NSMenuDelegate {
     }
 
     // -- crop
-    let cropMenuItemTitles = [Constants.String.none] + Aspect.aspectsInMenu + [Constants.String.custom]
+    let cropMenuItemTitles = [StringConstants.none] + Aspect.aspectsInMenu + [StringConstants.custom]
     // same as aspectList above.
-    let cropIdentifiers = [Constants.String.noneCropIdentifier] + Aspect.aspectsInMenu + [Constants.String.customCropIdentifier]
+    let cropIdentifiers = [StringConstants.noneCropIdentifier] + Aspect.aspectsInMenu + [StringConstants.customCropIdentifier]
     bind(menu: cropMenu, withOptions: cropMenuItemTitles, objects: cropIdentifiers, objectMap: nil, action: #selector(PlayerWindowController.menuChangeCrop(_:))) {
       return PlayerManager.shared.activePlayer?.pwc.geo.video.selectedCropLabel == $0.representedObject as? String
     }
@@ -265,7 +265,7 @@ class MenuController: NSObject, NSMenuDelegate {
     cropMenu.insertItem(NSMenuItem.separator(), at: 1 + Aspect.aspectsInMenu.count)
 
     // -- rotation
-    let rotationTitles = AppData.rotations.map { "\($0)\(Constants.String.degree)" }
+    let rotationTitles = AppData.rotations.map { "\($0)\(StringConstants.degree)" }
     bind(menu: rotationMenu, withOptions: rotationTitles, objects: AppData.rotations, objectMap: nil, action: #selector(PlayerWindowController.menuChangeRotation(_:))) {
       PlayerManager.shared.activePlayer?.pwc.geo.video.userRotation == $0.representedObject as? Int
     }
@@ -430,7 +430,7 @@ class MenuController: NSObject, NSMenuDelegate {
     let info = player.info
     menu.removeAllItems()
     let action = #selector(PlayerWindowController.menuChangeTrack(_:))
-    let noTrackMenuItem = NSMenuItem(title: Constants.String.trackNone, action: action, keyEquivalent: "")
+    let noTrackMenuItem = NSMenuItem(title: StringConstants.trackNone, action: action, keyEquivalent: "")
     noTrackMenuItem.representedObject = MPVTrack.emptyTrack(for: type)
     if info.trackId(type) == 0 {  // no track
       noTrackMenuItem.state = .on
@@ -446,10 +446,10 @@ class MenuController: NSObject, NSMenuDelegate {
   private func updatePlaybackMenu() {
     guard let player = PlayerManager.shared.activePlayer else { return }
     let isDisplayingPlaylist = player.pwc.isOpen(sidebarTab: .playlist)
-    playlistPanel?.title = isDisplayingPlaylist ? Constants.String.hidePlaylistPanel : Constants.String.playlistPanel
+    playlistPanel?.title = isDisplayingPlaylist ? StringConstants.hidePlaylistPanel : StringConstants.playlistPanel
     let isDisplayingChapters = player.pwc.isOpen(sidebarTab: .chapters)
-    chapterPanel?.title = isDisplayingChapters ? Constants.String.hideChaptersPanel : Constants.String.chaptersPanel
-    pause.title = player.info.isPaused ? Constants.String.resume : Constants.String.pause
+    chapterPanel?.title = isDisplayingChapters ? StringConstants.hideChaptersPanel : StringConstants.chaptersPanel
+    pause.title = player.info.isPaused ? StringConstants.resume : StringConstants.pause
     let speed = player.info.playSpeed.groupedStringUpTo6Decimals
     speedIndicator.title = String(format: NSLocalizedString("menu.speed", comment: "Speed:"), speed)
     let info = player.info
@@ -464,16 +464,16 @@ class MenuController: NSObject, NSMenuDelegate {
   private func updateVideoMenu() {
     guard let player = PlayerManager.shared.activePlayer else { return }
     let isDisplayingSettings = player.pwc.isOpen(sidebarTab: .video)
-    quickSettingsVideo?.title = isDisplayingSettings ? Constants.String.hideVideoPanel : Constants.String.videoPanel
+    quickSettingsVideo?.title = isDisplayingSettings ? StringConstants.hideVideoPanel : StringConstants.videoPanel
     let isInFullScreen = player.pwc.isFullScreen
     let isInPIP = player.pwc.currentLayout.isInPiP
     let isOnTop = player.pwc.isOnTop
     let isDelogo = player.info.delogoFilter != nil
     alwaysOnTop.state = isOnTop ? .on : .off
     deinterlace.state = player.info.deinterlace ? .on : .off
-    fullScreen.title = isInFullScreen ? Constants.String.exitFullScreen : Constants.String.fullScreen
-    pictureInPicture?.title = isInPIP ? Constants.String.exitPIP : Constants.String.pip
-    miniPlayer.title = player.isInMiniPlayer ? Constants.String.exitMiniPlayer : Constants.String.miniPlayer
+    fullScreen.title = isInFullScreen ? StringConstants.exitFullScreen : StringConstants.fullScreen
+    pictureInPicture?.title = isInPIP ? StringConstants.exitPIP : StringConstants.pip
+    miniPlayer.title = player.isInMiniPlayer ? StringConstants.exitMiniPlayer : StringConstants.miniPlayer
     delogo.state = isDelogo ? .on : .off
   }
 
@@ -481,8 +481,8 @@ class MenuController: NSObject, NSMenuDelegate {
   private func updateAudioMenu() {
     guard let player = PlayerManager.shared.activePlayer else { return }
     let isDisplayingSettings = player.pwc.isOpen(sidebarTab: .audio)
-    quickSettingsAudio?.title = isDisplayingSettings ? Constants.String.hideAudioPanel :
-        Constants.String.audioPanel
+    quickSettingsAudio?.title = isDisplayingSettings ? StringConstants.hideAudioPanel :
+        StringConstants.audioPanel
     let volFmtString: String
     if player.info.isMuted {
       volFmtString = NSLocalizedString("menu.volume_muted", comment: "Volume: (Muted)")
@@ -521,12 +521,12 @@ class MenuController: NSObject, NSMenuDelegate {
   private func updateSubMenu() {
     guard let player = PlayerManager.shared.activePlayer else { return }
     let isDisplayingSettings = player.pwc.isOpen(sidebarTab: .sub)
-    quickSettingsSub?.title = isDisplayingSettings ? Constants.String.hideSubtitlesPanel :
-    Constants.String.subtitlesPanel
-    hideSubtitles.title = player.info.isSubVisible ? Constants.String.hideSubtitles :
-    Constants.String.showSubtitles
-    hideSecondSubtitles.title = player.info.isSecondSubVisible ? Constants.String.hideSecondSubtitles :
-    Constants.String.showSecondSubtitles
+    quickSettingsSub?.title = isDisplayingSettings ? StringConstants.hideSubtitlesPanel :
+    StringConstants.subtitlesPanel
+    hideSubtitles.title = player.info.isSubVisible ? StringConstants.hideSubtitles :
+    StringConstants.showSubtitles
+    hideSecondSubtitles.title = player.info.isSecondSubVisible ? StringConstants.hideSecondSubtitles :
+    StringConstants.showSecondSubtitles
     let subDelayString = player.info.subDelay.groupedStringUpTo6Decimals
     subDelayIndicator.title = String(format: NSLocalizedString("menu.sub_delay", comment: "Subtitle Delay:"), subDelayString)
 
@@ -539,7 +539,7 @@ class MenuController: NSObject, NSMenuDelegate {
 
     let providerID = Preference.string(for: .onlineSubProvider) ?? OnlineSubtitle.Providers.openSub.id
     let providerName = OnlineSubtitle.Providers.nameForID(providerID)
-    findOnlineSub.title = String(format: Constants.String.findOnlineSubtitles, providerName)
+    findOnlineSub.title = String(format: StringConstants.findOnlineSubtitles, providerName)
   }
 
   private func updateOnlineSubSourceMenu() {
@@ -567,11 +567,11 @@ class MenuController: NSObject, NSMenuDelegate {
     Logger.log.trace("Updating Plugin menu")
     pluginMenu.removeAllItems()
 
-    pluginMenu.addItem(withTitle: Constants.String.managePlugins, action: #selector(AppDelegate.showPluginPreferences(_:)), keyEquivalent: "")
+    pluginMenu.addItem(withTitle: StringConstants.managePlugins, action: #selector(AppDelegate.showPluginPreferences(_:)), keyEquivalent: "")
 
     let activePlayer = PlayerManager.shared.activePlayer
     if let isDisplayingPluginsPanel = activePlayer?.pwc.isTabGroupVisible(.plugins) {
-      let itemTitle = isDisplayingPluginsPanel ? Constants.String.hidePluginsPanel : Constants.String.showPluginsPanel
+      let itemTitle = isDisplayingPluginsPanel ? StringConstants.hidePluginsPanel : StringConstants.showPluginsPanel
       let itemAction = #selector(PlayerWindowController.showPluginsPanel(_:))
       pluginMenu.addItem(withTitle: itemTitle, action: itemAction, keyEquivalent: "")
 

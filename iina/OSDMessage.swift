@@ -218,7 +218,7 @@ enum OSDMessage {
 
     case .aspect(var value):
       if value == "Default" {
-        value = Constants.String.default
+        value = StringConstants.default
       }
       return (
         String(format: NSLocalizedString("osd.aspect", comment: "Aspect Ratio: %@"), value),
@@ -227,7 +227,7 @@ enum OSDMessage {
 
     case .crop(var value):
       if value == "None" {
-        value = Constants.String.none
+        value = StringConstants.none
       }
       return (
         String(format: NSLocalizedString("osd.crop", comment: "Crop: %@"), value),

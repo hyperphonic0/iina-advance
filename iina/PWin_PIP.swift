@@ -68,7 +68,7 @@ extension PlayerWindowController {
     /// When true, window is currently entering or exiting PiP.
     var isInTransition: Bool = false
     /// In certain situations we will not get `pipDidClose` callback. Use this timer as a fallback
-    let pipDidCloseTimer = TimeoutTimer(timeout: Constants.TimeInterval.pipDidCloseTimeout)
+    let pipDidCloseTimer = TimeoutTimer(timeout: TimeConstants.pipDidCloseTimeout)
 
     @MainActor
     init(_ player: PlayerCore) {

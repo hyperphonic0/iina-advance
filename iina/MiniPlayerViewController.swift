@@ -326,7 +326,7 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
       volumePopover.show(relativeTo: volumePopoverAlignmentView.bounds, of: volumePopoverAlignmentView, preferredEdge: .minY)
     }
 
-    let timeout = max(Preference.double(for: .osdAutoHideTimeout), Constants.TimeInterval.musicModePopoverMinTimeout)
+    let timeout = max(Preference.double(for: .osdAutoHideTimeout), TimeConstants.musicModePopoverMinTimeout)
     hideVolumePopoverTimer = Timer.scheduledTimer(timeInterval: TimeInterval(timeout), target: self,
                                                   selector: #selector(self.hideVolumePopover), userInfo: nil, repeats: false)
   }

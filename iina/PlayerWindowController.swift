@@ -232,7 +232,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
   let fadeableViews: FadeableViewsHandler
 
   // Other visibility
-  var hideCursorTimer = TimeoutTimer(timeout: Constants.TimeInterval.hideCursorMinTimeoutMS)
+  var hideCursorTimer = TimeoutTimer(timeout: TimeConstants.hideCursorMinTimeoutMS)
 
   // - PiP
 
@@ -257,11 +257,11 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
   // Only used for debug logging:
   @Atomic var layoutTransitionCounter: Int = 0
 
-  let titleBarAndOSCUpdateDebouncer = Debouncer(delay: Constants.TimeInterval.playerTitleBarAndOSCUpdateThrottlingDelay)
+  let titleBarAndOSCUpdateDebouncer = Debouncer(delay: TimeConstants.playerTitleBarAndOSCUpdateThrottlingDelay)
   /// For throttling `windowDidChangeScreen` notifications. MacOS 14 often sends hundreds in short bursts
-  let screenChangedDebouncer = Debouncer(delay: Constants.TimeInterval.windowDidChangeScreenThrottlingDelay)
+  let screenChangedDebouncer = Debouncer(delay: TimeConstants.windowDidChangeScreenThrottlingDelay)
   /// For throttling `windowDidChangeScreenParameters` notifications. MacOS 14 often sends hundreds in short bursts
-  let screenParamsChangedDebouncer = Debouncer(delay: Constants.TimeInterval.windowDidChangeScreenParametersThrottlingDelay)
+  let screenParamsChangedDebouncer = Debouncer(delay: TimeConstants.windowDidChangeScreenParametersThrottlingDelay)
   let thumbDisplayDebouncer = Debouncer()
 
   var isFullScreen: Bool { currentLayout.isFullScreen }
@@ -1359,7 +1359,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
 
     // We can get here if external calls from accessibility APIs change the window location.
     // Inserting a small delay seems to help to avoid race conditions as the window seems to need time to "settle"
-    DispatchQueue.main.asyncAfter(deadline: .now() + Constants.TimeInterval.windowDidMoveProcessingDelay) { [self] in
+    DispatchQueue.main.asyncAfter(deadline: .now() + TimeConstants.windowDidMoveProcessingDelay) { [self] in
       animationPipeline.submitInstantTask({ [self] in
 
         let layout = currentLayout
@@ -2362,7 +2362,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
 
           if maxPressure == 1 &&
               ((left ? currentSpeedIndex < indexSpeed1x - 1 : currentSpeedIndex > indexSpeed1x + 1) ||
-               (CFAbsoluteTimeGetCurrent() - lastForceTouchClick) < Constants.TimeInterval.minimumPressDuration) { // Single click ended
+               (CFAbsoluteTimeGetCurrent() - lastForceTouchClick) < TimeConstants.minimumPressDuration) { // Single click ended
             newSpeedIndex = oldSpeedValueIndex + directionUnit
           } else { // Force Touch or long press ended
             newSpeedIndex = indexSpeed1x

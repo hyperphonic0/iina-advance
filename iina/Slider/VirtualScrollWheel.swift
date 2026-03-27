@@ -100,7 +100,7 @@ class ScrollSession {
 ///
 /// For Apple devices, the out-of-the-box functionality is a bit too sensitive. So this class also add logic to measure the
 /// time the user is actively scrolling and ignore any potential scroll sessions which shorter than
-/// `Constants.TimeInterval.minQualifyingScrollWheelDuration` to help avoid unwanted scrolling. Specifically, it starts the timer
+/// `TimeConstants.minQualifyingScrollWheelDuration` to help avoid unwanted scrolling. Specifically, it starts the timer
 /// when a `.mayBegin` or `.began` state is seen in `.phase`, and if `.ended` or `.cancelled` is seen too soon, all remaining
 /// received events are discarded (including momentum scroll events) until the next `.mayBegin` or `.began` is seen for `.phase`.
 ///
@@ -130,7 +130,7 @@ class VirtualScrollWheel {
   private var state: ScrollState = .notScrolling
 
   /// Calls `self.scrollSessionDidTimeOut` on timeout.
-  private let scrollSessionTimer = TimeoutTimer(timeout: Constants.TimeInterval.stepScrollSessionTimeout)
+  private let scrollSessionTimer = TimeoutTimer(timeout: TimeConstants.stepScrollSessionTimeout)
 
   init() {
     scrollSessionTimer.action = scrollSessionDidTimeOut
@@ -275,15 +275,15 @@ class VirtualScrollWheel {
         var startScrolling = false
 
         let timeElapsedSinceLastSessionEnd = now - lastSessionEndTime
-        if timeElapsedSinceLastSessionEnd < Constants.TimeInterval.instantConsecutiveScrollStartWindow {
+        if timeElapsedSinceLastSessionEnd < TimeConstants.instantConsecutiveScrollStartWindow {
           startScrolling = true
           log.verbose("Time elapsed since last scroll (\(timeElapsedSinceLastSessionEnd.stringTrunc3f)) < instantConsecutiveScrollStartWindow (\(timeElapsedSinceLastSessionEnd.logStr)): starting new scroll session immediately")
         } else {
           let timeElapsedSinceIntentStart = CFAbsoluteTimeGetCurrent() - intentStartTime
-          if timeElapsedSinceIntentStart >= Constants.TimeInterval.minQualifyingScrollWheelDuration {
+          if timeElapsedSinceIntentStart >= TimeConstants.minQualifyingScrollWheelDuration {
             if scrollSessionShouldBegin(currentSession) {
               startScrolling = true
-              log.verbose("Time elapsed (\(timeElapsedSinceIntentStart.stringTrunc3f)) ≥ minQualifyingScrollWheelDuration (\(Constants.TimeInterval.minQualifyingScrollWheelDuration)): starting scroll session")
+              log.verbose("Time elapsed (\(timeElapsedSinceIntentStart.stringTrunc3f)) ≥ minQualifyingScrollWheelDuration (\(TimeConstants.minQualifyingScrollWheelDuration)): starting scroll session")
             }
           }
         }

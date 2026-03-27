@@ -46,7 +46,7 @@ class PrefKeyBindingViewController: PreferenceViewController, PreferenceWindowEm
 
   private var observers: [NSObjectProtocol] = []
 
-  private var searchActionDebouncer = Debouncer(delay: Constants.TimeInterval.keyBindingsSearchDebounceDelay)
+  private var searchActionDebouncer = Debouncer(delay: TimeConstants.keyBindingsSearchDebounceDelay)
 
   private var notiHandler: NotificationHandler!
 

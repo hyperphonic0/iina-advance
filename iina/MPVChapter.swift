@@ -12,7 +12,7 @@ struct MPVChapter: Sendable, CustomStringConvertible {
 
   private var privTitle: String?
   var title: String {
-    return privTitle ?? "\(Constants.String.chapter) \(index)"
+    return privTitle ?? "\(StringConstants.chapter) \(index)"
   }
   let startTime: Double
   let index: Int

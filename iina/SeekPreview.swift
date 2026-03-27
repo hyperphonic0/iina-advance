@@ -49,7 +49,7 @@ extension PlayerWindowController {
 
     /// For auto hiding seek time & thumbnail after a timeout.
     /// Calls `PlayerWindowController.seekPreviewTimeout` on timeout.
-    let hideTimer = TimeoutTimer(timeout: Constants.TimeInterval.seekPreviewHideTimeout)
+    let hideTimer = TimeoutTimer(timeout: TimeConstants.seekPreviewHideTimeout)
 
     func refreshThumbfastFromPrefs() {
       let useThumbfastOld = useThumbfast

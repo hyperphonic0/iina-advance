@@ -181,11 +181,11 @@ actor UIState {
   }
 
   static func makeOpenWindowListKey(forLaunchID launchID: Int) -> String {
-    return String(format: Constants.String.openWindowListFmt, launchID)
+    return String(format: StringConstants.openWindowListFmt, launchID)
   }
 
   static func launchName(forID launchID: Int) -> String {
-    return "\(Constants.String.iinaLaunchPrefix)\(launchID)"
+    return "\(StringConstants.iinaLaunchPrefix)\(launchID)"
   }
 
   /// Example input=`"PWin-1032c0"` → output=`"1032c0"`
@@ -208,7 +208,7 @@ actor UIState {
   }
 
   static func launchID(fromOpenWindowListKey key: String) -> Int? {
-    if key.starts(with: Constants.String.iinaLaunchPrefix) && key.hasSuffix("Windows") {
+    if key.starts(with: StringConstants.iinaLaunchPrefix) && key.hasSuffix("Windows") {
       let splitted = key.split(separator: "-")
       if splitted.count == 3 {
         return Int(splitted[1])
@@ -228,7 +228,7 @@ actor UIState {
   }
 
   static func launchID(fromLaunchName launchName: String) -> Int? {
-    if launchName.starts(with: Constants.String.iinaLaunchPrefix) {
+    if launchName.starts(with: StringConstants.iinaLaunchPrefix) {
       let splitted = launchName.split(separator: "-")
       if splitted.count == 2 {
         return Int(splitted[1])

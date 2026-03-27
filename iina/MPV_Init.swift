@@ -8,8 +8,8 @@
 
 import VideoToolbox
 
-fileprivate let yes = Constants.String.mpvYes
-fileprivate let no = Constants.String.mpvNo
+fileprivate let yes = StringConstants.mpvYes
+fileprivate let no = StringConstants.mpvNo
 
 extension MPVController {
   /// Init the mpv context, set options.

@@ -260,8 +260,8 @@ extension PlayerWindowController {
   func isInWindowResizeDenialPeriod() -> Bool {
     guard !currentLayout.isFullScreen else { return false }
     let timeElapsed = CFAbsoluteTimeGetCurrent() - denyWindowResizePeriodStartTime
-    let denyWindowResize = timeElapsed - Constants.TimeInterval.denyWindowResizeTimeout < 0
-    log.trace("Time elapsed=\(timeElapsed), timeout=\(Constants.TimeInterval.denyWindowResizeTimeout) → DenyWinResize=\(denyWindowResize.yn)")
+    let denyWindowResize = timeElapsed - TimeConstants.denyWindowResizeTimeout < 0
+    log.trace("Time elapsed=\(timeElapsed), timeout=\(TimeConstants.denyWindowResizeTimeout) → DenyWinResize=\(denyWindowResize.yn)")
     return denyWindowResize
   }
 
@@ -274,8 +274,8 @@ extension PlayerWindowController {
   func isInWindowScrollDenialPeriod() -> Bool {
     guard !currentLayout.isFullScreen else { return false }
     let timeElapsed = CFAbsoluteTimeGetCurrent() - denyWindowScrollPeriodStartTime
-    let denyWindowScroll = timeElapsed - Constants.TimeInterval.denyWindowScrollTimeout < 0
-    log.trace("Time elapsed=\(timeElapsed), timeout=\(Constants.TimeInterval.denyWindowResizeTimeout) → DenyWinScroll=\(denyWindowScroll.yn)")
+    let denyWindowScroll = timeElapsed - TimeConstants.denyWindowScrollTimeout < 0
+    log.trace("Time elapsed=\(timeElapsed), timeout=\(TimeConstants.denyWindowResizeTimeout) → DenyWinScroll=\(denyWindowScroll.yn)")
     return denyWindowScroll
   }
 

@@ -13,7 +13,7 @@ struct VideoTime {
   let second: Double
 
   static func string(from seconds: Double?, precision: UInt = 0) -> String {
-    guard let seconds else { return Constants.String.videoTimePlaceholder }
+    guard let seconds else { return StringConstants.videoTimePlaceholder }
     return VideoTime(seconds).stringRepresentationWithPrecision(precision)
   }
 

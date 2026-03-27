@@ -44,7 +44,7 @@ extension PlayerWindowController {
         log.trace("HideCursorTimer: aborting start (cannot hide cursor)")
         return false
       }
-      let newTimeout = max(Constants.TimeInterval.hideCursorMinTimeoutMS, Double(player.info.cursorAutoHideTimeoutMs))
+      let newTimeout = max(TimeConstants.hideCursorMinTimeoutMS, Double(player.info.cursorAutoHideTimeoutMs))
       timer.timeout = newTimeout / 1000.0
       log.trace("HideCursorTimer: [re-]starting timeout=\(timer.timeout)s")
       return true

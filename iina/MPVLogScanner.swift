@@ -60,7 +60,7 @@ final class MPVLogScanner {
 
   init(player: PlayerCore) {
     self.player = player
-    mpvLogSubsystem = Logger.makeSubsystem(player, fmt: Constants.String.iinaMpvCategoryFmt)
+    mpvLogSubsystem = Logger.makeSubsystem(player, fmt: StringConstants.iinaMpvCategoryFmt)
     log = mpvLogSubsystem
 
     updateMpvEventLogLevel()

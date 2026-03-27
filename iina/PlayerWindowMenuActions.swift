@@ -198,7 +198,7 @@ extension PlayerWindowController {
 
   @objc func menuChangeCrop(_ sender: NSMenuItem) {
     if let cropStr = sender.representedObject as? String {
-      if cropStr == Constants.String.customCropIdentifier {
+      if cropStr == StringConstants.customCropIdentifier {
         player.pwc.enterInteractiveMode(.crop)
         return
       }

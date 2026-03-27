@@ -78,7 +78,7 @@ extension PlayerCore {
 
   private func __setCrop(fromLabel newCropLabel: String, _ videoGeo: VideoGeometry) {
     mpv.queue.async { [self] in
-      if newCropLabel == Constants.String.noneCropIdentifier {
+      if newCropLabel == StringConstants.noneCropIdentifier {
         log.verbose("Setting crop to None")
         removeCrop()
         return
@@ -110,7 +110,7 @@ extension PlayerCore {
       log.debug("Cannot remove crop: no filter found with label \(Constants.FilterLabel.crop.quoted). Will try to resync from mpv")
       return false
     }
-    log.verbose("Setting crop to \(Constants.String.noneCropIdentifier.quoted) and removing crop filter")
+    log.verbose("Setting crop to \(StringConstants.noneCropIdentifier.quoted) and removing crop filter")
     return removeVideoFilter(cropFilter, verify: false, notify: false)
   }
 

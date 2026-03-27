@@ -58,9 +58,9 @@ struct CommandLineState: Sendable {
           // Assume all other double-dashed tokens are mpv args.
           let opt = CommandLineState.parseDoubleDashedToken(token)
           if opt.optionName == MPVOption.PlaybackControl.shuffle {
-            if opt.val == Constants.String.mpvYes {
+            if opt.val == StringConstants.mpvYes {
               needsShufflePlaylist = true
-            } else if opt.val == Constants.String.mpvNo {
+            } else if opt.val == StringConstants.mpvNo {
               needsShufflePlaylist = false
             }
           }

@@ -13,20 +13,20 @@ extension VideoView {
     // to be super precise, and be nice to avoid 60 (or whatever rate of the DisplayLink) async tasks being enqueud per sec,
     // when most of those tasks are doing a simple check. So here is an extra check which limits tasks launches to a couple times
     // per sec.
-    if lastDisplayLinkStatusCheckTime > Constants.TimeInterval.dislpayLinkStatusCheckInterval {
+    if lastDisplayLinkStatusCheckTime > TimeConstants.dislpayLinkStatusCheckInterval {
       lastDisplayLinkStatusCheckTime = CFAbsoluteTimeGetCurrent()
 
       DispatchQueue.main.async { [self] in
         // DisplayLink idle timeout check
         if let displayIdleStartTime {
-          if CFAbsoluteTimeGetCurrent() - displayIdleStartTime > Constants.TimeInterval.displayIdleTimeout {
+          if CFAbsoluteTimeGetCurrent() - displayIdleStartTime > TimeConstants.displayIdleTimeout {
             stopDisplayLink()
           }
         }
 
         guard let glLayer else { return }
         if glLayer.isAsynchronous, let asynchronousModeStartTime = glLayer.asynchronousModeStartTime {
-          if CFAbsoluteTimeGetCurrent() - asynchronousModeStartTime > Constants.TimeInterval.asynchronousModeTimeout {
+          if CFAbsoluteTimeGetCurrent() - asynchronousModeStartTime > TimeConstants.asynchronousModeTimeout {
             player.log.verbose("Exiting asynchronous mode")
             /// If this is set to `true` while the video is paused, there is some degree of busy-waiting as the
             /// layer is polled at a high rate about whether it needs to draw. Disable this to save CPU while idle.

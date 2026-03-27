@@ -138,7 +138,7 @@ extension GeometryTransform.ContextStage2 {
       log.verbose("[GTF:\(name)] Determined crop label from iina_crop filter: \(cropLabel.quoted)")
       isNotCropped = false  // override this...it is still not perfect
     } else if isNotCropped {
-      cropLabel = Constants.String.noneCropIdentifier
+      cropLabel = StringConstants.noneCropIdentifier
       log.verbose("[GTF:\(name)] Looks like video is not cropped")
     } else {
       // Check for other sources of crop.
@@ -227,7 +227,7 @@ extension GeometryTransform.ContextStage2 {
               !pwc.isAnimatingLayoutTransition {
       // Don't show crop OSD when disabling it for entering interactive mode (layout transition)
       log.verbose("[GTF:\(name)] Changing selectedCropLabel: \(inputVideoGeo.selectedCropLabel.quoted) → \(cropLabel.quoted)")
-      let osdLabel = cropLabel.isEmpty ? Constants.String.customCropIdentifier : cropLabel
+      let osdLabel = cropLabel.isEmpty ? StringConstants.customCropIdentifier : cropLabel
       player.sendOSD(.crop(osdLabel))
     }
 
@@ -267,7 +267,7 @@ extension GeometryTransform.ContextStage2 {
         log.verbose("[GTF:\(name)] Vid \(vidTrackID) has mpv \(mpvPropertyName): nil")
         return nil
       }
-      let pauseDuration = Constants.TimeInterval.videoParamsRetryInterval
+      let pauseDuration = TimeConstants.videoParamsRetryInterval
       log.debug("[GTF:\(name)] Could not get \(mpvPropertyName) from mpv. Will retry in \(pauseDuration)s (tries remaining: \(maxRetries - retryNum + 1))")
       Thread.sleep(forTimeInterval: pauseDuration)
     }

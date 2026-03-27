@@ -14,7 +14,7 @@ class ShutdownHandler {
 
   /// Whether the shutdown sequence timed out.
   private var shutdownTimedOut = false
-  private let shutdownTimer = TimeoutTimer(timeout: Constants.TimeInterval.appTerminationTimeout)
+  private let shutdownTimer = TimeoutTimer(timeout: TimeConstants.appTerminationTimeout)
 
   private var cancellables: Set<AnyCancellable> = []
 
@@ -87,7 +87,7 @@ class ShutdownHandler {
       // request taking too long does not represent an error in the shutdown code, whereas the
       // intention of the overall termination timeout is to recover from some sort of hold up in the
       // shutdown sequence that should not occur.
-      OnlineSubtitle.logout(timeout: Constants.TimeInterval.appTerminationTimeout - 1)
+      OnlineSubtitle.logout(timeout: TimeConstants.appTerminationTimeout - 1)
     }
 
     // Close all windows. When a player window is closed it will send a stop command to mpv to stop

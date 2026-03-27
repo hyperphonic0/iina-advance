@@ -14,7 +14,7 @@ class VolumeSliderCell: ScrollableSliderCell {
   var isMouseHoveringOverVolumeSlider = false
 
   /// Calls `wc.refreshVolumeSliderHoverEffect` on timeout
-  let hoverTimer = TimeoutTimer(timeout: Constants.TimeInterval.seekPreviewHideTimeout)
+  let hoverTimer = TimeoutTimer(timeout: TimeConstants.seekPreviewHideTimeout)
 
   override init() {
     super.init()

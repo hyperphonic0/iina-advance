@@ -8,6 +8,8 @@
 
 import Cocoa
 
+// MARK: Global Typealiases
+
 typealias Callback = () -> Void
 typealias MainActorCallback = @MainActor () -> Void
 typealias OnSuccessCallback = () -> Void
@@ -72,9 +74,189 @@ struct AppData {
 }  /// end `struct AppData`
 
 
-// Need these to work around namespace conflicts
-typealias Str = String
-typealias TimeInt = TimeInterval
+struct StringConstants {
+  // MARK: mpv API constants
+
+  static let mpvYes = "yes"
+  static let mpvNo = "no"
+  static let mpvArgNone = "none"
+
+  static let anyUnicodeKey = "ANY_UNICODE"
+  static let unmappedKey = "UNMAPPED"
+
+  static let mpvDefaultFont = "sans-serif"
+
+  // MARK: Internal identifiers
+  // (Should not be displayed because they are not localized)
+
+  static let noneCropIdentifier = "None"
+  static let customCropIdentifier = "Custom"
+  static let demoPlayerIdentifier = "demo"
+
+  // MARK: Displayed strings
+  static let degree = "°"
+  static let dot = "●"
+  static let blackRightPointingTriangle = "▶︎"
+  static let blackLeftPointingTriangle = "◀"
+  static let videoTimePlaceholder = "--:--:--"
+  static let trackNone = NSLocalizedString("track.none", comment: "<None>")
+  static let chapter = "Chapter"
+  static let fullScreen = NSLocalizedString("menu.fullscreen", comment: "Full Screen")
+  static let exitFullScreen = NSLocalizedString("menu.exit_fullscreen", comment: "Exit Full Screen")
+  static let pause = NSLocalizedString("menu.pause", comment: "Pause")
+  static let resume = NSLocalizedString("menu.resume", comment: "Resume")
+  static let `default` = NSLocalizedString("quicksetting.item_default", comment: "Default")
+  static let none = NSLocalizedString("quicksetting.item_none", comment: "None")
+  static let pip = NSLocalizedString("menu.pip", comment: "Enter Picture-in-Picture")
+  static let exitPIP = NSLocalizedString("menu.exit_pip", comment: "Exit Picture-in-Picture")
+  static let miniPlayer = NSLocalizedString("menu.mini_player", comment: "Enter Music Mode")
+  static let exitMiniPlayer = NSLocalizedString("menu.exit_mini_player", comment: "Exit Music Mode")
+  static let custom = NSLocalizedString("menu.crop_custom", comment: "Custom crop size")
+  static let findOnlineSubtitles = NSLocalizedString("menu.find_online_sub", comment: "Find Online Subtitles")
+  static let chaptersPanel = NSLocalizedString("menu.chapters", comment: "Show Chapters Sidebar")
+  static let hideChaptersPanel = NSLocalizedString("menu.hide_chapters", comment: "Hide Chapters Sidebar")
+  static let playlistPanel = NSLocalizedString("menu.playlist", comment: "Show Playlist Sidebar")
+  static let hidePlaylistPanel = NSLocalizedString("menu.hide_playlist", comment: "Hide Playlist Sidebar")
+  static let videoPanel = NSLocalizedString("menu.video", comment: "Show Video Sidebar")
+  static let hideVideoPanel = NSLocalizedString("menu.hide_video", comment: "Hide Video Sidebar")
+  static let audioPanel = NSLocalizedString("menu.audio", comment: "Show Audio Sidebar")
+  static let hideAudioPanel = NSLocalizedString("menu.hide_audio", comment: "Hide Audio Sidebar")
+  static let subtitlesPanel = NSLocalizedString("menu.subtitles", comment: "Show Subtitles Sidebar")
+  static let hideSubtitlesPanel = NSLocalizedString("menu.hide_subtitles", comment: "Hide Subtitles Sidebar")
+  static let hideSubtitles = NSLocalizedString("menu.sub_hide", comment: "Hide Subtitles")
+  static let showSubtitles = NSLocalizedString("menu.sub_show", comment: "Show Subtitles")
+  static let hideSecondSubtitles = NSLocalizedString("menu.sub_second_hide", comment: "Hide Second Subtitles")
+  static let showSecondSubtitles = NSLocalizedString("menu.sub_second_show", comment: "Show Second Subtitles")
+
+  // MARK: Logger per-player categories
+  static let iinaPlayerCategoryFmt = "%@-Plr"
+  static let iinaMpvCategoryFmt = "%@-mpv"
+  static let iinaHdrCategoryFmt = "%@-hdr"
+
+  // MARK: Pref keys
+  static let iinaLaunchPrefix = "Launch-"
+  static let openWindowListFmt = "\(iinaLaunchPrefix)%d-Windows"
+  static let managePlugins = NSLocalizedString("menu.manage_plugins", comment: "Manage Plugins…")
+  static let showPluginsPanel = NSLocalizedString("menu.show_plugins_panel", comment: "Show Plugins Sidebar")
+  static let hidePluginsPanel = NSLocalizedString("menu.hide_plugins_panel", comment: "Hide Plugins Sidebar")
+}
+
+/// All values are in seconds unless explicitly named differently
+struct TimeConstants {
+  /// Minimum time interval to sync play slider position, time labels, volume indicator & other UI.
+  static let uiTimeDebouncerDelay: TimeInterval = 0.05
+
+  /// Minimum value to set a mpv loop point to.
+  ///
+  /// Setting a loop point to zero disables looping, so when loop points are being adjusted IINA must ensure the mpv property is not
+  /// set to zero. However using `Double.leastNonzeroMagnitude` as the minimum value did not work because mpv truncates
+  /// the value when storing the A-B loop points in the watch later file. As a result the state of the A-B loop feature is not properly
+  /// restored when the media is played again. Using the following value as the minimum for loop points avoids this issue.
+  static let minLoopPointTime = 0.000001
+
+  /// See notes in GeometryTransform.swift
+  static let videoParamsRetryInterval: TimeInterval = 0.2
+
+  /// Speed of scrolling labels in music mode. Increase to scroll faster
+  static let scrollingLabelOffsetPerSec: TimeInterval = 15
+  static let scrollingLabelInitialWaitSec: TimeInterval = 1.0
+
+  static let keyDownHandlingTimeout = 1.0
+
+  /// How long to wait after the last call to `application(_:openFiles:)` before deciding that all files have been received.
+  ///
+  /// When a user opens multiple files simultaneously, sometimes the system will make one call to `application(_:openFiles:)`
+  /// per file (i.e., it will send multiple arrays each with 1 item), and we have no way to know when the calls are done.
+  /// The need for this list, & `openFilesTimer`, is described here:
+  /// https://stackoverflow.com/questions/37623734/why-nsapplicationdelegate-method-openfiles-is-being-called-multiple-times-on-a
+  static let applicationOpenFilesRepeatTimeout = 0.2
+
+  /// There's a lot going on at startup, so wait a bit, to give other queues some time before fetching durations, since
+  /// they are a lot less important.
+  static let initialPlaylistDelayBeforePrefetch = 2.0
+
+  /// Seeks are expensive; limit them to this frequency. (note that 1/60 == 0.017 fps)
+  static let sliderSeekThrottlingInterval = 0.01
+
+  /// After a user changes a setting via a control in Quick Settings, how long to wait before allowing Quick Settings to
+  /// refresh via an external request. Some time is needed for mpv to update its state with the new value, otherwise any
+  /// updates made using data pulled from mpv might be out of date.
+  static let quickSettingsUpdateGracePeriod = 0.5
+
+  /// Time in seconds to wait before regenerating thumbnails.
+  /// Each character the user types into the thumbnailWidth text field triggers a new thumb regen request.
+  /// This should help cut down on unnecessary requests.
+  static let thumbnailRegenerationDelay = 0.5
+  /// Minimum delay between saves (except at program exit). Used to debounce state save requests.
+  /// This should be on the order of whole seconds, because nowadays the save process usually takes 1 full second.
+  static let playerStateSaveDelay = 2.0
+  /// If state save is enabled and video is playing, make sure player is saved every this number of secs
+  static let playTimeSaveStateFrequency: TimeInterval = 10.0
+
+  /// Delay before auto-loading playlist from files in the opened file's directory. In seconds.
+  static let autoLoadDelay = 2.0
+
+  static let keyBindingsSearchDebounceDelay: TimeInterval = 0.1
+
+  static let pastLaunchResponseTimeout = 1.0
+  static let asynchronousModeTimeout: TimeInterval = 2.0
+  static let dislpayLinkStatusCheckInterval: TimeInterval = 0.5
+
+  // TimeoutTimer timeouts
+
+  /// The time of 6 seconds was picked to match up with the time QuickTime delays once playback is
+  /// paused before stopping audio. As mpv does not provide an event indicating a frame step has
+  /// completed the time used must not be too short or will catch mpv still drawing when stepping.
+  static let displayIdleTimeout = 6.0
+  static let seekPreviewHideTimeout = 0.2
+  /// How long since the last window finished restoring
+  static let restoreWindowsTimeout = 5.0
+
+  /// Scroll wheel with non-Apple device. May need adjustment for optimal results
+  static let stepScrollSessionTimeout = 0.1
+
+  static let musicModeChangeTrackTimeout = 1.0
+  static let historyTableDelayBeforeLoadingMsgDisplay = 0.25
+  static let denyWindowResizeTimeout = 0.2
+  static let denyWindowScrollTimeout = 0.2
+  static let musicModePopoverMinTimeout = 2.0
+  static let hideCursorMinTimeoutMS: CGFloat = 1
+  static let pipDidCloseTimeout = 1.0
+
+  // This should match what is in Settings > UI
+  static let osdTimeoutMin = 0.1
+  /// For OSD messages whose type is `alwaysEnabled`, we need to show them for a reasonable time
+  /// and need to ignore the user pref (because they may have OSD disabled as well!)
+  static let osdTimeoutForAlwaysEnabledMessages = 5.0
+  static let fadeableViewsTimeoutMin = 0.1
+
+  /// Longest time to wait for asynchronous shutdown tasks to finish before giving up on waiting and proceeding with termination.
+  ///
+  /// Ten seconds was chosen to provide plenty of time for termination and yet not be long enough that users start thinking they will
+  /// need to force quit IINA. As termination may involve logging out of an online subtitles provider it can take a while to complete if
+  /// the provider is slow to respond to the logout request.
+  static let appTerminationTimeout = 10.0
+
+  /// For Force Touch.
+  static let minimumPressDuration: TimeInterval = 0.5
+
+  /// For each scroll, how long the scroll wheel needs to be active for the scroll to be enabled.
+  /// Set to a larger value to better avoid triggering accidental scrolls while making other trackpad gestures.
+  static let minQualifyingScrollWheelDuration = 0.1
+
+  /// When starting another smooth scroll after the last one ends, if less than this amount of time has passed since the last scroll ended,
+  /// then `minQualifyingScrollWheelDuration` will be ignored and the new scroll session will start immediately. This increases responsiveness
+  /// when the user is trying to scroll long distances by rapidly moving their fingers in a repeated motion.
+  static let instantConsecutiveScrollStartWindow = 0.1
+
+  static let windowDidChangeScreenParametersThrottlingDelay = 0.2
+  static let windowDidChangeScreenThrottlingDelay = 0.2
+  static let playerTitleBarAndOSCUpdateThrottlingDelay = 0.5
+  static let windowDidMoveProcessingDelay = 0.2
+
+  static let historyTableCompleteFileStatusReload = 600.0
+}
+
 
 struct Constants {
   /// Official IINA release version numbers, as integers.
@@ -94,73 +276,6 @@ struct Constants {
     static let V1_4_3 = 10
     static let V1_4_4 = 11
     static let V1_5 = 12
-  }
-
-  struct String {
-    // MARK: mpv API constants
-
-    static let mpvYes = "yes"
-    static let mpvNo = "no"
-    static let mpvArgNone = "none"
-
-    static let anyUnicodeKey = "ANY_UNICODE"
-    static let unmappedKey = "UNMAPPED"
-
-    static let mpvDefaultFont = "sans-serif"
-
-    // MARK: Internal identifiers
-    // (Should not be displayed because they are not localized)
-
-    static let noneCropIdentifier = "None"
-    static let customCropIdentifier = "Custom"
-    static let demoPlayerIdentifier = "demo"
-
-    // MARK: Displayed strings
-    static let degree = "°"
-    static let dot = "●"
-    static let blackRightPointingTriangle = "▶︎"
-    static let blackLeftPointingTriangle = "◀"
-    static let videoTimePlaceholder = "--:--:--"
-    static let trackNone = NSLocalizedString("track.none", comment: "<None>")
-    static let chapter = "Chapter"
-    static let fullScreen = NSLocalizedString("menu.fullscreen", comment: "Full Screen")
-    static let exitFullScreen = NSLocalizedString("menu.exit_fullscreen", comment: "Exit Full Screen")
-    static let pause = NSLocalizedString("menu.pause", comment: "Pause")
-    static let resume = NSLocalizedString("menu.resume", comment: "Resume")
-    static let `default` = NSLocalizedString("quicksetting.item_default", comment: "Default")
-    static let none = NSLocalizedString("quicksetting.item_none", comment: "None")
-    static let pip = NSLocalizedString("menu.pip", comment: "Enter Picture-in-Picture")
-    static let exitPIP = NSLocalizedString("menu.exit_pip", comment: "Exit Picture-in-Picture")
-    static let miniPlayer = NSLocalizedString("menu.mini_player", comment: "Enter Music Mode")
-    static let exitMiniPlayer = NSLocalizedString("menu.exit_mini_player", comment: "Exit Music Mode")
-    static let custom = NSLocalizedString("menu.crop_custom", comment: "Custom crop size")
-    static let findOnlineSubtitles = NSLocalizedString("menu.find_online_sub", comment: "Find Online Subtitles")
-    static let chaptersPanel = NSLocalizedString("menu.chapters", comment: "Show Chapters Sidebar")
-    static let hideChaptersPanel = NSLocalizedString("menu.hide_chapters", comment: "Hide Chapters Sidebar")
-    static let playlistPanel = NSLocalizedString("menu.playlist", comment: "Show Playlist Sidebar")
-    static let hidePlaylistPanel = NSLocalizedString("menu.hide_playlist", comment: "Hide Playlist Sidebar")
-    static let videoPanel = NSLocalizedString("menu.video", comment: "Show Video Sidebar")
-    static let hideVideoPanel = NSLocalizedString("menu.hide_video", comment: "Hide Video Sidebar")
-    static let audioPanel = NSLocalizedString("menu.audio", comment: "Show Audio Sidebar")
-    static let hideAudioPanel = NSLocalizedString("menu.hide_audio", comment: "Hide Audio Sidebar")
-    static let subtitlesPanel = NSLocalizedString("menu.subtitles", comment: "Show Subtitles Sidebar")
-    static let hideSubtitlesPanel = NSLocalizedString("menu.hide_subtitles", comment: "Hide Subtitles Sidebar")
-    static let hideSubtitles = NSLocalizedString("menu.sub_hide", comment: "Hide Subtitles")
-    static let showSubtitles = NSLocalizedString("menu.sub_show", comment: "Show Subtitles")
-    static let hideSecondSubtitles = NSLocalizedString("menu.sub_second_hide", comment: "Hide Second Subtitles")
-    static let showSecondSubtitles = NSLocalizedString("menu.sub_second_show", comment: "Show Second Subtitles")
-
-    // MARK: Logger per-player categories
-    static let iinaPlayerCategoryFmt = "%@-Plr"
-    static let iinaMpvCategoryFmt = "%@-mpv"
-    static let iinaHdrCategoryFmt = "%@-hdr"
-
-    // MARK: Pref keys
-    static let iinaLaunchPrefix = "Launch-"
-    static let openWindowListFmt = "\(iinaLaunchPrefix)%d-Windows"
-    static let managePlugins = NSLocalizedString("menu.manage_plugins", comment: "Manage Plugins…")
-    static let showPluginsPanel = NSLocalizedString("menu.show_plugins_panel", comment: "Show Plugins Sidebar")
-    static let hidePluginsPanel = NSLocalizedString("menu.hide_plugins_panel", comment: "Hide Plugins Sidebar")
   }
 
   struct Menu {
@@ -210,122 +325,6 @@ struct Constants {
   static let glassCornerRadius: CGFloat = 15
   static let glassButtonCornerRadius: CGFloat = 12
 
-  /// All values are in seconds unless explicitly named differently
-  struct TimeInterval {
-    /// Minimum time interval to sync play slider position, time labels, volume indicator & other UI.
-    static let uiTimeDebouncerDelay: TimeInt = 0.05
-
-    /// Minimum value to set a mpv loop point to.
-    ///
-    /// Setting a loop point to zero disables looping, so when loop points are being adjusted IINA must ensure the mpv property is not
-    /// set to zero. However using `Double.leastNonzeroMagnitude` as the minimum value did not work because mpv truncates
-    /// the value when storing the A-B loop points in the watch later file. As a result the state of the A-B loop feature is not properly
-    /// restored when the media is played again. Using the following value as the minimum for loop points avoids this issue.
-    static let minLoopPointTime = 0.000001
-
-    /// See notes in GeometryTransform.swift
-    static let videoParamsRetryInterval: TimeInt = 0.2
-
-    /// Speed of scrolling labels in music mode. Increase to scroll faster
-    static let scrollingLabelOffsetPerSec: TimeInt = 15
-    static let scrollingLabelInitialWaitSec: TimeInt = 1.0
-
-    static let keyDownHandlingTimeout = 1.0
-
-    /// How long to wait after the last call to `application(_:openFiles:)` before deciding that all files have been received.
-    ///
-    /// When a user opens multiple files simultaneously, sometimes the system will make one call to `application(_:openFiles:)`
-    /// per file (i.e., it will send multiple arrays each with 1 item), and we have no way to know when the calls are done.
-    /// The need for this list, & `openFilesTimer`, is described here:
-    /// https://stackoverflow.com/questions/37623734/why-nsapplicationdelegate-method-openfiles-is-being-called-multiple-times-on-a 
-    static let applicationOpenFilesRepeatTimeout = 0.2
-
-    /// There's a lot going on at startup, so wait a bit, to give other queues some time before fetching durations, since
-    /// they are a lot less important.
-    static let initialPlaylistDelayBeforePrefetch = 2.0
-
-    /// Seeks are expensive; limit them to this frequency. (note that 1/60 == 0.017 fps)
-    static let sliderSeekThrottlingInterval = 0.01
-
-    /// After a user changes a setting via a control in Quick Settings, how long to wait before allowing Quick Settings to
-    /// refresh via an external request. Some time is needed for mpv to update its state with the new value, otherwise any
-    /// updates made using data pulled from mpv might be out of date.
-    static let quickSettingsUpdateGracePeriod = 0.5
-
-    /// Time in seconds to wait before regenerating thumbnails.
-    /// Each character the user types into the thumbnailWidth text field triggers a new thumb regen request.
-    /// This should help cut down on unnecessary requests.
-    static let thumbnailRegenerationDelay = 0.5
-    /// Minimum delay between saves (except at program exit). Used to debounce state save requests.
-    /// This should be on the order of whole seconds, because nowadays the save process usually takes 1 full second.
-    static let playerStateSaveDelay = 2.0
-    /// If state save is enabled and video is playing, make sure player is saved every this number of secs
-    static let playTimeSaveStateFrequency: TimeInt = 10.0
-
-    /// Delay before auto-loading playlist from files in the opened file's directory. In seconds.
-    static let autoLoadDelay = 2.0
-
-    static let keyBindingsSearchDebounceDelay: TimeInt = 0.1
-
-    static let pastLaunchResponseTimeout = 1.0
-    static let asynchronousModeTimeout: TimeInt = 2.0
-    static let dislpayLinkStatusCheckInterval: TimeInt = 0.5
-
-    // TimeoutTimer timeouts
-
-    /// The time of 6 seconds was picked to match up with the time QuickTime delays once playback is
-    /// paused before stopping audio. As mpv does not provide an event indicating a frame step has
-    /// completed the time used must not be too short or will catch mpv still drawing when stepping.
-    static let displayIdleTimeout = 6.0
-    static let seekPreviewHideTimeout = 0.2
-    /// How long since the last window finished restoring
-    static let restoreWindowsTimeout = 5.0
-
-    /// Scroll wheel with non-Apple device. May need adjustment for optimal results
-    static let stepScrollSessionTimeout = 0.1
-
-    static let musicModeChangeTrackTimeout = 1.0
-    static let historyTableDelayBeforeLoadingMsgDisplay = 0.25
-    static let denyWindowResizeTimeout = 0.2
-    static let denyWindowScrollTimeout = 0.2
-    static let musicModePopoverMinTimeout = 2.0
-    static let hideCursorMinTimeoutMS: CGFloat = 1
-    static let pipDidCloseTimeout = 1.0
-
-    // This should match what is in Settings > UI
-    static let osdTimeoutMin = 0.1
-    /// For OSD messages whose type is `alwaysEnabled`, we need to show them for a reasonable time
-    /// and need to ignore the user pref (because they may have OSD disabled as well!)
-    static let osdTimeoutForAlwaysEnabledMessages = 5.0
-    static let fadeableViewsTimeoutMin = 0.1
-
-    /// Longest time to wait for asynchronous shutdown tasks to finish before giving up on waiting and proceeding with termination.
-    ///
-    /// Ten seconds was chosen to provide plenty of time for termination and yet not be long enough that users start thinking they will
-    /// need to force quit IINA. As termination may involve logging out of an online subtitles provider it can take a while to complete if
-    /// the provider is slow to respond to the logout request.
-    static let appTerminationTimeout = 10.0
-
-
-    /// For Force Touch.
-    static let minimumPressDuration: TimeInt = 0.5
-
-    /// For each scroll, how long the scroll wheel needs to be active for the scroll to be enabled.
-    /// Set to a larger value to better avoid triggering accidental scrolls while making other trackpad gestures.
-    static let minQualifyingScrollWheelDuration = 0.1
-
-    /// When starting another smooth scroll after the last one ends, if less than this amount of time has passed since the last scroll ended,
-    /// then `minQualifyingScrollWheelDuration` will be ignored and the new scroll session will start immediately. This increases responsiveness
-    /// when the user is trying to scroll long distances by rapidly moving their fingers in a repeated motion.
-    static let instantConsecutiveScrollStartWindow = 0.1
-
-    static let windowDidChangeScreenParametersThrottlingDelay = 0.2
-    static let windowDidChangeScreenThrottlingDelay = 0.2
-    static let playerTitleBarAndOSCUpdateThrottlingDelay = 0.5
-    static let windowDidMoveProcessingDelay = 0.2
-
-    static let historyTableCompleteFileStatusReload = 600.0
-  }
   struct AnimationDuration {
     static let standard: CGFloat = Preference.double(for: .animationDurationDefault)
     static let tableUIChange: CGFloat = standard
@@ -356,7 +355,7 @@ struct Constants {
     // Immmutable default input configs.
     // TODO: combine into an OrderedDictionary when available
     static let defaultConfNamesSorted = ["IINA Default", "mpv Default", "VLC Default", "Movist Default", "Movist v2 Default"]
-    static let defaults: [Str: Str] = [
+    static let defaults: [String: String] = [
       "IINA Default": resourcePath("iina-default-input"),
       "mpv Default": resourcePath("input"),
       "VLC Default": resourcePath("vlc-default-input"),
@@ -364,7 +363,7 @@ struct Constants {
       "Movist v2 Default": resourcePath("movist-v2-default-input"),
     ]
 
-    static func resourcePath(_ resource: Str) -> Str {
+    static func resourcePath(_ resource: String) -> String {
       return Bundle.main.path(forResource: resource, ofType: fileExtension, inDirectory: confDirName)!
     }
     static let fileExtension  = "conf"

@@ -40,7 +40,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
   }
 
   /// Calls `refreshDenialPeriodDidEnd` at timeout
-  private let refreshDenialPeriodTimer = TimeoutTimer(timeout: Constants.TimeInterval.quickSettingsUpdateGracePeriod)
+  private let refreshDenialPeriodTimer = TimeoutTimer(timeout: TimeConstants.quickSettingsUpdateGracePeriod)
   private var isInRefreshDenialPeriod: Bool {
     refreshDenialPeriodTimer.isValid
   }
@@ -860,13 +860,13 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     switch columnName {
     case .isChosen:
       let isChosen = track == nil ? (activeId == 0) : (track!.id == activeId)
-      mutableString = NSMutableAttributedString(string: isChosen ? Constants.String.dot : "")
+      mutableString = NSMutableAttributedString(string: isChosen ? StringConstants.dot : "")
     case .trackName:
       if let track {
         mutableString = NSMutableAttributedString(string: track.infoString)
       } else {
         // "<None>"
-        mutableString = NSMutableAttributedString(string: Constants.String.trackNone)
+        mutableString = NSMutableAttributedString(string: StringConstants.trackNone)
         mutableString.addItalic(using: textField.font)
       }
     case .trackId:

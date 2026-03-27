@@ -61,7 +61,7 @@ class VideoView: NSView {
   // MARK: Init
 
   init(frame: CGRect, player: PlayerCore) {
-    self.logHDR = Logger.makeSubsystem(player, fmt: Constants.String.iinaHdrCategoryFmt)
+    self.logHDR = Logger.makeSubsystem(player, fmt: StringConstants.iinaHdrCategoryFmt)
     self.player = player
     super.init(frame: frame)
     self.idString = "VideoView"

@@ -16,8 +16,8 @@ fileprivate let startPoint = NSPoint(x: mediaInfoViewLeadingOffset, y: 0)
 /// Scrolls the text in the field, interpolating the position based on the system clock's elapsed time.
 ///
 /// Design:
-/// - When playback starts, waits for `Constants.TimeInterval.scrollingLabelInitialWaitSec` before scrolling.
-/// - Scrolls at a rate of `Constants.TimeInterval.scrollingLabelOffsetPerSec` per second.
+/// - When playback starts, waits for `TimeConstants.scrollingLabelInitialWaitSec` before scrolling.
+/// - Scrolls at a rate of `TimeConstants.scrollingLabelOffsetPerSec` per second.
 /// - To pause scroll, call `redraw(paused: true)`. Scroll will freeze at current position.
 /// - To resume scroll, call `redraw(paused: false)` Scroll will continue from its previous position...
 /// - ... UNLESS `reset()` was called. In that case, the text will start from `0` and wait for the above
@@ -114,10 +114,10 @@ class ScrollingTextField: NSTextField {
       drawPoint.x = xOffset + mediaInfoViewLeadingOffset
       attributedStringValue.draw(at: drawPoint)
     } else {
-      let initialWait = Constants.TimeInterval.scrollingLabelInitialWaitSec
+      let initialWait = TimeConstants.scrollingLabelInitialWaitSec
       let endTime = pauseTime ?? CFAbsoluteTimeGetCurrent()
       let scrollOffsetSecs = max(0, endTime - baseTime - initialWait)
-      let scrollOffset = scrollOffsetSecs * Constants.TimeInterval.scrollingLabelOffsetPerSec
+      let scrollOffset = scrollOffsetSecs * TimeConstants.scrollingLabelOffsetPerSec
       /// Loop back to beginning, but fudge the numbers to exclude the pause
       if appendedStringCopyWidth - scrollOffset < 0 {
         self.baseTime = CFAbsoluteTimeGetCurrent() - initialWait

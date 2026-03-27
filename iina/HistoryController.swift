@@ -629,7 +629,7 @@ final class HistoryController {
     guard !isAppTerminating else { return }
 
     // Do a full reload if too much time has gone by since the last full reload
-    let forceFullStatusReload = (CFAbsoluteTimeGetCurrent() - lastCompleteStatusReloadTime) > Constants.TimeInterval.historyTableCompleteFileStatusReload
+    let forceFullStatusReload = (CFAbsoluteTimeGetCurrent() - lastCompleteStatusReloadTime) > TimeConstants.historyTableCompleteFileStatusReload
     let sw = Utility.Stopwatch()
 
     var fileExistsMapUpdated: [URL: Bool] = forceFullStatusReload ? [:] : fileExistsMap

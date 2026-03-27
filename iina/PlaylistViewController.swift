@@ -776,7 +776,7 @@ extension PlaylistViewController: NSTableViewDelegate {
 
       switch identifier {
       case .isChosen:
-        let pointer = view.userInterfaceLayoutDirection == .rightToLeft ? Constants.String.blackLeftPointingTriangle : Constants.String.blackRightPointingTriangle
+        let pointer = view.userInterfaceLayoutDirection == .rightToLeft ? StringConstants.blackLeftPointingTriangle : StringConstants.blackRightPointingTriangle
         // ▶︎ Is Playing icon
         let text = isPlaying ? pointer : ""
         v.textField?.setFormattedText(stringValue: text, textColor: isPlayingTextColor)
@@ -805,7 +805,7 @@ extension PlaylistViewController: NSTableViewDelegate {
         let pointerGlyph: String
         if isCurrentChapter {
           pointerGlyph = view.userInterfaceLayoutDirection == .rightToLeft ?
-          Constants.String.blackLeftPointingTriangle :  Constants.String.blackRightPointingTriangle
+          StringConstants.blackLeftPointingTriangle :  StringConstants.blackRightPointingTriangle
         } else {
           pointerGlyph = ""
         }

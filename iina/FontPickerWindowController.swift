@@ -72,7 +72,7 @@ class FontPickerWindowController: NSWindowController, NSTableViewDelegate, NSTab
       tv.dataSource = self
       tv.delegate = self
     }
-    otherField.placeholderString = Constants.String.mpvDefaultFont
+    otherField.placeholderString = StringConstants.mpvDefaultFont
     searchField.delegate = self
     faceTableView.doubleAction = #selector(okBtnPressed)
     Logger.log("FontPickerWindow init done")
@@ -81,7 +81,7 @@ class FontPickerWindowController: NSWindowController, NSTableViewDelegate, NSTab
   func select(_ fontString: String ) {
     Logger.log("FontPickerWindow selecting \(fontString.quoted) (searching=\(isSearching.yn))")
 
-    otherField.stringValue = fontString == Constants.String.mpvDefaultFont ? "" : fontString
+    otherField.stringValue = fontString == StringConstants.mpvDefaultFont ? "" : fontString
 
     updateTablesFromOtherFieldValue()
   }
@@ -179,7 +179,7 @@ class FontPickerWindowController: NSWindowController, NSTableViewDelegate, NSTab
   @IBAction func okBtnPressed(_ sender: AnyObject) {
     if let finishedPicking {
       let otherString = otherField.stringValue
-      let selectedFont = otherString.isEmpty ? Constants.String.mpvDefaultFont : otherString
+      let selectedFont = otherString.isEmpty ? StringConstants.mpvDefaultFont : otherString
       finishedPicking(selectedFont)
       // remove the listener
       self.finishedPicking = nil

@@ -28,7 +28,7 @@ extension PlayerWindowController {
   @discardableResult @MainActor
   func executeActionForKey(normalizedMpvKey: String, fallbackAction: ((PlayerCore) -> Void)? = nil) -> Bool {
     if let keyBinding = player.keyBindingContext.matchActiveKeyBinding(endingWith: normalizedMpvKey) {
-      if keyBinding.normalizedMpvKey == Constants.String.anyUnicodeKey {
+      if keyBinding.normalizedMpvKey == StringConstants.anyUnicodeKey {
         player.mpv.queue.async { [self] in
           guard player.isActive else { return }
           // Matched ANY_UNICODE: just pass the key through to mpv. It will know what to do with it.
@@ -137,7 +137,7 @@ extension PlayerWindowController {
         returnValue = player.mpv.command(rawString: rawAction)
         dispatchGroup.leave()
       }
-      let waitResult = dispatchGroup.wait(timeout: .now() + Constants.TimeInterval.keyDownHandlingTimeout)
+      let waitResult = dispatchGroup.wait(timeout: .now() + TimeConstants.keyDownHandlingTimeout)
       if waitResult == .timedOut {
         log.debug("Command timed out: \(rawAction.quoted)")
         return false

@@ -92,7 +92,7 @@ struct Logger {
       if let subsystem = playerLogs[playerID] {
         return subsystem
       }
-      let subsystem = SimpleSubsystem(rawValue: String(format: Constants.String.iinaPlayerCategoryFmt, playerID))
+      let subsystem = SimpleSubsystem(rawValue: String(format: StringConstants.iinaPlayerCategoryFmt, playerID))
 
       playerLogs[playerID] = subsystem
       return subsystem

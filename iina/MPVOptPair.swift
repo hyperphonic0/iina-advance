@@ -26,9 +26,9 @@ struct MPVOptPair: Sendable, CustomStringConvertible {
     if val.isEmpty {
       // check for special syntax for yes/no
       if key.hasPrefix("no-") {
-        return MPVOptPair(key: optionName, val: Constants.String.mpvNo)
+        return MPVOptPair(key: optionName, val: StringConstants.mpvNo)
       } else {
-        return MPVOptPair(key: key, val: Constants.String.mpvYes)
+        return MPVOptPair(key: key, val: StringConstants.mpvYes)
       }
     }
 

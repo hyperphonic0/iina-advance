@@ -75,7 +75,7 @@ final class StartupHandler {
   /// Serves as a queue to store file paths received across multiple invocations of `application(_:openFiles:)` within a short interval.
   @MainActor private var pendingFilesForApplicationOpenFiles: [URL] = []
   /// The timer for `OpenFileRepeatTime` and `application(_:openFiles:)`.
-  @MainActor private let openFilesTimer = TimeoutTimer(timeout: Constants.TimeInterval.applicationOpenFilesRepeatTimeout)
+  @MainActor private let openFilesTimer = TimeoutTimer(timeout: TimeConstants.applicationOpenFilesRepeatTimeout)
 
   // TODO: clean up messy & confusing logic for `isAwaitingNewWindowsForOpenedFile` & `pwcsForOpenFiles`
   /// When launching, this variable indicates that the UI needs to wait for opened file(s) to finish loading before showing all windows.
@@ -111,7 +111,7 @@ final class StartupHandler {
   @MainActor var playersToRestore: [WindowAutosaveName: PlayerToRestore] = [:]
 
   /// Calls `self.restoreDidTimeOut` on timeout, which displays `restoreTimeoutPromptWindow`.
-  @MainActor fileprivate let restoreTimer = TimeoutTimer(timeout: Constants.TimeInterval.restoreWindowsTimeout)
+  @MainActor fileprivate let restoreTimer = TimeoutTimer(timeout: TimeConstants.restoreWindowsTimeout)
   @MainActor fileprivate var restoreTimeoutPromptWindow: ThreeButtonPromptWindow? = nil
 
   // - Properties: Command Line
@@ -401,7 +401,7 @@ final class StartupHandler {
     // If too much time has passed (in particular if user took a long time to respond to confirmation dialog), consider the data stale.
     // Due to 1s delay in chosen strategy for verifying whether other instances are running, try not to repeat it twice.
     // Users who are quick with their user interface device probably know what they are doing and will be impatient.
-    let pastLaunchesCache = stopwatch.secElapsed > Constants.TimeInterval.pastLaunchResponseTimeout ? nil : pastLaunches
+    let pastLaunchesCache = stopwatch.secElapsed > TimeConstants.pastLaunchResponseTimeout ? nil : pastLaunches
     let savedWindowsBackToFront = UIState.shared.consolidateSavedWindowsFromPastLaunches(pastLaunches: pastLaunchesCache)
 
     guard !savedWindowsBackToFront.isEmpty else {
