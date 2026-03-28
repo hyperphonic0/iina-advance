@@ -232,7 +232,7 @@ class VirtualScrollWheel {
 
 #if DEBUG
     if DebugConfig.enableScrollWheelDebug {
-      log.verbose("ScrollWheel phases: \(event.phase.name)/\(event.momentumPhase.name) State: \(state) → \(newState)")
+      log.verbose("ScrollWheel phase=\(event.phase.name) momPhase=\(event.momentumPhase.name). State=\(state) → \(newState)")
     }
 #endif
 
@@ -271,11 +271,10 @@ class VirtualScrollWheel {
       case .smoothScrollMayBegin(let intentStartTime):
         guard let currentSession else { Logger.fatal("No current session for state \(state) → \(newState)") }
 
-        let now = CFAbsoluteTimeGetCurrent()
         var startScrolling = false
 
-        let timeElapsedSinceLastSessionEnd = now - lastSessionEndTime
-        if timeElapsedSinceLastSessionEnd < TimeConstants.instantConsecutiveScrollStartWindow {
+        let timeElapsedSinceLastSessionEnd = CFAbsoluteTimeGetCurrent() - lastSessionEndTime
+        if timeElapsedSinceLastSessionEnd <= TimeConstants.instantConsecutiveScrollStartWindow {
           startScrolling = true
           log.verbose("Time elapsed since last scroll (\(timeElapsedSinceLastSessionEnd.stringTrunc3f)) < instantConsecutiveScrollStartWindow (\(timeElapsedSinceLastSessionEnd.logStr)): starting new scroll session immediately")
         } else {
@@ -365,7 +364,7 @@ class VirtualScrollWheel {
         /// any pre-existing session.
         return .notScrolling
       } else if phase.contains(.began) {
-        return .smoothScrollMayBegin(Date().timeIntervalSince1970)
+        return .smoothScrollMayBegin(CFAbsoluteTimeGetCurrent())
       } else if phase.contains(.changed) {
         return .smoothScrolling
       } else if phase.contains(.ended) {

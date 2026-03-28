@@ -645,7 +645,7 @@ class OpenSubClient {
     func delayBeforeCall() -> TimeInterval {
       // No delay needed if the current time is outside of the window for which the quota given in
       // remaining is applicable.
-      let now = Date().timeIntervalSince1970
+      let now = CFAbsoluteTimeGetCurrent()
       guard resets > now else { return 0 }
       remaining -= 1
       // No delay needed if quota has not been exceeded.
