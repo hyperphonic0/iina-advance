@@ -505,26 +505,26 @@ class Utility {
   }()
 
   static let userInputConfDirURL: URL = {
-    let url = Utility.appSupportDirUrl.appendingPathComponent(AppData.userInputConfFolder, isDirectory: true)
+    let url = Utility.appSupportDirUrl.appendingPathComponent(StringConstants.userInputConfFolder, isDirectory: true)
     createDirIfNotExist(url: url)
     return url
   }()
 
   static let watchLaterURL: URL = {
-    let url = Utility.appSupportDirUrl.appendingPathComponent(AppData.watchLaterFolder, isDirectory: true)
+    let url = Utility.appSupportDirUrl.appendingPathComponent(StringConstants.watchLaterFolder, isDirectory: true)
     createDirIfNotExist(url: url)
     Logger.log("Watch Later directory: \(url.path.pii.quoted)")
     return url
   }()
 
   static let pluginsURL: URL = {
-    let url = Utility.appSupportDirUrl.appendingPathComponent(AppData.pluginsFolder, isDirectory: true)
+    let url = Utility.appSupportDirUrl.appendingPathComponent(StringConstants.pluginsFolder, isDirectory: true)
     createDirIfNotExist(url: url)
     return url
   }()
 
   static let binariesURL: URL = {
-    let url = Utility.appSupportDirUrl.appendingPathComponent(AppData.binariesFolder, isDirectory: true)
+    let url = Utility.appSupportDirUrl.appendingPathComponent(StringConstants.binariesFolder, isDirectory: true)
     createDirIfNotExist(url: url)
     return url
   }()
@@ -538,20 +538,20 @@ class Utility {
   }()
 
   static let thumbnailCacheURL: URL = {
-    let appThumbnailCacheUrl = cacheURL.appendingPathComponent(AppData.thumbnailCacheFolder, isDirectory: true)
+    let appThumbnailCacheUrl = cacheURL.appendingPathComponent(StringConstants.thumbnailCacheFolder, isDirectory: true)
     createDirIfNotExist(url: appThumbnailCacheUrl)
     Logger.log.debug("Using thumb cache dir: \(appThumbnailCacheUrl.path.pii.quoted)")
     return appThumbnailCacheUrl
   }()
 
   static let screenshotCacheURL: URL = {
-    let url = cacheURL.appendingPathComponent(AppData.screenshotCacheFolder, isDirectory: true)
+    let url = cacheURL.appendingPathComponent(StringConstants.screenshotCacheFolder, isDirectory: true)
     createDirIfNotExist(url: url)
     return url
   }()
 
   static let playbackHistoryURL: URL = {
-    return Utility.appSupportDirUrl.appendingPathComponent(AppData.historyFile, isDirectory: false)
+    return Utility.appSupportDirUrl.appendingPathComponent(StringConstants.historyFile, isDirectory: false)
   }()
 
   static let tempDirURL: URL = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)

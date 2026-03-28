@@ -99,12 +99,12 @@ class RotationGestureHandler {
   // Find which 90° rotation the given rotation is closest to (within 45° of it).
   private func findClosestQuarterRotation(_ mpvNormalizedRotationDegrees: Int) -> Int {
     assert(mpvNormalizedRotationDegrees >= 0 && mpvNormalizedRotationDegrees < 360)
-    for quarterCircleRotation in AppData.rotations {
+    for quarterCircleRotation in Constants.rotations {
       if mpvNormalizedRotationDegrees < quarterCircleRotation + 45 {
         return quarterCircleRotation
       }
     }
-    return AppData.rotations[0]
+    return Constants.rotations[0]
   }
 
   private func findNearestCGQuarterRotation(forCGRotation cgRotationInDegrees: CGFloat, equalToMpvRotation mpvQuarterRotation: Int) -> CGFloat {

@@ -493,9 +493,9 @@ extension PlayerWindowController {
       }
 
     case 10:  // smaller size
-      scaleVideoByIncrement(-AppData.scaleStepWidthPixels)
+      scaleVideoByIncrement(-Constants.scaleStepWidthPixels)
     case 11:  // bigger size
-      scaleVideoByIncrement(AppData.scaleStepWidthPixels)
+      scaleVideoByIncrement(Constants.scaleStepWidthPixels)
     default:
       return
     }

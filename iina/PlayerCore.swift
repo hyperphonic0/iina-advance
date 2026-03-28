@@ -1738,7 +1738,7 @@ final class PlayerCore: NSObject {
 
   func setVideoRotate(_ userRotation: Int) {
     mpv.queue.async { [self] in
-      guard AppData.rotations.firstIndex(of: userRotation)! >= 0 else {
+      guard Constants.rotations.firstIndex(of: userRotation)! >= 0 else {
         log.error("Invalid value for videoRotate, ignoring: \(userRotation)")
         return
       }

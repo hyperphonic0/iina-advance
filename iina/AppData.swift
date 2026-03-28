@@ -17,37 +17,8 @@ typealias OnErrorCallback = (String) -> Void
 
 typealias MainActorSuccessCallback = MainActorCallback
 
-/// Trying to deprecate this struct. New constants should be added to `Constants` struct.
+/// __Deprecated!__. New constants should be added to `Constants` struct.
 struct AppData {
-
-  // Stopgap for https://github.com/mpv-player/mpv/issues/4000
-  static let availableSpeedValues: [Double] = [0.03125, 0.0625, 0.125, 0.25, 0.5, 1, 2, 4, 8, 16, 32]
-
-  // Min/max speed for playback speed slider in Quick Settings
-  static let minSpeed = 0.25
-  static let maxSpeed = 16.0
-
-  /// Lowest possible speed allowed by mpv (0.01x)
-  static let mpvMinPlaybackSpeed = 0.01
-
-  static let rotations: [Int] = [0, 90, 180, 270]
-  static let scaleStepWidthPixels: Int = 25
-
-  /** Seek amount */
-  static let seekAmountMap = [0, 0.05, 0.1, 0.25, 0.5]
-  static let seekAmountMapMouse = [0, 0.5, 1, 2, 4]
-  static let volumeMap = [0, 0.25, 0.5, 0.75, 1]
-  static let playbackSpeedMap = [0, 0.001, 0.002, 0.005, 0.01]
-
-  static let encodings = CharEncoding.list
-
-  static let userInputConfFolder = "input_conf"
-  static let watchLaterFolder = "watch_later"
-  static let pluginsFolder = "plugins"
-  static let binariesFolder = "bin"
-  static let historyFile = "history.plist"
-  static let thumbnailCacheFolder = "thumb_cache"
-  static let screenshotCacheFolder = "screenshot_cache"
 
   static let githubLink = "https://github.com/svobs/iina-advance"
   static let contributorsLink = "https://github.com/iina/iina/graphs/contributors"
@@ -75,6 +46,16 @@ struct AppData {
 
 
 struct StringConstants {
+  // MARK: File system
+
+  static let userInputConfFolder = "input_conf"
+  static let watchLaterFolder = "watch_later"
+  static let pluginsFolder = "plugins"
+  static let binariesFolder = "bin"
+  static let historyFile = "history.plist"
+  static let thumbnailCacheFolder = "thumb_cache"
+  static let screenshotCacheFolder = "screenshot_cache"
+
   // MARK: mpv API constants
 
   static let mpvYes = "yes"
@@ -300,6 +281,21 @@ struct Constants {
   /// If set to `false`, `vid` can change to `0` while loading, and possibly the media's tracklist can be briefly
   /// inaccurate or missing. Note that the IINA default album art will be shown while `vid=0`.
   static let requireFileLoadedForTrackReload: Bool = false
+
+  // Stopgap for https://github.com/mpv-player/mpv/issues/4000
+  static let availableSpeedValues: [Double] = [0.03125, 0.0625, 0.125, 0.25, 0.5, 1, 2, 4, 8, 16, 32]
+
+  // Min/max speed for playback speed slider in Quick Settings
+  static let minSpeed = 0.25
+  static let maxSpeed = 16.0
+
+  /// Lowest possible speed allowed by mpv (0.01x)
+  static let mpvMinPlaybackSpeed = 0.01
+
+  static let rotations: [Int] = [0, 90, 180, 270]
+  static let scaleStepWidthPixels: Int = 25
+
+  static let encodings = CharEncoding.list
 
   static let maxAttemptsForGetVideoParams = 6
 

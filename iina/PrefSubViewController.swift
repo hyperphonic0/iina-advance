@@ -67,7 +67,7 @@ class PrefSubViewController: PreferenceViewController, PreferenceWindowEmbeddabl
 #endif
 
     let defaultEncoding = Preference.string(for: .defaultEncoding)
-    for encoding in AppData.encodings {
+    for encoding in Constants.encodings {
       defaultEncodingList.addItem(withTitle: encoding.title)
       let lastItem = defaultEncodingList.lastItem!
       lastItem.representedObject = encoding.code

@@ -27,7 +27,7 @@ fileprivate let speedFormatter: NumberFormatter = {
   fmt.maximumFractionDigits = 6  // matches mpv behavior
   fmt.usesSignificantDigits = false
   fmt.roundingMode = .halfDown   // matches mpv behavior
-  fmt.minimum = NSNumber(floatLiteral: AppData.mpvMinPlaybackSpeed)
+  fmt.minimum = NSNumber(floatLiteral: Constants.mpvMinPlaybackSpeed)
   return fmt
 }()
 
@@ -486,7 +486,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
   /// - Parameter speed: Playback speed.
   /// - Returns: Appropriate slider value.
   private func convertSpeedToSliderValue(_ speed: Double) -> Double {
-    log(speed / AppData.minSpeed) / log(AppData.maxSpeed / AppData.minSpeed) * speedSliderStepCount
+    log(speed / Constants.minSpeed) / log(Constants.maxSpeed / Constants.minSpeed) * speedSliderStepCount
   }
 
   // TODO: should probably call this to change crop label every time a change to custom crop filter is detected
@@ -567,7 +567,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     updateAspectControls(using: videoGeo)
     updateCropControls(using: videoGeo)
 
-    if let knownRotationIndex = AppData.rotations.firstIndex(of: videoGeo.userRotation) {
+    if let knownRotationIndex = Constants.rotations.firstIndex(of: videoGeo.userRotation) {
       rotateSegment.selectSegment(withTag: knownRotationIndex)
     } else {
       // Not a right-angle rotation: deselect all segments
@@ -1113,10 +1113,10 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     }
   }
 
-  // Sets mpv's `MPVOption.Video.videoRotate` property if it is one of the 4 `AppData.rotations` values
+  // Sets mpv's `MPVOption.Video.videoRotate` property if it is one of the 4 `Constants.rotations` values
   @IBAction func rotationChangedAction(_ sender: NSSegmentedControl) {
     startRefreshDenialPeriod()
-    let value = AppData.rotations[sender.selectedSegment]
+    let value = Constants.rotations[sender.selectedSegment]
     player.setVideoRotate(value)
   }
 
@@ -1166,7 +1166,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     let sliderValue = sender.doubleValue
     // Attempt to round speed to 2 decimal places. If user is using the slider, any more
     // precision than that is just a distraction
-    let newSpeed = (AppData.minSpeed * pow(AppData.maxSpeed / AppData.minSpeed, sliderValue / speedSliderStepCount)).roundedTo2()
+    let newSpeed = (Constants.minSpeed * pow(Constants.maxSpeed / Constants.minSpeed, sliderValue / speedSliderStepCount)).roundedTo2()
     player.log.verbose("Speed slider changed to \(sliderValue) → newSpeed = \(newSpeed)")
     updateSpeed(to: newSpeed)
   }

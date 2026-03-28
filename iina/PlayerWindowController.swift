@@ -159,7 +159,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
   /// The maximum pressure recorded when clicking on the speed arrow buttons.
   var maxPressure: Int = 0
   /// The value of speedValueIndex before Force Touch.
-  var oldSpeedValueIndex: Int = AppData.availableSpeedValues.count / 2
+  var oldSpeedValueIndex: Int = Constants.availableSpeedValues.count / 2
 
   /// Force Touch: for `PK.forceTouchAction`
   var isCurrentPressInSecondStage = false
@@ -2349,7 +2349,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
       player.seek(relativeSecond: left ? -10 : 10, option: .defaultValue)
 
     case .speed:
-      let indexSpeed1x = AppData.availableSpeedValues.count / 2
+      let indexSpeed1x = Constants.availableSpeedValues.count / 2
       let directionUnit: Int = (left ? -1 : 1)
       let currentSpeedIndex = findClosestCurrentSpeedIndex()
       let newSpeedIndex: Int
@@ -2382,8 +2382,8 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
         guard didRelease else { return }
         newSpeedIndex = currentSpeedIndex + directionUnit
       }
-      let newSpeedIndexClamped = newSpeedIndex.clamped(to: 0..<AppData.availableSpeedValues.count)
-      let newSpeed = AppData.availableSpeedValues[newSpeedIndexClamped]
+      let newSpeedIndexClamped = newSpeedIndex.clamped(to: 0..<Constants.availableSpeedValues.count)
+      let newSpeed = Constants.availableSpeedValues[newSpeedIndexClamped]
       guard player.info.playSpeed != newSpeed else { return }
       player.setSpeed(newSpeed, forceResume: true) // always resume if paused
     }
@@ -2391,12 +2391,12 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
 
   private func findClosestCurrentSpeedIndex() -> Int {
     let currentSpeed = player.info.playSpeed
-    for (speedIndex, speedValue) in AppData.availableSpeedValues.enumerated() {
+    for (speedIndex, speedValue) in Constants.availableSpeedValues.enumerated() {
       if currentSpeed <= speedValue {
         return speedIndex
       }
     }
-    return AppData.availableSpeedValues.count - 1
+    return Constants.availableSpeedValues.count - 1
   }
 
   @objc func toggleOnTop(_ sender: AnyObject) {

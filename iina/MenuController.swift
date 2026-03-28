@@ -265,8 +265,8 @@ class MenuController: NSObject, NSMenuDelegate {
     cropMenu.insertItem(NSMenuItem.separator(), at: 1 + Aspect.aspectsInMenu.count)
 
     // -- rotation
-    let rotationTitles = AppData.rotations.map { "\($0)\(StringConstants.degree)" }
-    bind(menu: rotationMenu, withOptions: rotationTitles, objects: AppData.rotations, objectMap: nil, action: #selector(PlayerWindowController.menuChangeRotation(_:))) {
+    let rotationTitles = Constants.rotations.map { "\($0)\(StringConstants.degree)" }
+    bind(menu: rotationMenu, withOptions: rotationTitles, objects: Constants.rotations, objectMap: nil, action: #selector(PlayerWindowController.menuChangeRotation(_:))) {
       PlayerManager.shared.activePlayer?.pwc.geo.video.userRotation == $0.representedObject as? Int
     }
 
@@ -344,8 +344,8 @@ class MenuController: NSObject, NSMenuDelegate {
     resetSubDelay.action = #selector(PlayerWindowController.menuResetSubDelay(_:))
 
     // encoding
-    let encodingTitles = AppData.encodings.map { $0.title }
-    let encodingObjects = AppData.encodings.map { $0.code }
+    let encodingTitles = Constants.encodings.map { $0.title }
+    let encodingObjects = Constants.encodings.map { $0.code }
     let action = #selector(PlayerWindowController.menuSetSubEncoding(_:))
     bind(menu: encodingMenu, withOptions: encodingTitles, objects: encodingObjects, objectMap: nil, action: action) {
       PlayerManager.shared.activePlayer?.info.subEncoding == $0.representedObject as? String
@@ -531,7 +531,7 @@ class MenuController: NSObject, NSMenuDelegate {
     subDelayIndicator.title = String(format: NSLocalizedString("menu.sub_delay", comment: "Subtitle Delay:"), subDelayString)
 
     let encodingCode = player.info.subEncoding ?? "auto"
-    for encoding in AppData.encodings {
+    for encoding in Constants.encodings {
       if encoding.code == encodingCode {
         encodingMenu.item(withTitle: encoding.title)?.state = .on
       }
