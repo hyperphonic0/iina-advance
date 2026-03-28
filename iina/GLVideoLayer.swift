@@ -228,6 +228,8 @@ class GLVideoLayer: CAOpenGLLayer {
     isAsynchronous = true
   }
 
+  /// Similar to `drawSync()`, but draws asynchronously by first enqueuing onto a `DispatchQueue`.
+  /// This is also self-correcting under heavy load by dropping draw calls when the queue starts to grow.
   func drawAsync(onSuccess: (() -> Void)? = nil) {
     // Playback is noticeable smoother for ≥30fps videos if this is called immediately instead of enqueued…
     // Could this cause a race condition which results in the draw call being off by a frame? Do we care?
@@ -252,8 +254,10 @@ class GLVideoLayer: CAOpenGLLayer {
     }
   }
 
-  /// Although this generates a warning in Xcode, synchronous drawing via the DisplayLink seems far smoother.
-  /// Despite Xcode's declarations, no lockup has yet been observed.
+  /// Although this generates a warning in Xcode, synchronous drawing via the DisplayLink is far smoother during
+  /// animations. Despite Xcode's warning, this should not result in a unrecoverable lockup because we only use this
+  /// for brief & finite periods (during animations and/or resizing, as indicated by `isAsynchronous==true`). Under
+  /// normal circumstances, `drawAsync` is used.
   func drawSync(onSuccess: (() -> Void)? = nil) {
     mpvReportSwap()
     display()
