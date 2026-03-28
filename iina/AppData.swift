@@ -267,6 +267,8 @@ struct Constants {
 
   static let chineseNumbers: [Character] = ["零", "一", "二", "三", "四", "五", "六", "七", "八", "九", "十"]
 
+  static let attachmentChar = Character("\u{FFFC}")
+
   static let stdinPath = "-"
   static let stdinURL = URL(string: "stdin")!
 

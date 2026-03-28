@@ -128,8 +128,7 @@ class LanguageTokenField: NSTokenField {
 
   func controlTextDidChange(_ obj: Notification) {
     guard let layoutManager = layoutManager else { return }
-    let attachmentChar = Character(UnicodeScalar(NSTextAttachment.character)!)
-    let finished = layoutManager.attributedString().string.split(separator: attachmentChar).count == 0
+    let finished = layoutManager.attributedString().string.split(separator: Constants.attachmentChar).count == 0
     if finished {
       Logger.log("LTF Submitting changes from controlTextDidChange()", level: .verbose)
       submitChanges()
@@ -298,3 +297,4 @@ extension LanguageTokenField: NSTokenFieldDelegate {
     return []
   }
 }
+
