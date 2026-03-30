@@ -153,7 +153,9 @@ final class MPVController: NSObject {
       log.error("Skipping call to mpv_destroy; mpv handle is nil!")
       return
     }
-    mpv_destroy(mpv)
+    ObjcUtils.silenced { [self] in
+      mpv_destroy(mpv)
+    }
     mpv = nil
   }
 

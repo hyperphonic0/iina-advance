@@ -2936,7 +2936,7 @@ final class PlayerCore: NSObject {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
 
     guard !isStopping else {
-      log.verbose("SyncUI: not syncing: player not active")
+      log.trace("SyncUI: not syncing: player not active")
       return nil
     }
 
