@@ -10,6 +10,8 @@ import Foundation
 
 fileprivate let changeSelectedConfActionName: String = "Change Active Config"
 
+fileprivate let log = Logger.input
+
 /**
  Responsible for changing the state of the Key Bindings Configuration ("Conf") table by building new versions of `ConfTableState`.
  For the most part, methods in this class should only be directly called by `ConfTableState`; but only this class will read & write
@@ -56,7 +58,7 @@ final class ConfTableStateManager: NSObject {
     if let selectedConf = Preference.string(for: .currentInputConfigName) {
       selectedConfName = selectedConf
     } else {
-      AppInputConfig.log.warn("Could not get pref: \(Preference.Key.currentInputConfigName.rawValue.quoted): will use default (\(defaultConfName.quoted))")
+      log.warn("Could not get pref: \(Preference.Key.currentInputConfigName.rawValue.quoted): will use default (\(defaultConfName.quoted))")
       selectedConfName = defaultConfName
     }
 
@@ -71,27 +73,30 @@ final class ConfTableStateManager: NSObject {
   override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
     guard let keyPath = keyPath, let change = change else { return }
 
-    DispatchQueue.main.async {  // had some issues with race conditions
-      let curr = ConfTableState.current
+    switch keyPath {
 
-      switch keyPath {
+    case Preference.Key.currentInputConfigName.rawValue:
+      guard let selectedConfNameNew = change[.newKey] as? String else { return }
 
-      case Preference.Key.currentInputConfigName.rawValue:
-        guard let selectedConfNameNew = change[.newKey] as? String, !selectedConfNameNew.equalsIgnoreCase(curr.selectedConfName) else { return }
+      DispatchQueue.main.async {  // had some issues with race conditions
+        let curr = ConfTableState.current
+        guard !selectedConfNameNew.equalsIgnoreCase(curr.selectedConfName) else { return }
+
         guard curr.specialState != .fallBackToDefaultConf else {
           // Avoids infinite loop if two or more instances are running at the same time
-          AppInputConfig.log.verbose("Already in error state; ignoring pref update for selectedConf: \(selectedConfNameNew.quoted)")
+          log.verbose("Already in error state; ignoring pref update for selectedConf: \(selectedConfNameNew.quoted)")
           return
         }
         guard curr.selectedConfName != selectedConfNameNew else { return }
-        AppInputConfig.log.verbose("Detected pref update for selectedConf: \(selectedConfNameNew.quoted)")
+        log.verbose("Detected pref update for selectedConf: \(selectedConfNameNew.quoted)")
         // Update the UI in case the update came from an external source. Make sure not to update prefs,
         // as this can cause a runaway chain reaction of back-and-forth updates if two or more instances are open!
         curr.changeSelectedConf(selectedConfNameNew, skipSaveToPrefs: true)
-      default:
-        return
       }
+    default:
+      return
     }
+
   }
 
   // TODO: monitor conf dir for changes and call this on change
@@ -99,7 +104,7 @@ final class ConfTableStateManager: NSObject {
     let curr = ConfTableState.current
     let userConfDictNew: [String: String] = findUserConfigs()
     guard !userConfDictNew.keys.sorted().elementsEqual(curr.userConfDict.keys.sorted()) else { return }
-    AppInputConfig.log.verbose("Detected pref update for inputConfigs")
+    log.verbose("Detected pref update for inputConfigs")
     changeState(userConfDictNew, selectedConfName: curr.selectedConfName, skipSaveToPrefs: true)
   }
 
@@ -111,13 +116,13 @@ final class ConfTableStateManager: NSObject {
   func appendBindingsToUserConfFile(_ mappingsToAppend: [KeyMapping], targetConfName: String) {
     guard targetConfName != ConfTableState.current.selectedConfName else {
       // Should use BindingTableState instead
-      AppInputConfig.log.verbose("appendBindingsToUserConfFile() should not be called for appending to the currently selected conf (\(targetConfName.quoted))! Ignoring.")
+      log.verbose("appendBindingsToUserConfFile() should not be called for appending to the currently selected conf (\(targetConfName.quoted))! Ignoring.")
       return
     }
 
     let inputConfFile = fileCache.getOrLoadConfFile(confName: targetConfName)
     guard !inputConfFile.failedToLoad else {
-      AppInputConfig.log.error("Cannot append to conf: \(targetConfName.quoted): file was not loaded properly!")
+      log.error("Cannot append to conf: \(targetConfName.quoted): file was not loaded properly!")
       return
     }
 
@@ -133,12 +138,12 @@ final class ConfTableStateManager: NSObject {
     let tableUIChange = TableUIChange(.none, flashAfter: flashAfter)
 
     let doAction = {
-      AppInputConfig.log.debug("Appending to conf: \(targetConfName.quoted), prevCount: \(fileMappingsOrig.count), newCount: \(fileMappingsAppended.count)")
+      log.debug("Appending to conf: \(targetConfName.quoted), prevCount: \(fileMappingsOrig.count), newCount: \(fileMappingsAppended.count)")
       inputConfFile.overwriteFile(with: fileMappingsAppended)
     }
 
     let undoAction = {
-      AppInputConfig.log.debug("Un-appending \(mappingsToAppend.count) bindings of conf: \(targetConfName.quoted) (newCount: \(fileMappingsOrig.count))")
+      log.debug("Un-appending \(mappingsToAppend.count) bindings of conf: \(targetConfName.quoted) (newCount: \(fileMappingsOrig.count))")
       inputConfFile.overwriteFile(with: fileMappingsOrig)
       self.postUpdateToTableUI(tableUIChange)
     }
@@ -190,7 +195,7 @@ final class ConfTableStateManager: NSObject {
 
       if !addedConfs.isEmpty || !removedConfs.isEmpty {
         hasConfListChange = true
-        AppInputConfig.log.verbose("Found in state change: \(addedConfs.count) added & \(removedConfs.count) removed confs")
+        log.verbose("Found in state change: \(addedConfs.count) added & \(removedConfs.count) removed confs")
       }
 
       // Apply conf file disk operations before updating the stored prefs or the UI.
@@ -246,9 +251,9 @@ final class ConfTableStateManager: NSObject {
       }
 
       if skipSaveToPrefs || Preference.string(for: .currentInputConfigName) == tableStateNew.selectedConfName {
-        AppInputConfig.log.verbose("Skipping pref save for 'currentInputConfigName': \(tableStateOld.selectedConfName.quoted) -> \(tableStateNew.selectedConfName.quoted) (current pref val: \(Preference.string(for: .currentInputConfigName)?.quoted ?? "nil"); skip=\(skipSaveToPrefs))")
+        log.verbose("Skipping pref save for 'currentInputConfigName': \(tableStateOld.selectedConfName.quoted) -> \(tableStateNew.selectedConfName.quoted) (current pref val: \(Preference.string(for: .currentInputConfigName)?.quoted ?? "nil"); skip=\(skipSaveToPrefs))")
       } else {
-        AppInputConfig.log.verbose("Saving pref 'currentInputConfigName': \(tableStateOld.selectedConfName.quoted) -> \(tableStateNew.selectedConfName.quoted)")
+        log.verbose("Saving pref 'currentInputConfigName': \(tableStateOld.selectedConfName.quoted) -> \(tableStateNew.selectedConfName.quoted)")
         Preference.set(tableStateNew.selectedConfName, for: .currentInputConfigName)
 
         NotificationCenter.default.post(Notification(name: .iinaActiveInputConfFileDidUpdate))
@@ -269,11 +274,11 @@ final class ConfTableStateManager: NSObject {
 
     let specialStateChanged = tableStateOld.specialState != tableStateNew.specialState
     if specialStateChanged {
-      AppInputConfig.log.verbose("ConfTable specialState is changing: \(tableStateOld.specialState) -> \(tableStateNew.specialState)")
+      log.verbose("ConfTable specialState is changing: \(tableStateOld.specialState) -> \(tableStateNew.specialState)")
     }
 
     guard hasUndoableChange || specialStateChanged || completionHandler != nil else {
-      AppInputConfig.log.verbose("ConfTable doAction(): looks like nothing to do. Will skip update to table UI")
+      log.verbose("ConfTable doAction(): looks like nothing to do. Will skip update to table UI")
       return
     }
 
@@ -290,10 +295,10 @@ final class ConfTableStateManager: NSObject {
     case .none, .fallBackToDefaultConf:
       // Always keep the current config selected
       if let selectedConfIndex = new.confTableRows.firstIndex(of: new.selectedConfName) {
-        AppInputConfig.log.verbose("Will change Conf Table selection index to \(selectedConfIndex) (\(new.selectedConfName.quoted))")
+        log.verbose("Will change Conf Table selection index to \(selectedConfIndex) (\(new.selectedConfName.quoted))")
         newSelectedRowIndexes = IndexSet(integer: selectedConfIndex)
       } else {
-        AppInputConfig.log.error("Failed to find selection index for \(new.selectedConfName.quoted) in new Conf Table state!")
+        log.error("Failed to find selection index for \(new.selectedConfName.quoted) in new Conf Table state!")
       }
     }
 
@@ -310,7 +315,7 @@ final class ConfTableStateManager: NSObject {
 
   private func postUpdateToTableUI(_ tableUIChange: TableUIChange) {
     let notification = Notification(name: .iinaPendingUIChangeForConfTable, object: tableUIChange)
-    AppInputConfig.log.verbose("ConfTableStateManager: posting \(notification.name.rawValue.quoted) notification")
+    log.verbose("ConfTableStateManager: posting \(notification.name.rawValue.quoted) notification")
     NotificationCenter.default.post(notification)
   }
 
@@ -330,7 +335,7 @@ final class ConfTableStateManager: NSObject {
     let currentState = ConfTableState.current
     let targetConfName = confName ?? currentState.selectedConfName
 
-    AppInputConfig.log.debug("Loading InputConf file for \(targetConfName.pii.quoted)")
+    log.debug("Loading InputConf file for \(targetConfName.pii.quoted)")
     return fileCache.getOrLoadConfFile(confName: targetConfName)
   }
 }

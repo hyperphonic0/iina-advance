@@ -66,12 +66,6 @@ class PrefKeyBindingViewController: PreferenceViewController, PreferenceWindowEm
   @IBOutlet weak var bindingSearchField: NSSearchField!
   @IBOutlet weak var showFromAllSourcesBtn: NSButton!
 
-  deinit {
-    ObjcUtils.silenced { [self] in
-      removeObserver(self, forKeyPath: #keyPath(view.effectiveAppearance))
-    }
-  }
-
   override func viewWillAppear() {
     Logger.log.verbose("Key Bindings pref pane will appear")
     super.viewWillAppear()
@@ -86,6 +80,8 @@ class PrefKeyBindingViewController: PreferenceViewController, PreferenceWindowEm
       let keyList = PlayerManager.shared.getOrCreateDemo().mpv.getInputKeyList()
       Logger.log.debug("Key List (count=\(keyList.count)): \(keyList)")
     }
+
+    addObserver(self, forKeyPath: #keyPath(view.effectiveAppearance), options: [], context: nil)
   }
 
   override func viewWillDisappear() {
@@ -94,6 +90,10 @@ class PrefKeyBindingViewController: PreferenceViewController, PreferenceWindowEm
     super.viewWillDisappear()
     notiHandler.removeAllObservers()
     BindingTableState.manager.notiHandler.removeAllObservers()
+
+    ObjcUtils.silenced { [self] in
+      removeObserver(self, forKeyPath: #keyPath(view.effectiveAppearance))
+    }
   }
 
   override func viewDidLoad() {
@@ -156,8 +156,6 @@ class PrefKeyBindingViewController: PreferenceViewController, PreferenceWindowEm
         }
       ]
     ])
-
-    addObserver(self, forKeyPath: #keyPath(view.effectiveAppearance), options: [], context: nil)
 
     confTableController?.selectCurrentConfRow()
     self.updateTableButtonVisibilities()

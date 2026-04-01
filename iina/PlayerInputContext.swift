@@ -8,7 +8,7 @@
 
 import Foundation
 
-let MP_MAX_KEY_DOWN = 4
+fileprivate let log = Logger.input
 
 /**
  This class serves as a repository for all the active key bindings for a given player.
@@ -80,12 +80,11 @@ class PlayerInputContext {
   // Data structure which keeps track of a player's input sections
   private let sectionStack: InputSectionStack
 
-  /*
-   Stores up to the last 4 key presses, separately for each player.
-   mpv equivalent: `int key_history[MP_MAX_KEY_DOWN];`
-   Here, the the newest keypress is at the "head", with the "tail" being the oldest.
-   */
-  private var keyPressHistory = RingBuffer<String>(capacity: MP_MAX_KEY_DOWN)
+
+  /// Stores up to the last 4 key presses, separately for each player.
+  /// mpv equivalent: `int key_history[MP_MAX_KEY_DOWN];`
+  /// Here, the the newest keypress is at the "head", with the "tail" being the oldest.
+  private var keyPressHistory = RingBuffer<String>(capacity: Constants.mpvMaxKeyDown)
 
   init(playerCore: PlayerCore) {
     self.player = playerCore

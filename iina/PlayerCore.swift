@@ -1403,14 +1403,21 @@ final class PlayerCore: NSObject {
   }
 
   func screenshotRawCallback(_ screenshotImage: NSImage) {
-    guard Preference.bool(for: .screenshotShowPreview) else {
-      return
-    }
     DispatchQueue.main.async { [self] in
       let saveToClipboard = Preference.bool(for: .screenshotCopyToClipboard)
       if saveToClipboard {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.writeObjects([screenshotImage])
+      }
+
+      let saveToFile = Preference.bool(for: .screenshotSaveToFile)
+      if saveToFile {
+        // FIXME: implement save to file
+      }
+
+      guard Preference.bool(for: .screenshotShowPreview) else {
+        sendOSD(.screenshot)
+        return
       }
 
       let screenshotViewController = ScreenshootOSDView()

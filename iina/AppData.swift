@@ -297,6 +297,9 @@ struct Constants {
   static let rotations: [Int] = [0, 90, 180, 270]
   static let scaleStepWidthPixels: Int = 25
 
+  /// `MP_MAX_KEY_DOWN` from mpv 
+  static let mpvMaxKeyDown = 4
+
   static let encodings = CharEncoding.list
 
   static let maxAttemptsForGetVideoParams = 6

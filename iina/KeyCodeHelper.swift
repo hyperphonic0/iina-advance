@@ -32,6 +32,7 @@ struct KeyCodeHelper {
 
   fileprivate static let modifierSymbols: [(NSEvent.ModifierFlags, String)] = [(.control, "⌃"), (.option, "⌥"), (.shift, "⇧"), (.command, "⌘")]
   fileprivate static let modifierFlagsToMpv: [(NSEvent.ModifierFlags, String)] = [(.control, CTRL_KEY), (.option, ALT_KEY), (.shift, SHIFT_KEY), (.command, META_KEY)]
+  static let log = Logger.input
 
   static let keyMap: [UInt16 : (String, String?)] = [
     0x00: ("a", "A"),
@@ -354,7 +355,7 @@ struct KeyCodeHelper {
     } else {
       // Is probably an unprintable char such as KP_ENTER.
       guard let keyName = KeyCodeHelper.keyMap[keyCode] else {
-        AppInputConfig.log.warn("Undefined key code: \"\(keyCode)\"")
+        log.warn("Undefined key code: \"\(keyCode)\"")
         return ""
       }
       keyChar = keyName.0
@@ -408,20 +409,20 @@ struct KeyCodeHelper {
     // They will cause matching logic to fail, so it's necessary to check for this for the forseeable future.
     let ksClean = keystrokes.replacingOccurrences(of: "\0", with: "")
     if ksClean.count != keystrokes.count {
-      AppInputConfig.log.warn("Found \(keystrokes.count - ksClean.count) null characters in \"\(keystrokes)\"; will try to fix & continue")
+      log.warn("Found \(keystrokes.count - ksClean.count) null characters in \"\(keystrokes)\"; will try to fix & continue")
     }
     var unparsedRemainder = Substring(ksClean)
     var splitKeystrokeList: [String] = []
 
-    while !unparsedRemainder.isEmpty && splitKeystrokeList.count < MP_MAX_KEY_DOWN {
+    while !unparsedRemainder.isEmpty && splitKeystrokeList.count < Constants.mpvMaxKeyDown {
       guard let endIndex = getNextEndIndex(unparsedRemainder) else {
-        AppInputConfig.log.warn("Could not split keystrokes; not a valid sequence: \"\(keystrokes)\"")
+        log.warn("Could not split keystrokes; not a valid sequence: \"\(keystrokes)\"")
         return [keystrokes]
       }
 
       let ks = String(unparsedRemainder[unparsedRemainder.startIndex..<endIndex])
       guard !ks.isEmpty else {
-        AppInputConfig.log.error("While splitting keystrokes: Last keystroke is empty! Returning list: \(splitKeystrokeList)")
+        log.error("While splitting keystrokes: Last keystroke is empty! Returning list: \(splitKeystrokeList)")
           return splitKeystrokeList
       }
       splitKeystrokeList.append(ks)
@@ -542,7 +543,7 @@ struct KeyCodeHelper {
     let normalizedList = splitAndNormalizeMpvString(mpvKeystrokes)
     let normalizedString = normalizedList.joined(separator: "-")
     if DebugConfig.logBindingsRebuild {
-      AppInputConfig.log.verbose("Normalized mpv: \(mpvKeystrokes.quoted) → \(normalizedString.quoted)")
+      log.verbose("Normalized mpv: \(mpvKeystrokes.quoted) → \(normalizedString.quoted)")
     }
     return normalizedString
   }
@@ -557,7 +558,7 @@ struct KeyCodeHelper {
     }
     let keystrokeList = splitKeystrokes(normalizedMpvKey)
     guard keystrokeList.count == 1 else {
-      AppInputConfig.log.verbose("MacOSKeyEquivalent: string has >1 keystroke; returning nil for: \(normalizedMpvKey.quoted)")
+      log.verbose("MacOSKeyEquivalent: string has >1 keystroke; returning nil for: \(normalizedMpvKey.quoted)")
       return nil
     }
     let splitted = keystrokeList[0].components(separatedBy: "+")
