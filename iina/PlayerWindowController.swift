@@ -193,7 +193,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
 
   var isScrollingOrDraggingPlaySlider: Bool {
     assert(DispatchQueue.isExecutingIn(.main))  // Must use main DQ to avoid error whe accessing playSlider.customCell
-    if playSlider.customCell.isDragging {
+    if playSliderCell.isDragging {
       // Dragging play slider
       return true
     }
@@ -561,7 +561,8 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
 
   /// Container for legacy PlaySlider layout which shows time labels on left & right of slider.
   let playSliderAndTimeLabelsView = ClickThroughView()
-  let playSlider = PlaySlider()
+  let playSlider = ScrollableSlider(customCell: PlaySliderCell())
+  var playSliderCell: PlaySliderCell { playSlider.cell as! PlaySliderCell }
   let leftTimeLabel = DurationDisplayTextField()
   let rightTimeLabel = DurationDisplayTextField()
 
@@ -704,17 +705,12 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
     // TODO: clean up this nasty code
     let oscAppearance = layoutState.oscColorScheme.hasClearBG ? NSAppearance(iinaTheme: .dark)! : contentView.effectiveAppearance
     oscAppearance.performAsCurrentDrawingAppearance {
-      playSlider.abLoopA.updateKnobImage(to: .loopKnob)
-      playSlider.abLoopB.updateKnobImage(to: .loopKnob)
+      playSliderCell.abLoopA.updateKnobImage(to: .loopKnob)
+      playSliderCell.abLoopB.updateKnobImage(to: .loopKnob)
 
       let oscGeo = layoutState.controlBarGeo
       let scaleFactor = screen.backingScaleFactor
-      if let hoverIndicator = playSlider.hoverIndicator {
-        hoverIndicator.update(scaleFactor: scaleFactor, oscGeo: oscGeo, isDark: oscAppearance.isDark)
-      } else {
-        playSlider.hoverIndicator = SliderHoverIndicator(slider: playSlider, oscGeo: oscGeo,
-                                                         scaleFactor: scaleFactor, isDark: oscAppearance.isDark)
-      }
+      playSliderCell.updateHoverIndicator(scaleFactor: scaleFactor, oscGeo: oscGeo, isDark: oscAppearance.isDark)
       playSlider.needsDisplay = true
       volumeSlider.needsDisplay = true
     }
@@ -2456,7 +2452,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
   /// - clicking inside it
   /// - dragging inside it
   /// Scroll wheel seek should call `seekFromPlaySlider` directly.
-  @objc func playSliderAction(_ slider: PlaySlider) {
+  @objc func playSliderAction(_ slider: ScrollableSlider) {
     // Update player.info & UI proactively
     guard let durationSec = player.info.playbackTime.durationSec else { return }
     let playbackPositionAbsSec = durationSec * slider.progressRatio

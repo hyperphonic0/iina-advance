@@ -116,14 +116,14 @@ extension PlayerWindowController {
         .init(NSApplication.didChangeScreenParametersNotification) { _ in self.windowDidChangeScreenParameters() },
 
         // Play Slider loop knobs:
-        .init(.iinaPlaySliderLoopKnobChanged, object: playSlider.abLoopA) { [self] _ in
-          let seconds = player.info.playbackTime.percentToSeconds(playSlider.abLoopA.posInSliderPercent)
+        .init(.iinaPlaySliderLoopKnobChanged, object: playSliderCell.abLoopA) { [self] _ in
+          let seconds = player.info.playbackTime.percentToSeconds(playSliderCell.abLoopA.posInSliderPercent)
           player.info.abLoopA = seconds
           player.abLoopA = seconds
           player.sendOSD(.abLoopUpdate(.aSet, VideoTime(seconds).stringRepresentation))
         },
-        .init(.iinaPlaySliderLoopKnobChanged, object: playSlider.abLoopB) { [self] _ in
-          let seconds = player.info.playbackTime.percentToSeconds(playSlider.abLoopB.posInSliderPercent)
+        .init(.iinaPlaySliderLoopKnobChanged, object: playSliderCell.abLoopB) { [self] _ in
+          let seconds = player.info.playbackTime.percentToSeconds(playSliderCell.abLoopB.posInSliderPercent)
           player.info.abLoopB = seconds
           player.abLoopB = seconds
           player.sendOSD(.abLoopUpdate(.bSet, VideoTime(seconds).stringRepresentation))
@@ -332,7 +332,7 @@ extension PlayerWindowController {
 
     case .showChapterPos:
       if let newValue = newValue as? Bool {
-        playSlider.customCell.drawChapters = newValue
+        (playSlider.cell as! PlaySliderCell).drawChapters = newValue
       }
     case .blackOutMonitor:
       if let newValue = newValue as? Bool {

@@ -536,7 +536,7 @@ extension PlayerWindowController {
       miniPlayer.view.addAllConstraintsToFillSuperview()
 
       // Now confiure various subviews
-      playSlider.customCell.knobHeight = Constants.Slider.musicModeKnobHeight
+      playSliderCell.knobHeight = Constants.Slider.musicModeKnobHeight
 
       // move playback buttons
       if !miniPlayer.playbackBtnsWrapperView.subviews.contains(fragPlaybackBtnsView) {
@@ -711,10 +711,10 @@ extension PlayerWindowController {
 
       let sliderKnobWidth = newGeo.sliderKnobWidth
       let sliderKnobHeight = newGeo.sliderKnobHeight
-      playSlider.customCell.knobWidth = sliderKnobWidth
-      playSlider.customCell.knobHeight = sliderKnobHeight
-      playSlider.abLoopA.updateKnobImage(to: .loopKnob)
-      playSlider.abLoopB.updateKnobImage(to: .loopKnob)
+      playSliderCell.knobWidth = sliderKnobWidth
+      playSliderCell.knobHeight = sliderKnobHeight
+      playSliderCell.abLoopA.updateKnobImage(to: .loopKnob)
+      playSliderCell.abLoopB.updateKnobImage(to: .loopKnob)
       playSlider.needsDisplay = true
 
       let volumeSliderCell = volumeSliderCell

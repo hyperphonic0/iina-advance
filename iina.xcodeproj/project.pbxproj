@@ -173,7 +173,6 @@
 		51CA83E22E35AD6300A44B22 /* MPVAudioDevice.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51CA83E12E35AD6300A44B22 /* MPVAudioDevice.swift */; };
 		51CACB9529D500290034CEE5 /* VideoPIPViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51CACB9429D500290034CEE5 /* VideoPIPViewController.swift */; };
 		51DE55C92A6646710050AD06 /* Sysctl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51DE55C82A6646710050AD06 /* Sysctl.swift */; };
-		51E63DFB29CFB031008AFC20 /* PlaySlider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51E63DFA29CFB031008AFC20 /* PlaySlider.swift */; };
 		51E63DFD29CFB04C008AFC20 /* PlaySliderLoopKnob.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51E63DFC29CFB04B008AFC20 /* PlaySliderLoopKnob.swift */; };
 		51EDB4722E85EE10007E5018 /* DisplayController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51EDB4712E85EE10007E5018 /* DisplayController.swift */; };
 		51F7974728C7E00200812D0D /* Lock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51F7974628C7E00200812D0D /* Lock.swift */; };
@@ -1295,7 +1294,6 @@
 		51CA83E12E35AD6300A44B22 /* MPVAudioDevice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MPVAudioDevice.swift; sourceTree = "<group>"; };
 		51CACB9429D500290034CEE5 /* VideoPIPViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoPIPViewController.swift; sourceTree = "<group>"; };
 		51DE55C82A6646710050AD06 /* Sysctl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sysctl.swift; sourceTree = "<group>"; };
-		51E63DFA29CFB031008AFC20 /* PlaySlider.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PlaySlider.swift; sourceTree = "<group>"; };
 		51E63DFC29CFB04B008AFC20 /* PlaySliderLoopKnob.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PlaySliderLoopKnob.swift; sourceTree = "<group>"; };
 		51EDB4712E85EE10007E5018 /* DisplayController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DisplayController.swift; sourceTree = "<group>"; };
 		51F7974628C7E00200812D0D /* Lock.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Lock.swift; sourceTree = "<group>"; };
@@ -2918,7 +2916,6 @@
 			children = (
 				D1C741092CB3833500522FA7 /* ScrollableSlider.swift */,
 				D1E407BE2CC7A67D002A2F9B /* VirtualScrollWheel.swift */,
-				51E63DFA29CFB031008AFC20 /* PlaySlider.swift */,
 				51E63DFC29CFB04B008AFC20 /* PlaySliderLoopKnob.swift */,
 				D13557292D4AF5C500F26A79 /* SliderHoverIndicator.swift */,
 				8461C52D1D45FFF6006E91FF /* PlaySliderCell.swift */,
@@ -3690,7 +3687,6 @@
 				D1FD2DD828521AD500CF7B35 /* MPVLogScanner.swift in Sources */,
 				E38BD4AF20054BD9007635FC /* PlayerWindow.swift in Sources */,
 				51AC1CAB2A9FBF3700DF7079 /* OpenSubClient.swift in Sources */,
-				51E63DFB29CFB031008AFC20 /* PlaySlider.swift in Sources */,
 				84F5D4A01E44F9DB0060A838 /* KeyBindingItem.swift in Sources */,
 				84E5221323FF3D080006FDA1 /* JavascriptAPIPlaylist.swift in Sources */,
 				84A0BA991D2FAAA700BC8DA1 /* MPVController.swift in Sources */,

@@ -35,10 +35,12 @@ final class PlaySliderLoopKnob: NSImageView, DraggableObject {
   // The x coordinate of the last mouse location when dragging.
   private var lastDragLocation: CGFloat = 0
 
-  private let slider: PlaySlider
+  private let sliderCell: PlaySliderCell
   private var centerXConstraint: NSLayoutConstraint!
   private var widthConstraint: NSLayoutConstraint!
   private var heightConstraint: NSLayoutConstraint!
+
+  private var slider: NSSlider { sliderCell.slider }
 
   /// The knob's x coordinate associated with the current value.
   ///
@@ -48,9 +50,9 @@ final class PlaySliderLoopKnob: NSImageView, DraggableObject {
   /// though the value has remained constant.
   private(set) var x: CGFloat {
     get {
-      let bar = slider.customCell.barRect(flipped: isFlipped)
+      let bar = sliderCell.barRect(flipped: isFlipped)
       // The usable width of the bar is reduced by the width of the knob.
-      let effectiveWidth = bar.width - slider.customCell.loopKnobWidth
+      let effectiveWidth = bar.width - sliderCell.loopKnobWidth
       let percentage = CGFloat(posInSliderPercent / slider.span)
       let calculatedX = constrainX(bar.origin.x + percentage * effectiveWidth)
       return calculatedX
@@ -58,9 +60,9 @@ final class PlaySliderLoopKnob: NSImageView, DraggableObject {
     set {
       let constrainedX = constrainX(newValue)
       // Calculate the value selected by the new location.
-      let bar = slider.customCell.barRect(flipped: isFlipped)
+      let bar = sliderCell.barRect(flipped: isFlipped)
       // The usable width of the bar is reduced by the width of the knob.
-      let effectiveWidth = bar.width - slider.customCell.loopKnobWidth
+      let effectiveWidth = bar.width - sliderCell.loopKnobWidth
       let percentage = Double((constrainedX - bar.origin.x) / effectiveWidth)
       posInSliderPercent = percentage * slider.span
       updateHorizontalPosition()
@@ -74,8 +76,8 @@ final class PlaySliderLoopKnob: NSImageView, DraggableObject {
   /// - Parameters:
   ///   - slider: The slider this thumb belongs to.
   ///   - toolTip: The help tag to display for this thumb.
-  init(slider: PlaySlider, toolTip: String) {
-    self.slider = slider
+  init(sliderCell: PlaySliderCell, toolTip: String) {
+    self.sliderCell = sliderCell
     // The frame is calculated and set once the superclass is initialized.
     super.init(frame: NSZeroRect)
     self.toolTip = toolTip
@@ -91,7 +93,7 @@ final class PlaySliderLoopKnob: NSImageView, DraggableObject {
     translatesAutoresizingMaskIntoConstraints = false
     centerYAnchor.constraint(equalTo: slider.centerYAnchor).isActive = true
     centerXConstraint = centerXAnchor.constraint(equalTo: slider.leadingAnchor,
-                                                 constant: slider.customCell.knobWidth * 0.5)
+                                                 constant: sliderCell.knobWidth * 0.5)
     centerXConstraint.isActive = true
 
     widthConstraint = widthAnchor.constraint(equalToConstant: 0)
@@ -106,9 +108,9 @@ final class PlaySliderLoopKnob: NSImageView, DraggableObject {
   /// - Parameter x: The proposed x coordinate.
   /// - Returns: The given x coordinate constrained to keep the knob within the bar.
   private func constrainX(_ x: CGFloat) -> CGFloat {
-    let bar = slider.customCell.barRect(flipped: isFlipped)
+    let bar = sliderCell.barRect(flipped: isFlipped)
     // The coordinate must be short of the end of the bar to keep the knob within the bar.
-    let maxX = max(bar.minX, bar.maxX - slider.customCell.knobWidth)
+    let maxX = max(bar.minX, bar.maxX - sliderCell.knobWidth)
     return x.clamped(to: bar.minX...maxX)
   }
 
@@ -120,13 +122,12 @@ final class PlaySliderLoopKnob: NSImageView, DraggableObject {
 
   func updateKnobImage(to knobType: KnobRenderer.KnobType) {
     guard let scaleFactor: CGFloat = window?.screen?.backingScaleFactor else { return }
-    let cell = slider.customCell
-    let knob = slider.knobRenderer.getKnob(knobType,
-                                          darkMode: cell.isDarkMode, clearBG: cell.hasClearBG,
-                                          knobWidth: cell.knobWidth, mainKnobHeight: cell.knobHeight,
-                                          scaleFactor: scaleFactor)
+    let knob = sliderCell.knobRenderer.getKnob(knobType,
+                                               darkMode: sliderCell.isDarkMode, clearBG: sliderCell.hasClearBG,
+                                               knobWidth: sliderCell.knobWidth, mainKnobHeight: sliderCell.knobHeight,
+                                               scaleFactor: scaleFactor)
     let knobImage = knob.image
-    let imgSize = slider.knobRenderer.imageSize(knob, knobType)  // unscaled
+    let imgSize = sliderCell.knobRenderer.imageSize(knob, knobType)  // unscaled
     image = NSImage(cgImage: knobImage, size: imgSize)
     widthConstraint.constant = imgSize.width
     heightConstraint.constant = imgSize.height
@@ -134,7 +135,7 @@ final class PlaySliderLoopKnob: NSImageView, DraggableObject {
   }
 
   private func knobRect() -> NSRect {
-    let rect = slider.customCell.knobRect(flipped: isFlipped)
+    let rect = sliderCell.knobRect(flipped: isFlipped)
     return NSMakeRect(x, rect.origin.y, rect.width, rect.height)
   }
 
@@ -148,7 +149,7 @@ final class PlaySliderLoopKnob: NSImageView, DraggableObject {
   /// Begin dragging the knob.
   /// - Parameter event: An object encapsulating information about the mouse-down event initiating the drag.
   func beginDragging(with event: NSEvent) {
-    slider.customCell.player.pwc.currentDragObject = self
+    sliderCell.player.pwc.currentDragObject = self
     let clickLocation = slider.convert(event.locationInWindow, from: nil)
     lastDragLocation = constrainX(clickLocation.x)
     updateKnobImage(to: .loopKnobSelected)
@@ -173,7 +174,7 @@ final class PlaySliderLoopKnob: NSImageView, DraggableObject {
   override func mouseDown(with event: NSEvent) {
     let clickLocation = slider.convert(event.locationInWindow, from: nil)
     // If this click lands on the play knob then pass the event up the responder chain.
-    if isMousePoint(clickLocation, in: slider.customCell.knobRect(flipped: slider.isFlipped)) {
+    if isMousePoint(clickLocation, in: sliderCell.knobRect(flipped: slider.isFlipped)) {
       super.mouseDown(with: event)
       return
     }

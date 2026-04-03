@@ -1488,7 +1488,7 @@ final class PlayerCore: NSObject {
 
     DispatchQueue.main.async { [self] in
       log.verbose("Syncing player slider AB loop: a=\(a), b=\(b)")
-      pwc.playSlider.syncABLoop(info, a: a, b: b)
+      pwc.playSliderCell.syncABLoop(info, a: a, b: b)
     }
   }
 

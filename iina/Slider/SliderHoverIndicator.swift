@@ -8,15 +8,16 @@
 
 import Cocoa
 
-final class SliderHoverIndicator: NSView {
-  private let slider: PlaySlider
+// Must inherit from ClickThroughView, or else the indicator will suck up first mouse clicks when window not focused
+final class SliderHoverIndicator: ClickThroughView {
+  private let slider: ScrollableSlider
   private var heightConstraint: NSLayoutConstraint!
   private var widthConstraint: NSLayoutConstraint!
   private var centerXConstraint: NSLayoutConstraint!
   var imgLayer: IndicatorImgLayer { layer as! IndicatorImgLayer }
 
   /// Size in points
-  init(slider: PlaySlider, oscGeo: ControlBarGeometry, scaleFactor: CGFloat, isDark: Bool) {
+  init(slider: ScrollableSlider, oscGeo: ControlBarGeometry, scaleFactor: CGFloat, isDark: Bool) {
     let size = oscGeo.sliderIndicatorSize
     self.slider = slider
     // The frame is calculated and set once the superclass is initialized.

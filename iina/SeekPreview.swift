@@ -270,7 +270,7 @@ extension PlayerWindowController {
           let sliderFrameInWindowCoords = pwc.playSlider.frameInWindowCoords
           let sliderCenterY = sliderFrameInWindowCoords.origin.y + (sliderFrameInWindowCoords.height * 0.5)
           let quarterMargin = margins.bottom * 0.25
-          let halfKnobHeight = pwc.playSlider.customCell.knobHeight * 0.5
+          let halfKnobHeight = pwc.playSliderCell.knobHeight * 0.5
           // If clear background, align the label consistently close to the slider bar.
           // Else if using gray panel, try to align the label either wholly inside or outside the panel.
           if currentLayout.oscColorScheme != .clearGradient, sliderCenterY + halfKnobHeight + timeLabelSize.height >= oscTopY {
@@ -288,7 +288,7 @@ extension PlayerWindowController {
           let sliderFrameInWindowCoords = pwc.playSlider.frameInWindowCoords
           let sliderCenterY = (sliderFrameInWindowCoords.origin.y + (sliderFrameInWindowCoords.height * 0.5)).rounded()
           // See note for the Above case (but use ½ margin instead of ¼).
-          let halfKnobHeight = (pwc.playSlider.customCell.knobHeight * 0.5).rounded()
+          let halfKnobHeight = (pwc.playSliderCell.knobHeight * 0.5).rounded()
           if currentLayout.oscColorScheme != .clearGradient, sliderCenterY - halfKnobHeight - halfMargin - timeLabelSize.height <= oscOriginInWindowY {
             timeLabelOriginY = (oscOriginInWindowY - halfMargin - timeLabelSize.height).rounded()
           } else {
@@ -466,7 +466,7 @@ extension PlayerWindowController {
         fadeableViews.hideTimer.restart()
       }
 
-      playSlider.hoverIndicator?.alphaValue = 0
+      playSliderCell.hoverIndicator?.alphaValue = 0
     })
 
     tasks.append(.init(duration: 0) { [self] in
@@ -486,7 +486,7 @@ extension PlayerWindowController {
     seekPreview.thumbnailPeekView.isHidden = true
     seekPreview.timeLabel.isHidden = true
     seekPreview.currentPreviewTimeSec = nil
-    playSlider.hoverIndicator?.isHidden = true
+    playSliderCell.hoverIndicator?.isHidden = true
 
     if seekPreview.useThumbfast {
       player.mpv.clearThumbfast()
@@ -536,7 +536,7 @@ extension PlayerWindowController {
 
     let showThumbnail = Preference.bool(for: .enableThumbnailPreview) && player.info.isVideoTrackSelected
     let isShowingThumbnailForSeek = isScrollingOrDraggingPlaySlider
-    if (isShowingThumbnailForSeek || playSlider.isDraggingLoopKnob) && !(Preference.bool(for: .enableThumbnailPreview) && Preference.bool(for: .showThumbnailDuringSliderSeek)) {
+    if (isShowingThumbnailForSeek || playSliderCell.isDraggingLoopKnob) && !(Preference.bool(for: .enableThumbnailPreview) && Preference.bool(for: .showThumbnailDuringSliderSeek)) {
       // Do not show any preview if preview for seeking is disabled
       return false
     }
@@ -566,7 +566,7 @@ extension PlayerWindowController {
 
     // Get X coord of hover (not the knob center)!
     let pointInWindowX: CGFloat = playSlider.convert(pointInWindow, from: nil).x
-    playSlider.showHoverIndicator(atSliderCoordX: pointInWindowX)
+    playSliderCell.showHoverIndicator(atSliderCoordX: pointInWindowX)
 
     let currentGeo: PWinGeometry
     switch currentLayout.mode {

@@ -8,10 +8,45 @@
 
 import Cocoa
 
+/// The cell for the play slider.
+///
+/// This slider adds two thumbs (referred to as knobs in code) to the progress bar slider to show the A and B loop points of the
+/// [mpv](https://mpv.io/manual/stable/) A-B loop feature and allow the loop points to be adjusted. When the feature is
+/// disabled the additional thumbs are hidden.
+/// - Requires: The custom slider cell provided by `PlaySliderCell` **must** be used with this class.
+/// - Note: Unlike `NSSlider` the `draw` method of this class will do nothing if the view is hidden.
 class PlaySliderCell: ScrollableSliderCell {
+  /// Knob representing the A loop point for the mpv A-B loop feature.
+  var abLoopA: PlaySliderLoopKnob { abLoopAKnob! }
+
+  /// Knob representing the B loop point for the mpv A-B loop feature.
+  var abLoopB: PlaySliderLoopKnob { abLoopBKnob! }
+
+  var knobRenderer: KnobRenderer { pwc!.oscKnobRenderer }
+
+  var hoverIndicator: SliderHoverIndicator! {
+    willSet {
+      // Make sure to remove constraints & other cleanup!
+      if newValue != hoverIndicator {
+        hoverIndicator?.dispose()
+      }
+    }
+  }
+
   var drawChapters = Preference.bool(for: .showChapterPos)
 
   var wasPausedBeforeSeeking = false
+
+  var isDraggingLoopKnob: Bool {
+    guard let pwc else { return false }
+    return pwc.currentDragObject == abLoopA || pwc.currentDragObject == abLoopB
+  }
+
+  // MARK:- Private Properties
+
+  private var abLoopAKnob: PlaySliderLoopKnob?
+
+  private var abLoopBKnob: PlaySliderLoopKnob?
 
   override var wantsKnob: Bool {
     guard let pwc else { return false }
@@ -24,10 +59,18 @@ class PlaySliderCell: ScrollableSliderCell {
     return Preference.bool(for: .useSliderFocusMagnifyEffect) && pwc.currentLayout.useSliderFocusEffect && (pwc.isScrollingOrDraggingPlaySlider || pwc.seekPreview.animationState == .shown)
   }
 
+  func initLoopKnobs() {
+    abLoopAKnob = PlaySliderLoopKnob(sliderCell: self, toolTip: "A-B loop A")
+    abLoopBKnob = PlaySliderLoopKnob(sliderCell: self, toolTip: "A-B loop B")
+  }
+
   // MARK:- Displaying the Cell
 
   override func drawBar(inside barRect: NSRect, flipped: Bool) {
     guard let pwc else { return }
+    abLoopAKnob?.updateHorizontalPosition()
+    abLoopBKnob?.updateHorizontalPosition()
+
     let scaleFactor: CGFloat = slider.window?.screen?.backingScaleFactor ?? Constants.defaultBackingScaleFactor
     let appearance = sliderAppearance ?? slider.effectiveAppearance
     guard let br = pwc.oscBarRenderer else { return }
@@ -55,6 +98,76 @@ class PlaySliderCell: ScrollableSliderCell {
 
       br.drawBar(playBarImg, in: barRect, scaleFactor: scaleFactor,
                  tallestBarHeight: br.maxPlayBarHeightNeeded, drawShadow: drawShadow)
+    }
+  }
+
+  func showHoverIndicator(atSliderCoordX x: CGFloat) {
+    guard let scaleFactor = slider.window?.screen?.backingScaleFactor,
+          let sliderAppearance = sliderAppearance,
+          let pwc else { return }
+
+    guard let hoverIndicator else {
+      // Probably init is done yet. If so, it should be soon enough to ignore for now
+      pwc.player.log.verbose("PlaySlider.showHoverIndicator: hoverIndicator is nil, ignoring")
+      return
+    }
+
+    // Do not draw over the main knob, or AB loop knobs
+    if wantsKnob {
+      let knobRect = knobRect(flipped: slider.isFlipped)
+      if x.isBetweenInclusive(knobRect.minX, and: knobRect.maxX) {
+        hoverIndicator.isHidden = true
+        return
+      }
+    }
+
+    guard !isDraggingLoopKnob else {
+      hoverIndicator.isHidden = true
+      return
+    }
+
+    if let abLoopAKnob, !abLoopAKnob.isHidden {
+      let knobCenterX = abLoopAKnob.x
+      let halfWidth = loopKnobWidth * 0.5
+      if x.isBetweenInclusive(knobCenterX - halfWidth, and: knobCenterX + halfWidth) {
+        hoverIndicator.isHidden = true
+        return
+      }
+    }
+    if let abLoopBKnob, !abLoopBKnob.isHidden {
+      let knobCenterX = abLoopBKnob.x
+      let halfWidth = loopKnobWidth * 0.5
+      if x.isBetweenInclusive(knobCenterX - halfWidth, and: knobCenterX + halfWidth) {
+        hoverIndicator.isHidden = true
+        return
+      }
+    }
+
+    if hoverIndicator.imgLayer.contentsScale != scaleFactor {
+      let oscGeo = pwc.currentLayout.controlBarGeo
+      hoverIndicator.update(scaleFactor: scaleFactor, oscGeo: oscGeo, isDark: sliderAppearance.isDark)
+    }
+
+    hoverIndicator.show(atSliderCoordX: x)
+  }
+
+  func syncABLoop(_ info: PlaybackInfo, a: Double, b: Double) {
+    let hideA = a == 0
+    abLoopA.isHidden = hideA
+    abLoopA.posInSliderPercent = info.playbackTime.secondsToPercent(a)
+
+    let hideB = b == 0
+    abLoopB.isHidden = hideB
+    abLoopB.posInSliderPercent = info.playbackTime.secondsToPercent(b)
+
+    slider.needsDisplay = true
+  }
+
+  func updateHoverIndicator(scaleFactor: CGFloat, oscGeo: ControlBarGeometry, isDark: Bool) {
+    if let hoverIndicator {
+      hoverIndicator.update(scaleFactor: scaleFactor, oscGeo: oscGeo, isDark: isDark)
+    } else {
+      hoverIndicator = SliderHoverIndicator(slider: slider, oscGeo: oscGeo, scaleFactor: scaleFactor, isDark: isDark)
     }
   }
 

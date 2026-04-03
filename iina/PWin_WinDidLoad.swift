@@ -31,6 +31,9 @@ extension PlayerWindowController {
 
     viewportView.player = player
 
+    // Must call this before buildObservers
+    playSliderCell.initLoopKnobs()
+
     notiHandler = buildObservers()
 
     // The fade timer is only used if auto-hide is enabled
@@ -531,13 +534,11 @@ extension PlayerWindowController {
     leftTimeLabel.setContentCompressionResistancePriority(.init(501), for: .horizontal)
 
     playSlider.idString = "PlaySlider"
-    playSlider.customCell.pwc = self
+    playSliderCell.pwc = self
     playSlider.target = self
     playSlider.action = #selector(playSliderAction(_:))
     playSlider.minValue = 0
     playSlider.maxValue = 100
-    playSlider.isContinuous = true
-    playSlider.refusesFirstResponder = true
     playSlider.translatesAutoresizingMaskIntoConstraints = false
     let widthConstraint = playSlider.widthAnchor.constraint(greaterThanOrEqualToConstant: 50)
     widthConstraint.identifier = "PlaySlider-MinWidthConstraint"
