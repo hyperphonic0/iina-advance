@@ -93,7 +93,13 @@ final class PlaySlider: ScrollableSlider {
     needsDisplay = true
   }
 
+  override func mouseDown(with event: NSEvent) {
+    super.mouseDown(with: event)
+    pwc?.mouseDown(with: event)
+  }
+
   override func mouseUp(with event: NSEvent) {
+    super.mouseUp(with: event)
     pwc?.mouseUp(with: event)
   }
 

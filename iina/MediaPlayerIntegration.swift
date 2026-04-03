@@ -99,7 +99,7 @@ final class MediaPlayerIntegration {
     }
     // The seek command target may be negative to indicate seeking backwards, however the remote
     // command dictates the direction and requires that the interval to be positive.
-    Logger.log.verbose("Seek interval for key \(key) is \(seconds) s")
+    Logger.log.trace("Seek interval for key \(key) is \(seconds) s")
     return seconds
   }
 

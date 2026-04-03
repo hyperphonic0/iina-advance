@@ -11,6 +11,7 @@ import CustomExecutorsKit
 
 fileprivate let thumbCacheSubsystem = Logger.makeSubsystem("thumbcache")
 
+@globalActor
 actor ThumbnailCache {
   static let shared = ThumbnailCache()
 

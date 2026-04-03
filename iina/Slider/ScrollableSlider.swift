@@ -89,6 +89,7 @@ class ScrollableSlider: NSSlider {
 
   init(customCell: ScrollableSliderCell? = nil) {
     super.init(frame: .zero)
+    isContinuous = true
     if let customCell {
       cell = customCell
     }
@@ -96,6 +97,7 @@ class ScrollableSlider: NSSlider {
   
   required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
+  override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 
   override func scrollWheel(with event: NSEvent) {
     guard isEnabled else { return }
