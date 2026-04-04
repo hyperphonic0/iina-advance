@@ -486,8 +486,8 @@ extension PlayerWindowController {
                                 topMarginHeight: 0)
       } else {
         /// `Use entire Macbook screen` is checked in Settings. As of MacOS before Sonoma 14.4, Apple has been making improvements
-        /// but we still need to use  a separate animation to give the OS time to show/hide the menu bar - otherwise there will be a flicker.
-        let cameraHeight = (screen.cameraHousingHeight ?? 0) + 0
+        /// but we still need to use a separate animation to give the OS time to show/hide the menu bar - otherwise there will be a flicker.
+        let cameraHeight = (screen.cameraHousingHeight ?? 0)
         // Set viewportMargins to nil so that they will be recalculated
         return fsGeometry.clone(windowFrame: fsGeometry.windowFrame.addingTo(top: -cameraHeight), mode: targetMode,
                                 topMarginHeight: -cameraHeight, viewportMargins: nil)
