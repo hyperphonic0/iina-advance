@@ -215,7 +215,7 @@
                             <subviews>
                                 <textField focusRingType="none" verticalHuggingPriority="751" horizontalCompressionResistancePriority="250" verticalCompressionResistancePriority="751" translatesAutoresizingMaskIntoConstraints="NO" id="32B-ju-PCH">
                                     <rect key="frame" x="-2" y="6" width="212" height="16"/>
-                                    <textFieldCell key="cell" sendsActionOnEndEditing="YES" alignment="right" title="Bottom bar color scheme:" id="Kwp-XS-F0C">
+                                    <textFieldCell key="cell" sendsActionOnEndEditing="YES" alignment="right" title="OSC color scheme:" id="Kwp-XS-F0C">
                                         <font key="font" metaFont="system"/>
                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
