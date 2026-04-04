@@ -637,6 +637,9 @@ extension PlayerWindowController {
 
     switch area {
     case .playerWindow:
+      // reset after moved out of window
+      isMomentumScrollingAllowed = false
+      
       // Cursor
       if !currentLayout.mode.mustShowCursorAlways {
         // Show cursor if not already shown

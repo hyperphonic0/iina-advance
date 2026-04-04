@@ -89,7 +89,6 @@ class ScrollableSlider: NSSlider {
 
   init(customCell: ScrollableSliderCell? = nil) {
     super.init(frame: .zero)
-    isContinuous = true
     if let customCell {
       cell = customCell
     }

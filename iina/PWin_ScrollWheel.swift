@@ -14,6 +14,15 @@ extension PlayerWindowController {
   override func scrollWheel(with event: NSEvent) {
     guard !isInInteractiveMode else { return }
     guard !isMouseEventInsideDisabledView(event) else { return }
+    if !isMomentumScrollingAllowed && !event.momentumPhase.isEmpty {
+      // ignore delta caused by abrupt momentum phases
+      return
+    }
+
+    if let window {
+      let isMouseInWindow = NSPointInRect(NSEvent.mouseLocation, window.frame)
+      isMomentumScrollingAllowed = event.phase.contains(.ended) || isMouseInWindow // previous
+    }
 
     if isZoomedViaGesture, magnificationHandler.handlePanGesture(with: event) {
       return

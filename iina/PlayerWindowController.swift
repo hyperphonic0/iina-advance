@@ -185,6 +185,8 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
   var lastRightMouseDownEventID: Int = -1
   var lastRightMouseUpEventID: Int = -1
 
+  /// flag to ignore abrupt momentum scrolls
+  var isMomentumScrollingAllowed = false
 
   /// Scroll wheel (see `PWin_ScrollWheel.swift`)
 
