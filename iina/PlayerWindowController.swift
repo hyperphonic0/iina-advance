@@ -1099,7 +1099,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
   func windowDidExitFullScreen(_ notification: Notification) {
     log.verbose("WndDidExitFullScreen")
     if AccessibilityPreferences.motionReductionEnabled {
-      animateExitFromFullScreen(withDuration: Constants.AnimationDuration.fullScreenTransition, isLegacy: false)
+      animateExitFromFullScreen(withDuration: Constants.AnimationDuration.nativeFullScreenTransition, isLegacy: false)
     } else {
       animationPipeline.submitInstantTask { [self] in
         // Kludge/workaround for race condition when exiting native FS to native windowed mode
@@ -1187,7 +1187,8 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
 
     if isLegacy {
       animationPipeline.submitInstantTask({ [self] in
-        animateEntryIntoFullScreen(withDuration: Constants.AnimationDuration.fullScreenTransition, isLegacy: true)
+        let legacyFSDuration: CGFloat = Preference.double(for: .animationDurationFullScreen)
+        animateEntryIntoFullScreen(withDuration: legacyFSDuration, isLegacy: true)
       })
     } else {
       /// `collectionBehavior` *must* be correct or else `toggleFullScreen` may do nothing!
@@ -1205,7 +1206,8 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
       log.verbose("ExitFullScreen called, legacy=\(isLegacyFS.yn)")
       animationPipeline.submitInstantTask({ [self] in
         // If "legacy" pref was toggled while in fullscreen, still need to exit native FS
-        animateExitFromFullScreen(withDuration: Constants.AnimationDuration.fullScreenTransition, isLegacy: true)
+        let legacyFSDuration: CGFloat = Preference.double(for: .animationDurationFullScreen)
+        animateExitFromFullScreen(withDuration: legacyFSDuration, isLegacy: true)
       })
     } else {
       let isActuallyNativeFullScreen = isWindowInNativeFullScreen
