@@ -252,8 +252,19 @@ extension MPVController {
           let screenshotImage = NSImage(cgImage: cgImage, size: cgImage.size())
           player.screenshotRawCallback(screenshotImage)
         }
-
       }
+
+    case MPV_EVENT_QUEUE_OVERFLOW:
+      // The mpv event system uses an event queue of limited size. If events are not read quickly
+      // enough the queue can overflow resulting in events being dropped. This event indicates the
+      // ringbuffer overflowed and at least one event was dropped. IINA can recover from the loss of
+      // some types of mpv events, but certain mpv events are critical. If a critical event is
+      // discarded IINA will experience severe malfunctions. For this reason most of the work of
+      // processing an event is dispatched to other queues so that MPVController can move on to
+      // reading the next event. This event indicates something went wrong and IINA failed to read
+      // events fast enough. As IINA has been ignoring this event we don't know if this has been
+      // occurring. For now log this as an error. May want to switch to an alert in the future.
+      log.error("Critical failure, mpv events lost, queue overflowed")
 
     default:
       player.log.trace("Unhandled mpv event: \(eventId)")
