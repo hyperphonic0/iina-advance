@@ -254,7 +254,7 @@ final class MPVController: NSObject {
 
   func setFlag(_ name: String, _ flag: Bool, level: Logger.Level = .debug) {
     log.log("Set property: \(name)=\(flag.yesno)", level: level)
-    var data: Int = flag ? 1 : 0
+    var data: Int32 = flag ? 1 : 0
     guard mpv != nil else { log.warn("Aborting setProperty: mpv is nil"); return }
     let code = mpv_set_property(mpv, name, MPV_FORMAT_FLAG, &data)
     if code < 0 {
@@ -311,7 +311,7 @@ final class MPVController: NSObject {
   }
 
   func getFlag(_ name: String) -> Bool {
-    var data = Int64()
+    var data = Int32()
     mpv_get_property(mpv, name, MPV_FORMAT_FLAG, &data)
     return data > 0
   }
