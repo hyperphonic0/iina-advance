@@ -1527,11 +1527,6 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
         blackOutOtherMonitors()
       }
 
-      if currentLayout.isLegacyFullScreen && window.level != .iinaFloating {
-        log.verbose("Window is key: resuming legacy FS window level")
-        window.level = .iinaFloating
-      }
-
       if player.needsInputConfFileReload {
         player.needsInputConfFileReload = false
         player.mpv.loadSelectedInputConf()
@@ -1547,11 +1542,6 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
       }
 
     } else {
-      /// Always restore window level from `floating` to `normal`, so other windows aren't blocked & cause confusion
-      if currentLayout.isLegacyFullScreen && window.level != .normal {
-        log.verbose("Window is not key: restoring legacy FS window level to normal")
-        window.level = .normal
-      }
 
       if Preference.bool(for: .blackOutMonitor) {
         removeBlackWindows()
