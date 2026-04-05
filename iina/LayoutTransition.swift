@@ -427,7 +427,13 @@ extension PlayerWindowController {
         } else {
           return outputLayout
         }
-      case .midTransitionHiddenUpdates, .extraAnimationBeforeOpenNewPanels, .openNewPanels, .postTransition:
+      case .midTransitionHiddenUpdates:
+        if isTogglingLegacyFullScreen {
+          return inputLayout
+        } else {
+          return outputLayout
+        }
+      case .extraAnimationBeforeOpenNewPanels, .openNewPanels, .postTransition:
         // About to apply output geometry, or applying output geometry: use output layout
         return outputLayout
       }
