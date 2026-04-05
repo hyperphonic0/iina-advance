@@ -141,7 +141,7 @@ final class OSDState {
 
   fileprivate var textSizeLast: CGFloat = 0
   @MainActor
-  var queue = LinkedList<() -> Void>()
+  var queue = LinkedList<Callback>()
 
   fileprivate static func buildOSDView(_ colorScheme: Preference.PanelColorScheme,
                                        subviews: [NSView]) -> NSView {

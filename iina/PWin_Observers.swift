@@ -143,7 +143,7 @@ extension PlayerWindowController {
             animationPipeline.submitInstantTask({ [self] in
               guard !currentLayout.isInPiP else { return }
               log.debug("Window is no longer in active space; entering PIP")
-              enterPIP(then: { [self] in
+              enterPIP(onSuccess: { [self] in
                 isWindowPipDueToInactiveSpace = true
               })
             })

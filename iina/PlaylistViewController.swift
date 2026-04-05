@@ -260,7 +260,7 @@ class PlaylistViewController: NSViewController, NSMenuDelegate, SidebarTabGroupV
 
     let sw = Utility.Stopwatch()
 
-    let doAfterReload: @MainActor () -> Void = { [self] in
+    let doAfterReload: MainActorCallback = { [self] in
       refreshNowPlayingIndex()
       updateCachesForAllItems()
       removeBtn.isEnabled = !playlistTableView.selectedRowIndexes.isEmpty

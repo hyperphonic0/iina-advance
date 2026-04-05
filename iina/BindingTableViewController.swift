@@ -44,7 +44,7 @@ final class BindingTableViewController: NSObject {
   fileprivate var filterIconColor: NSColor = .textColor
   fileprivate var builtinMenuItemIconColor: NSColor = .textColor
 
-  init(_ bindingTableView: EditableTableView, selectionDidChangeHandler: @escaping () -> Void) {
+  init(_ bindingTableView: EditableTableView, selectionDidChangeHandler: @escaping Callback) {
     bindingTableView.log.verbose("BindingTableViewController init")
     self.tableView = bindingTableView
     self.selectionDidChangeHandler = selectionDidChangeHandler

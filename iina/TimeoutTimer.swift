@@ -13,7 +13,7 @@ class TimeoutTimer {
   private let queue: DispatchQueue
 
   /// nillable because sometimes this needs to be set after the containing class has finished init
-  var action: (() -> Void)?
+  var action: Callback?
 
   /// If not nil, is executed before starting or restarting the timer.
   /// If it returns false, the timer will not be started.
@@ -23,7 +23,7 @@ class TimeoutTimer {
   init(timeout: TimeInterval,
        queue: DispatchQueue = .main,
        startCondition: ((TimeoutTimer) -> Bool)? = nil,
-       action: (() -> Void)? = nil) {
+       action: Callback? = nil) {
     self.timeout = timeout
     self.queue = queue
     self.startCondition = startCondition

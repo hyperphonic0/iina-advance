@@ -10,12 +10,12 @@ import Cocoa
 
 // MARK: Global Typealiases
 
-typealias Callback = () -> Void
-typealias MainActorCallback = @MainActor () -> Void
-typealias OnSuccessCallback = () -> Void
-typealias OnErrorCallback = (String) -> Void
+public typealias Callback = () -> Void
+public typealias MainActorCallback = @MainActor () -> Void
+public typealias OnSuccessCallback = () -> Void
+public typealias OnErrorCallback = (String) -> Void
 
-typealias MainActorSuccessCallback = MainActorCallback
+public typealias MainActorSuccessCallback = MainActorCallback
 
 /// __Deprecated!__. New constants should be added to `Constants` struct.
 struct AppData {

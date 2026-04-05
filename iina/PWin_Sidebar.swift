@@ -858,7 +858,7 @@ extension PlayerWindowController {
 
   // This is so that sidebar controllers can notify when they changed tabs in their tab groups, so that
   // the tracking information here can be updated.
-  func didChangeTab(to tab: Sidebar.Tab, then doAfter: (() -> Void)? = nil) {
+  func didChangeTab(to tab: Sidebar.Tab, then doAfter: Callback? = nil) {
     log.verbose("Changing to sidebar tab: \(tab.name.quoted)")
 
     // Try to avoid race conditions if possible

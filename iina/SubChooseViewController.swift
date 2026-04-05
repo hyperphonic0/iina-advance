@@ -19,7 +19,7 @@ class SubChooseViewController: NSViewController {
   var subtitles: [OnlineSubtitle] = []
 
   var userDoneAction: (([OnlineSubtitle]) -> Void)?
-  var userCanceledAction: (() -> Void)?
+  var userCanceledAction: Callback?
 
   var context: Any?
 

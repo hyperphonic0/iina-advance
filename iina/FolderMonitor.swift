@@ -17,7 +17,7 @@ public class FolderMonitor {
   /// URL for the directory being monitored.
   public let url: URL
 
-  public var folderDidChange: (() -> Void)?
+  public var folderDidChange: Callback?
 
   // MARK: Initializers
 

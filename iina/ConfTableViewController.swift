@@ -30,7 +30,7 @@ final class ConfTableViewController: NSObject {
     return ConfTableState.current
   }
   private unowned let bindingTableViewController: BindingTableViewController
-  private let selectionDidChangeHandler: () -> Void
+  private let selectionDidChangeHandler: Callback
 
   // Convenience var. Pref lookup is super fast; should be fine to check on each access. Try to reduce need for restart
   fileprivate var enableInlineCreate: Bool {
@@ -58,7 +58,7 @@ final class ConfTableViewController: NSObject {
 
   @MainActor
   init(_ inputConfTableView: EditableTableView, _ bindingTableViewController: BindingTableViewController,
-       selectionDidChangeHandler: @escaping () -> Void) {
+       selectionDidChangeHandler: @escaping Callback) {
     self.tableView = inputConfTableView
     self.bindingTableViewController = bindingTableViewController
     self.selectionDidChangeHandler = selectionDidChangeHandler

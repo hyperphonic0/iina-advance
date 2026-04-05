@@ -74,7 +74,7 @@ struct GeometryTransform: Sendable {
   private let buildPWinGeoTransformTasks: ((GeometryTransform.ContextStage3) -> [IINAAnimation.Task])?
 
   nonisolated(unsafe)
-  private let onSuccess: (() -> Void)?
+  private let onSuccess: OnSuccessCallback?
 
   init(_ name: String,
        pregeneratedID: Int? = nil,
@@ -85,7 +85,7 @@ struct GeometryTransform: Sendable {
        video: VideoGeometryTF? = nil,
        windowed: PWinGeometryTF? = nil,
        buildPWinGeoTransformTasks: ((GeometryTransform.ContextStage3) -> [IINAAnimation.Task])? = nil,
-       onSuccess: (() -> Void)? = nil) {
+       onSuccess: OnSuccessCallback? = nil) {
     let pipeline = player.pwc.animationPipeline
     self.id = pregeneratedID ?? pipeline.gtfNextID()
     self.name = "\(name)-\(id)"

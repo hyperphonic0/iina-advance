@@ -60,7 +60,7 @@ final class HistoryController {
 
   /// Enqueues the given task argument in workDQ.
   /// If the application is already shutting down, it will not be enqueued or executed.
-  func async(_ taskBody: @escaping () -> Void) {
+  func async(_ taskBody: @escaping Callback) {
     guard !isAppTerminating else {
       log.verbose("Aborting new task: app is terminating")
       return

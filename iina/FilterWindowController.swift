@@ -135,7 +135,7 @@ class FilterWindowController: WindowController, NSWindowDelegate {
   }
 
   @MainActor
-  func addFilter(_ filter: MPVFilter, onSuccess: @Sendable @MainActor @escaping () -> Void) {
+  func addFilter(_ filter: MPVFilter, onSuccess: @escaping MainActorSuccessCallback) {
     guard let player = PlayerManager.shared.lastActivePlayer else {
       Utility.showAlert("filter.no_player", sheetWindow: window)
       return

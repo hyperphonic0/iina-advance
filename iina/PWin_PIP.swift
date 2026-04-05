@@ -106,7 +106,7 @@ extension PlayerWindowController: @MainActor PIPViewControllerDelegate {
   @MainActor
   func enterPIP(usePipBehavior preferredPipBehavior: Preference.WindowBehaviorWhenPip? = nil,
                 isRestoring: Bool = false,
-                then doOnSuccess: (() -> Void)? = nil) {
+                onSuccess doOnSuccess: OnSuccessCallback? = nil) {
     // Exit interactive mode before even entering intermediate status
     exitInteractiveMode(then: { [self] in
       guard !pip.isInTransition else {
@@ -153,7 +153,7 @@ extension PlayerWindowController: @MainActor PIPViewControllerDelegate {
       pip.isInTransition = true
 
       if Preference.bool(for: .lockViewportToVideoSize) {
-        _enterPIP(usePipBehavior: preferredPipBehavior, then: doOnSuccess)
+        _enterPIP(usePipBehavior: preferredPipBehavior, onSuccess: doOnSuccess)
       } else {
         // The PiP entry animation uses the size of the VideoView to determine what to show going to PiP.
         // But if lockViewportToVideoSize==true, VideoView may also include black margins. So first silently
@@ -166,7 +166,7 @@ extension PlayerWindowController: @MainActor PIPViewControllerDelegate {
           applyPWinGeometry(currentGeo, .enteringPIP)
         }
         tx.append(duration: taskDuration) { [self] in
-          _enterPIP(usePipBehavior: preferredPipBehavior, then: doOnSuccess)
+          _enterPIP(usePipBehavior: preferredPipBehavior, onSuccess: doOnSuccess)
         }
         animationPipeline.submit(tx)
       }
@@ -175,7 +175,7 @@ extension PlayerWindowController: @MainActor PIPViewControllerDelegate {
   }
 
   @MainActor
-  private func _enterPIP(usePipBehavior: Preference.WindowBehaviorWhenPip?, then doOnSuccess: (() -> Void)?) {
+  private func _enterPIP(usePipBehavior: Preference.WindowBehaviorWhenPip?, onSuccess doOnSuccess: (() -> Void)?) {
     guard let window else { return }
 
     do {

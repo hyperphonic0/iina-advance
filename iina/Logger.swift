@@ -650,14 +650,14 @@ struct Logger {
 
   // MARK: - Failure
 
-  static func ensure(_ condition: @autoclosure () -> Bool, _ errorMessage: String = "Assertion failed in \(#line):\(#file)", _ cleanup: () -> Void = {}) {
+  static func ensure(_ condition: @autoclosure () -> Bool, _ errorMessage: String = "Assertion failed in \(#line):\(#file)", _ cleanup: Callback = {}) {
     guard condition() else {
       log(errorMessage, level: .error)
       showAlertAndExit(errorMessage, cleanup)
     }
   }
 
-  static func fatal(_ message: String, _ cleanup: () -> Void = {}) -> Never {
+  static func fatal(_ message: String, _ cleanup: Callback = {}) -> Never {
     log(message, level: .error)
     log(Thread.callStackSymbols.joined(separator: "\n"))
     showAlertAndExit(message, cleanup)
@@ -675,7 +675,7 @@ struct Logger {
     showAlertAndExit(message)
   }
 
-  private static func showAlertAndExit(_ message: String, _ cleanup: () -> Void = {}) -> Never {
+  private static func showAlertAndExit(_ message: String, _ cleanup: Callback = {}) -> Never {
     // Ensure we are on the main thread so that we display the alert instead of crashing
     DispatchQueue.main.execOrSync {
       // Set logAlert to false to avoid recursion

@@ -1764,7 +1764,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
   /// Use `immediately: true` to exit without animation.
   /// • If there is to be an active crop, `newVidGeo` must be present and must contain it. Otherwise crop of "None" will be applied.
   /// • This method can be run safely even if not in interactive mode.
-  func exitInteractiveMode(immediately: Bool = false, newVidGeo: VideoGeometry? = nil, then doAfter: (() -> Void)? = nil) {
+  func exitInteractiveMode(immediately: Bool = false, newVidGeo: VideoGeometry? = nil, then doAfter: Callback? = nil) {
 
     guard currentLayout.isInteractiveMode else {
       if let doAfter {

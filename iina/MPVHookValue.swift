@@ -10,7 +10,7 @@ import Foundation
 import JavaScriptCore
 
 struct MPVHookValue {
-  typealias Block = (@escaping () -> Void) -> Void
+  typealias Block = (@escaping Callback) -> Void
 
   var id: String?
   var isJavascript: Bool
@@ -31,7 +31,7 @@ struct MPVHookValue {
     self.block = block
   }
 
-  func call(withNextBlock next: @escaping () -> Void) {
+  func call(withNextBlock next: @escaping Callback) {
     if isJavascript {
       let block: @convention(block) () -> Void = { next() }
       guard let callback = jsBlock.value else {

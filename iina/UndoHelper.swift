@@ -15,7 +15,7 @@ class UndoHelper {
   static let UNDO = "Undo"
   static let REDO = "Redo"
 
-  typealias ActionBody = () -> Void
+  typealias ActionBody = Callback
 
   var undoManager: UndoManager? {
     nil  // Subclasses should override
