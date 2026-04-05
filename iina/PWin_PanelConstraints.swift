@@ -141,14 +141,14 @@ extension PlayerWindowController {
         topBar.view.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: 0)
       }
 
-      if stage == .openNewPanels, transition.isExitingNativeFullScreen {
-        log.verbose("Updating titleBarHeight=\(0) for exiting native FS")
-        topBar.titleBarHeightConstraint.animateToConstant(0)
+      let titleHeight: CGFloat
+      if transition.isTogglingNativeFullScreen {
+        titleHeight = transition.outputLayout.titleBarHeight
       } else {
-        let titleHeight = min(stageLayout.titleBarHeight, stageGeo.topBarHeight)  // do not make titleBar larger than top bar
-        log.verbose("Updating titleBarHeight=\(Int(titleHeight))")
-        topBar.titleBarHeightConstraint.animateToConstant(titleHeight)
+        titleHeight = stageLayout.titleBarHeight
       }
+      log.verbose("Updating titleBarHeight=\(Int(titleHeight))")
+      topBar.titleBarHeightConstraint.animateToConstant(titleHeight)
 
       // Not sure why when we make this `.required`, we get a bogus constraint violation
       topBar.titleBarHeightConstraint.priority = .defaultHigh

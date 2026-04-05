@@ -466,7 +466,7 @@ extension PlayerWindowController {
       }
     }
 
-    if !transition.isWindowInitialLayout && !transition.isTogglingNativeFullScreen {
+    if !transition.isWindowInitialLayout {
       rebuildPanelConstraints(transition, stage: .midTransitionHiddenUpdates)
     }
 

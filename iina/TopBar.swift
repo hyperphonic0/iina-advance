@@ -165,7 +165,7 @@ final class TopControlBarView: ClickThroughView {
     rebuildTopBarView(targetLayout: targetLayout, targetAppearance: targetAppearance, superview: superview, log)
   }
 
-  func rebuildTopBarView(targetLayout: LayoutState, targetAppearance: NSAppearance, superview: NSView, _ log: any Logger.Subsystem) {
+  fileprivate func rebuildTopBarView(targetLayout: LayoutState, targetAppearance: NSAppearance, superview: NSView, _ log: any Logger.Subsystem) {
     log.verbose("[Load] Rebuilding topBarView: colorScheme=\(targetLayout.topBarColorScheme) appearanceIsDark=\(targetAppearance.isDark.yesno)")
     view.removeFromSuperview()
     let subviews = [titleBarView, controlBarTop, bottomBorder]
