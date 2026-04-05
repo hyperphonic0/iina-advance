@@ -1363,6 +1363,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
     // MacOS Sonoma sometimes blasts tons of these for unknown reasons. Attempt to prevent slowdown by de-duplicating
     screenParamsChangedDebouncer.run { [self] in
 
+      guard !isWindowMiniturized else { return }
       guard !sessionState.isRestoring, !isAnimatingLayoutTransition, !isApplyingPWinGeo else { return }
 
       // In normal full screen mode AppKit will automatically adjust the window frame if the window
