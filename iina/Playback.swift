@@ -139,6 +139,26 @@ struct PlaybackID: Sendable, Equatable, Hashable {
   var displayName: String { PlaybackID.displayName(from: url) }
   var needsBookmark: Bool { !isNetworkResource && bookmark == nil }
 
+  /// If bookmark data is found, tries to resolve the URL from it. Otherwise just use its static URL.
+  func resolveFileURL(_ log: any Logger.Subsystem) -> URL? {
+    guard !isNetworkResource else {
+      return nil
+    }
+
+    let url: URL
+    if let bookmarkData = bookmark, !bookmarkData.isEmpty, let urlFromBookmark = PlaybackID.url(fromBookmark: bookmarkData, log) {
+      url = urlFromBookmark
+    } else {
+      url = staticURL
+    }
+
+    guard FileManager.default.fileExists(atPath: url.path) else {
+      log.error("File not found at URL: \(url.path.pii.quoted)")
+      return nil
+    }
+    return url
+  }
+
   /// Hashable protocol conformance, to enable diffing
   var hash: Int {
     var hasher = Hasher()
@@ -157,6 +177,8 @@ struct PlaybackID: Sendable, Equatable, Hashable {
     }
     return other.url == url
   }
+
+  // MARK: - Static Methods
 
   static func == (lhs: PlaybackID, rhs: PlaybackID) -> Bool {
     return lhs.url == rhs.url

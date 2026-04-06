@@ -1041,6 +1041,7 @@ final class PlayerCore: NSObject {
     }
     mpv.setFlag(MPVOption.PlaybackControl.pause, false)
     DispatchQueue.main.async { [self] in
+      videoView.displayActive()  // pre-empt for faster responsiveness
       pwc.updatePlayButtonAndSpeedUI(isPaused: false)
     }
   }
@@ -1135,21 +1136,6 @@ final class PlayerCore: NSObject {
       log.debug("Stopping playback")
 
       mpv.command(.stop)
-    }
-  }
-
-  /// Playback has stopped and the media has been unloaded.
-  ///
-  /// This method is called by `MPVController` when mpv emits an event indicating the asynchronous mpv `stop` command
-  /// has completed executing.
-  private func playbackStopped() {
-    log.debug("Playback has stopped")
-    assert(DispatchQueue.isExecutingIn(mpv.queue))
-    /// Do not set player's state = `stopped` here. This method seems to get called when it shouldn't
-    /// (e.g., when changing current pos in playlist)
-
-    DispatchQueue.main.async { [self] in
-      postNotification(.iinaPlayerStopped)
     }
   }
 
@@ -2249,10 +2235,12 @@ final class PlayerCore: NSObject {
     }
   }
 
+  /// If `dueToStopCommand` is true, it can be assumed that no error has occurred (and thus `errorDetail` is unused).
   func fileEnded(dueToStopCommand: Bool, errorDetail: String) {
     // if receive end-file when loading file, might be error
     // wait for idle
     if info.isFileLoaded {
+      // Unsure why this line exists. Cancel autoload(?)
       info.shouldAutoLoadFiles = false
     } else {
       if !dueToStopCommand {
@@ -2260,7 +2248,10 @@ final class PlayerCore: NSObject {
       }
     }
     if dueToStopCommand {
-      playbackStopped()
+      // Can indicate changing current playback (e.g. via playlist navigation), or if player is quitting
+      DispatchQueue.main.async { [self] in
+        postNotification(.iinaPlayerStopped)
+      }
     }
   }
 

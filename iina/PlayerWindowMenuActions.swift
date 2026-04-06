@@ -31,7 +31,12 @@ extension PlayerWindowController {
   }
 
   @objc func menuShowCurrentFileInFinder(_ sender: NSMenuItem) {
-    guard let url = player.info.currentURL, !player.info.isNetworkResource else { return }
+    log.verbose("Got request to show current file in Finder")
+    guard let url = player.info.currentPlayback?.id.resolveFileURL(player.log) else {
+      log.verbose("Aborting request to show current file in Finder")
+      return
+    }
+    log.verbose("Showing current file in Finder: \(url.path.pii.quoted)")
     NSWorkspace.shared.activateFileViewerSelecting([url])
   }
 

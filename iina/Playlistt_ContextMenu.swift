@@ -74,13 +74,15 @@ extension PlaylistViewController {
     // TODO: WIP, really?
   }
 
-  private func getFiles(fromPlaylistRows rows: IndexSet) -> [URL] {
+  /// Gets the list of URLs for the files in the playlist (if any). Any URLs for non-files (i.e. network streams) will be omitted from the list.
+  /// For each file: if bookmark data is found, tries to resolve the URL from it. Otherwise just use its static URL.
+  private func getFileURLs(fromPlaylistRows rowIndexes: IndexSet) -> [URL] {
     var urls: [URL] = []
     let playlistItems = displayedPlaylist
-    for index in rows {
+    for index in rowIndexes {
       guard index < playlistItems.count else { continue }
-      if !playlistItems[index].isNetworkResource {
-        urls.append(playlistItems[index].url)
+      if let fileURL = playlistItems[index].resolveFileURL(player.log) {
+        urls.append(fileURL)
       }
     }
 
@@ -88,7 +90,7 @@ extension PlaylistViewController {
   }
 
   @IBAction func contextMenuShowInFinder(_ sender: ContextMenuItem) {
-    let urls: [URL] = getFiles(fromPlaylistRows: sender.targetRows)
+    let urls: [URL] = getFileURLs(fromPlaylistRows: sender.targetRows)
     guard !urls.isEmpty else {
       player.log.error("Show in Finder failed: found no files in \(sender.targetRows.count) provided rows!")
       return
