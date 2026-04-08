@@ -103,6 +103,9 @@
 /* Class = "NSMenuItem"; title = "No adjustment"; ObjectID = "k7b-6o-lCK"; */
 "k7b-6o-lCK.title" = "調整なし";
 
+/* Class = "NSMenuItem"; title = "Disabled"; ObjectID = "ti2-JH-nXX"; */
+"ti2-JH-nXX.title" = "使用しない";
+
 /* Class = "NSMenuItem"; title = "Track gain"; ObjectID = "w6E-lw-g7g"; */
 "w6E-lw-g7g.title" = "トラックゲイン";
 
