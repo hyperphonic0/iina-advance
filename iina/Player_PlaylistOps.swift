@@ -779,14 +779,22 @@ extension PlayerCore {
     }
   }
 
+  /// Play the entry at the given position in the playlist.
+  /// - Important: The mpv
+  ///     [playlist-play-index](https://mpv.io/manual/stable/#command-interface-playlist-play-index)
+  ///     playlist manipulation command is intentionally used instead of setting the mpv
+  ///     [playlist-pos](https://mpv.io/manual/stable/#command-interface-playlist-pos) property so that double
+  ///     clicking in the playlist on the entry that is currently playing reloads that entry.
+  /// - Parameter pos: Position of the entry in the playlist to be played.
   func playFileInPlaylist(_ pos: Int) {
     mpv.queue.async { [self] in
       guard !isStopping else { return }
       log.verbose("[Playlist] Changing mpv playlist-pos to \(pos)")
-      mpv.setInt(MPVProperty.playlistPos, pos)
+      mpv.command(.playlistPlayIndex, args: [String(pos)], level: .verbose)
     }
   }
 
+  /// Play the next or the previous entry in the playlist.
   func navigateInPlaylist(nextMedia: Bool) {
     mpv.queue.async { [self] in
       guard !isStopping else { return }
