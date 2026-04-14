@@ -325,7 +325,7 @@ final class InspectorWindowController: WindowController, NSWindowDelegate, NSTab
     self.trackPopup.removeAllItems()
     var needSeparator = false
     for track in info.videoTracks {
-      self.trackPopup.menu?.addItem(withTitle: "Video" + track.readableTitle,
+      self.trackPopup.menu?.addItem(withTitle: NSLocalizedString("track.video", comment: "Video") + track.readableTitle,
                                     action: nil, tag: nil, obj: track, stateOn: false)
       needSeparator = true
     }
@@ -333,7 +333,7 @@ final class InspectorWindowController: WindowController, NSWindowDelegate, NSTab
       self.trackPopup.menu?.addItem(NSMenuItem.separator())
     }
     for track in info.audioTracks {
-      self.trackPopup.menu?.addItem(withTitle: "Audio" + track.readableTitle,
+      self.trackPopup.menu?.addItem(withTitle: NSLocalizedString("track.audio", comment: "Audio") + track.readableTitle,
                                     action: nil, tag: nil, obj: track, stateOn: false)
       needSeparator = true
     }
@@ -341,7 +341,7 @@ final class InspectorWindowController: WindowController, NSWindowDelegate, NSTab
       self.trackPopup.menu?.addItem(NSMenuItem.separator())
     }
     for track in info.subTracks {
-      self.trackPopup.menu?.addItem(withTitle: "Subtitle" + track.readableTitle,
+      self.trackPopup.menu?.addItem(withTitle: NSLocalizedString("track.sub", comment: "Subtitle") + track.readableTitle,
                                     action: nil, tag: nil, obj: track, stateOn: false)
     }
     self.trackPopup.selectItem(at: 0)
