@@ -228,14 +228,14 @@ final class InspectorWindowController: WindowController, NSWindowDelegate, NSTab
 
     for (k, v) in dynamicStrProperties {
       let value = controller.getString(k)
-      v.stringValue = value ?? "N/A"
+      v.stringValue = value ?? NSLocalizedString("general.na", comment: "N/A")
       self.setLabelColor(v, by: value != nil)
     }
 
     let sigPeak = controller.getDouble(MPVProperty.videoParamsSigPeak);
     self.vprimariesField.stringValue = sigPeak > 0
       ? "\(controller.getString(MPVProperty.videoParamsPrimaries) ?? "?") / \(controller.getString(MPVProperty.videoParamsGamma) ?? "?") (\(sigPeak > 1 ? "H" : "S")DR)"
-      : "N/A";
+    : NSLocalizedString("general.na", comment: "N/A");
     self.setLabelColor(self.vprimariesField, by: sigPeak > 0)
 
     let isFileLoaded = player.info.isFileLoaded
@@ -264,8 +264,8 @@ final class InspectorWindowController: WindowController, NSWindowDelegate, NSTab
         self.vPixelFormat.stringValue = "\(swPf) (SW)"
       }
     } else {
-      self.vcolorspaceField.stringValue = "N/A"
-      self.vPixelFormat.stringValue = "N/A"
+      self.vcolorspaceField.stringValue = NSLocalizedString("general.na", comment: "N/A")
+      self.vPixelFormat.stringValue = NSLocalizedString("general.na", comment: "N/A")
     }
     self.setLabelColor(self.vcolorspaceField, by: isFileLoaded)
     self.setLabelColor(self.vPixelFormat, by: isFileLoaded)
@@ -297,7 +297,7 @@ final class InspectorWindowController: WindowController, NSWindowDelegate, NSTab
     for (k, v) in strProperties {
       var value = controller.getString(k)
       if value == "" { value = nil }
-      v.stringValue = value ?? "N/A"
+      v.stringValue = value ?? NSLocalizedString("general.na", comment: "N/A")
       self.setLabelColor(v, by: value != nil)
     }
 
@@ -384,7 +384,7 @@ final class InspectorWindowController: WindowController, NSWindowDelegate, NSTab
     ]
 
     for (str, field) in strProperties {
-      field.stringValue = str ?? "N/A"
+      field.stringValue = str ?? NSLocalizedString("general.na", comment: "N/A")
       setLabelColor(field, by: str != nil)
     }
   }
