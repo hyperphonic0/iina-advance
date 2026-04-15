@@ -170,6 +170,9 @@ extension MPVController {
         mpv_hook_continue(self.mpv, hookID)
         break
       }
+      hook.call {
+        mpv_hook_continue(self.mpv, hookID)
+      }
 
     case MPV_EVENT_AUDIO_RECONFIG, MPV_EVENT_VIDEO_RECONFIG:
       break

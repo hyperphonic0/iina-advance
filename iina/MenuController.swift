@@ -141,6 +141,8 @@ class MenuController: NSObject, NSMenuDelegate {
   @IBOutlet weak var inspector: NSMenuItem!
   @IBOutlet weak var miniPlayer: NSMenuItem!
 
+  @IBOutlet weak var debugDump: NSMenuItem!
+
   /// If `true` then all menu items are disabled.
   private var isDisabled = false
 
@@ -371,6 +373,11 @@ class MenuController: NSObject, NSMenuDelegate {
 
     inspector.action = #selector(AppDelegate.shared.toggleInspectorWindow(_:))
     miniPlayer.action = #selector(PlayerWindowController.menuSwitchToMiniPlayer(_:))
+
+    // Debug
+
+    debugDump.isAlternate = true
+    debugDump.keyEquivalentModifierMask = .option
   }
 
   func refreshCmdNStatus() {
@@ -788,7 +795,7 @@ class MenuController: NSObject, NSMenuDelegate {
     case savedAudioFiltersMenu:
       updateSavedFiltersMenu(type: MPVProperty.af)
     case pluginMenu:
-      PlayerCore.active.events.emit(.menuUpdate)
+      PlayerManager.shared.activePlayer?.events.emit(.menuUpdate)
       updatePluginMenu()
     default: break
     }
