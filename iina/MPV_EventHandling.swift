@@ -163,9 +163,12 @@ extension MPVController {
       let userData = event.pointee.reply_userdata
       let hookEvent = event.pointee.data.bindMemory(to: mpv_event_hook.self, capacity: 1).pointee
       let hookID = hookEvent.id
-      guard let hook = $hooks.withLock({ $0[userData] }) else { break }
-      hook.call {
+      guard let hook = $hooks.withLock({ $0[userData] }) else {
+        // Hook not found, probably because it's from an unloaded plugin.
+        // Still need to call hook_continue otherwise it will stuck.
+        player.log.warn("Hook \(hookID) not found")
         mpv_hook_continue(self.mpv, hookID)
+        break
       }
 
     case MPV_EVENT_AUDIO_RECONFIG, MPV_EVENT_VIDEO_RECONFIG:
