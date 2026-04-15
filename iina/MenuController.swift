@@ -360,6 +360,7 @@ class MenuController: NSObject, NSMenuDelegate {
 
     if AppDelegate.iinaPluginSystemEnabled {
       pluginMenu.delegate = self
+      pluginMenu.autoenablesItems = false
     } else {
       pluginMenuItem.isHidden = true
     }
@@ -787,6 +788,7 @@ class MenuController: NSObject, NSMenuDelegate {
     case savedAudioFiltersMenu:
       updateSavedFiltersMenu(type: MPVProperty.af)
     case pluginMenu:
+      PlayerCore.active.events.emit(.menuUpdate)
       updatePluginMenu()
     default: break
     }
