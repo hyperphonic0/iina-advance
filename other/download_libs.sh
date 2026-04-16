@@ -5,6 +5,7 @@ ARCH="universal"
 # github | iina (use iina to get the binary included in the latest release)
 YT_DLP_SOURCE="github"
 PARALLEL_DOWNLOADS=5
+SKIP_PLUGINS=false
 
 DYLIBS_DOWNLOAD_PATH="https://iina.io/dylibs/${ARCH}"
 YT_DLP_DOWNLOAD_PATH="https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_macos"
@@ -16,6 +17,12 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
+# Reset in case getopts has been used previously in the shell.
+if ! OPTS=$(getopt -o "h": --long "arch:,yt-dlp-src:,parallel:,skip-plugins,help": -n 'parse-options' -- "$@"); then
+  echo -e "${RED}Failed parsing options.${NC}" >&2
+  exit 1
+fi
+
 printUsageHelp() {
   echo
   echo -e "${BLUE}Usage:${NC}"
@@ -23,6 +30,7 @@ printUsageHelp() {
   echo -e "    ${GREEN}$0 [--arch] <ARCH>:${NC}       Architecture to download dylibs for: universal | arm64 | x86_64"
   echo -e "    ${GREEN}$0 [--yt-dlp-src] <SRC>:${NC}  Source to download youtube-dl from: github | iina"
   echo -e "    ${GREEN}$0 [--parallel] <N>:${NC}      Number of parallel downloads (default: 5)"
+  echo -e "    ${GREEN}$0 [--skip-plugins]:${NC}      Skip downloading official plugins"
   echo
 }
 
@@ -89,15 +97,6 @@ while [[ $# -gt 0 ]]; do
     fi
     PARALLEL_DOWNLOADS=$2
     shift 2
-    ;;
-  --parallel=*)
-    PARALLEL_DOWNLOADS=${1#*=}
-    if [[ -z "$PARALLEL_DOWNLOADS" ]]; then
-      echo -e "${RED}You need to specify a number of parallel downloads when using --parallel${NC}" >&2
-      printUsageHelp
-      exit 1
-    fi
-    shift
     ;;
   --skip-plugins)
     SKIP_PLUGINS=true
@@ -196,6 +195,115 @@ mkdir -p "$EXEC_PATH"
 echo -e "${YELLOW}Downloading yt-dlp...${NC}"
 curl -s -L "$YT_DLP_DOWNLOAD_PATH" -o "$YT_DLP_PATH" && echo -e "${GREEN}yt-dlp downloaded${NC}"
 chmod +x "$YT_DLP_PATH"
+
+mkdir -p "$PLUGIN_PATH"
+
+if [[ "$SKIP_PLUGINS" == true ]]; then
+  echo -e "${YELLOW}Skipping official plugin downloads.${NC}"
+  echo -e "${GREEN}All downloads completed.${NC}"
+  exit 0
+fi
+
+fetch_latest_plugin_asset() {
+  local repo="$1"
+  local response_file
+  local status_code
+
+  response_file=$(mktemp) || return 1
+  status_code=$(curl -s -L -o "$response_file" -w "%{http_code}" "https://api.github.com/repos/${repo}/releases/latest") || {
+    echo -e "${RED}Failed to contact GitHub for ${repo}.${NC}" >&2
+    rm -f "$response_file"
+    return 1
+  }
+
+  if [[ "$status_code" -lt 200 || "$status_code" -ge 300 ]]; then
+    echo -e "${RED}GitHub API returned HTTP ${status_code} for ${repo}.${NC}" >&2
+    python3 -c '
+import json
+import pathlib
+import sys
+
+path = pathlib.Path(sys.argv[1])
+text = path.read_text(encoding="utf-8", errors="replace").strip()
+if not text:
+    raise SystemExit(0)
+try:
+    payload = json.loads(text)
+except json.JSONDecodeError:
+    print(text[:240], file=sys.stderr)
+    raise SystemExit(0)
+message = payload.get("message")
+if message:
+    print(message, file=sys.stderr)
+' "$response_file"
+    rm -f "$response_file"
+    return 1
+  fi
+
+  python3 -c '
+import json
+import pathlib
+import sys
+
+path = pathlib.Path(sys.argv[1])
+text = path.read_text(encoding="utf-8", errors="replace")
+try:
+    release = json.loads(text)
+except json.JSONDecodeError as exc:
+    print(f"Failed to decode GitHub API response as JSON: {exc}", file=sys.stderr)
+    preview = text.strip()
+    if preview:
+        print(preview[:240], file=sys.stderr)
+    raise SystemExit(1)
+assets = [asset for asset in release.get("assets", []) if asset.get("name", "").endswith(".iinaplgz")]
+if not assets:
+    message = release.get("message")
+    if message:
+        print(message, file=sys.stderr)
+    else:
+        print("Latest release does not contain a .iinaplgz asset.", file=sys.stderr)
+    raise SystemExit(1)
+asset = assets[0]
+print(asset["name"])
+print(asset["browser_download_url"])
+' "$response_file"
+  local status=$?
+  rm -f "$response_file"
+  return $status
+}
+
+download_plugin() {
+  local repo="$1"
+  local prefix="$2"
+  local asset_info
+  local asset_name
+  local asset_url
+  local tmp_path
+
+  echo -e "${YELLOW}Downloading latest plugin release for ${repo}...${NC}"
+  asset_info=$(fetch_latest_plugin_asset "$repo") || {
+    echo -e "${RED}Failed to fetch the latest plugin asset for ${repo}.${NC}" >&2
+    return 1
+  }
+
+  asset_name=$(printf "%s\n" "$asset_info" | sed -n "1p")
+  asset_url=$(printf "%s\n" "$asset_info" | sed -n "2p")
+  tmp_path="${PLUGIN_PATH}/${asset_name}.download"
+
+  curl -s -f -L "$asset_url" -o "$tmp_path" || {
+    echo -e "${RED}Failed downloading ${asset_name}.${NC}" >&2
+    rm -f "$tmp_path"
+    return 1
+  }
+
+  find "$PLUGIN_PATH" -maxdepth 1 -type f -name "${prefix}-*.iinaplgz" -delete
+  mv "$tmp_path" "${PLUGIN_PATH}/${asset_name}"
+  echo -e "${GREEN}Downloaded ${asset_name}${NC}"
+}
+
+download_plugin "iina/plugin-online-media" "iina-plugin-ytdl" || exit 1
+download_plugin "iina/plugin-userscript" "iina-plugin-userscript" || exit 1
+download_plugin "iina/plugin-opensub" "iina-plugin-opensub" || exit 1
 
 echo -e "${GREEN}All downloads completed.${NC}"
 
