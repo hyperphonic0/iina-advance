@@ -70,8 +70,23 @@
 /* Class = "NSMenuItem"; title = "Adjust volume"; ObjectID = "SYg-hW-b6r"; */
 "SYg-hW-b6r.title" = "Justera volymen";
 
+/* Class = "NSMenuItem"; title = "Adjust playback speed"; ObjectID = "XXq-G1-9sl"; */
+"XXq-G1-9sl.title" = "Justera uppspelningshastighet";
+
+/* Class = "NSMenuItem"; title = "Reset speed"; ObjectID = "Vv4-AU-kGj"; */
+"Vv4-AU-kGj.title" = "Återställ hastighet";
+
+/* Class = "NSMenuItem"; title = "Adjust playback speed"; ObjectID = "XXq-G1-9sl"; */
+"XXq-G1-9sl.title" = "Justera uppspelningshastighet";
+
 /* Class = "NSTextFieldCell"; title = "Sensitivity for volume:"; ObjectID = "YQH-1a-WcM"; */
 "YQH-1a-WcM.title" = "Känslighet för volym:";
+
+/* Class = "NSMenuItem"; title = "Reset speed"; ObjectID = "Zbp-ok-mMJ"; */
+"Zbp-ok-mMJ.title" = "Återställ hastighet";
+
+/* Class = "NSTextFieldCell"; title = "Sensitivity for speed:"; ObjectID = "aa0-Qo-1nw"; */
+"aa0-Qo-1nw.title" = "Känslighet för hastighet:";
 
 /* Class = "NSMenuItem"; title = "None"; ObjectID = "chS-d2-TG1"; */
 "chS-d2-TG1.title" = "Inget";
@@ -94,11 +109,20 @@
 /* Class = "NSMenuItem"; title = "Hide OSC"; ObjectID = "iFF-Gq-tVx"; */
 "iFF-Gq-tVx.title" = "Gömma skärmkontroller";
 
+/* Class = "NSMenuItem"; title = "A-B loop"; ObjectID = "iLX-jW-Tdw"; */
+"iLX-jW-Tdw.title" = "A–B-loop";
+
+/* Class = "NSMenuItem"; title = "Reset speed"; ObjectID = "ig1-kk-RZu"; */
+"ig1-kk-RZu.title" = "Återställ hastighet";
+
 /* Class = "NSMenuItem"; title = "None"; ObjectID = "jnR-2I-4x4"; */
 "jnR-2I-4x4.title" = "Inget";
 
 /* Class = "NSMenuItem"; title = "Pause / Resume"; ObjectID = "mOX-Fi-oTv"; */
 "mOX-Fi-oTv.title" = "Pausa / fortsätta";
+
+/* Class = "NSMenuItem"; title = "Adjust playback speed"; ObjectID = "nJZ-9M-DHk"; */
+"nJZ-9M-DHk.title" = "Justera uppspelningshastighet";
 
 /* Class = "NSMenuItem"; title = "None"; ObjectID = "oOk-y6-lek"; */
 "oOk-y6-lek.title" = "Inget";
@@ -123,6 +147,12 @@
 
 /* Class = "NSMenuItem"; title = "Seek"; ObjectID = "wcS-tP-wav"; */
 "wcS-tP-wav.title" = "Spola";
+
+/* Class = "NSMenuItem"; title = "Adjust volume"; ObjectID = "CXf-Ca-OhE"; */
+"CXf-Ca-OhE.title" = "Justera volymen";
+
+/* Class = "NSMenuItem"; title = "Adjust playback speed"; ObjectID = "nJZ-9M-DHk"; */
+"nJZ-9M-DHk.title" = "Justera uppspelningshastighet";
 
 /* Class = "NSMenuItem"; title = "None"; ObjectID = "wkV-Gq-B0T"; */
 "wkV-Gq-B0T.title" = "Inget";

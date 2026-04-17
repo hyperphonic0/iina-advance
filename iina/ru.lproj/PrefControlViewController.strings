@@ -70,6 +70,15 @@
 /* Class = "NSMenuItem"; title = "Adjust volume"; ObjectID = "SYg-hW-b6r"; */
 "SYg-hW-b6r.title" = "Громкость";
 
+/* Class = "NSMenuItem"; title = "Adjust playback speed"; ObjectID = "XXq-G1-9sl"; */
+"XXq-G1-9sl.title" = "Настроить скорость воспроизведения";
+
+/* Class = "NSMenuItem"; title = "Reset speed"; ObjectID = "Vv4-AU-kGj"; */
+"Vv4-AU-kGj.title" = "Сбросить скорость";
+
+/* Class = "NSMenuItem"; title = "Adjust playback speed"; ObjectID = "XXq-G1-9sl"; */
+"XXq-G1-9sl.title" = "Настроить скорость воспроизведения";
+
 /* Class = "NSTextFieldCell"; title = "Sensitivity for volume:"; ObjectID = "YQH-1a-WcM"; */
 "YQH-1a-WcM.title" = "Чувствительность громкости:";
 
@@ -123,6 +132,12 @@
 
 /* Class = "NSMenuItem"; title = "Seek"; ObjectID = "wcS-tP-wav"; */
 "wcS-tP-wav.title" = "Перемотка";
+
+/* Class = "NSMenuItem"; title = "Adjust volume"; ObjectID = "CXf-Ca-OhE"; */
+"CXf-Ca-OhE.title" = "Громкость";
+
+/* Class = "NSMenuItem"; title = "Adjust playback speed"; ObjectID = "nJZ-9M-DHk"; */
+"nJZ-9M-DHk.title" = "Настроить скорость воспроизведения";
 
 /* Class = "NSMenuItem"; title = "None"; ObjectID = "wkV-Gq-B0T"; */
 "wkV-Gq-B0T.title" = "Ничего";
