@@ -16,10 +16,9 @@ class WindowController: NSWindowController {
     /// NOTE: `window.isVisible` returns `false` if the window is ordered out, which we do sometimes,
     /// as well as in the minimized or hidden states.
     /// Check against our internally tracked window state lists also:
+    if window.isVisible { return true }
     let savedStateName = window.savedStateName
-    let isVisible = window.isVisible || UIState.shared.windowsOpen.contains(savedStateName)
-    let isMinimized = UIState.shared.windowsMinimized.contains(savedStateName)
-    return isVisible || isMinimized
+    return UIState.shared.windowsOpen.contains(savedStateName) || UIState.shared.windowsMinimized.contains(savedStateName)
   }
 
   var mouseLocationInWindow: NSPoint {

@@ -146,8 +146,9 @@ struct PlaybackID: Sendable, Equatable, Hashable {
     }
 
     let url: URL
-    if let bookmarkData = bookmark, !bookmarkData.isEmpty, let urlFromBookmark = PlaybackID.url(fromBookmark: bookmarkData, log) {
-      url = urlFromBookmark
+    if let bookmarkData = bookmark, !bookmarkData.isEmpty,
+       let idFromBookmark = PlaybackID.resolvingBookmarkData(bookmarkData, updateCache: false, log) {
+      url = idFromBookmark.staticURL
     } else {
       url = staticURL
     }
@@ -203,18 +204,39 @@ struct PlaybackID: Sendable, Equatable, Hashable {
     }
   }
 
+  /// If able to resolve a URL from the given bookmarkData, builds and returns a `PlaybackID` for it;
+  /// otherwise returns `nil`.
+  ///
+  /// If `updateCache` is true (the default), also updates the central cache, including enqueuing any
+  /// work needed to update a stale bookmark.
+  /// The `staticURL` of the returned `PlaybackID` is guaranteed to be from the bookmark.
   /// Warning: this can be expensive! Use strategically.
-  static func url(fromBookmark bookmarkData: Data, _ log: any Logger.Subsystem) -> URL? {
+  static func resolvingBookmarkData(_ bookmarkData: Data,
+                                    updateCache: Bool = true,
+                                    _ log: any Logger.Subsystem) -> PlaybackID? {
     guard !bookmarkData.isEmpty else { return nil }
     
     var isStale = false
     do {
-      let url = try URL(resolvingBookmarkData: bookmarkData, bookmarkDataIsStale: &isStale)
+      let bookmarkURL = try URL(resolvingBookmarkData: bookmarkData, bookmarkDataIsStale: &isStale)
+
+      let idWithBookmark = PlaybackID(bookmarkURL, bookmark: bookmarkData)
+
       if isStale {
-        // TODO: update stale bookmarks where convenient
-        log.verbose("URL has gone stale: \(url.absoluteString.pii.quoted)")
+        log.verbose("Resolved bookmark has gone stale; now has URL: \(bookmarkURL.absoluteString.pii.quoted)")
       }
-      return url
+
+      if updateCache {
+        if isStale {
+
+          // FIXME: enqueue task to update cached item
+
+        } else {
+          // Merge bookmark into cache
+          MediaMetaCache.shared.updateCacheEntry(idWithBookmark)
+        }
+      }
+      return idWithBookmark
     } catch {
       log.error("Failed to resolve URL from bookmark: \(error)")
       return nil

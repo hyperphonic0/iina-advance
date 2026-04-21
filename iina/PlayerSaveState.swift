@@ -292,6 +292,7 @@ struct PlayerSaveState: CustomStringConvertible {
   var staticURL: URL? { url(for: .url) }
 
   /// This attempts to resolve the latest URL from bookmark data if possible, but may fall back to `staticURL`.
+  /// For use in restoring.
   @MainActor
   fileprivate func resolveURL(volRemounts: [String: Bool]) -> URL? {
     let staticURL = staticURL
@@ -334,9 +335,9 @@ struct PlayerSaveState: CustomStringConvertible {
     }
     if volRemountURL.isEmpty || (volRemounts[volRemountURL] == true) {
       log.verbose("Restoring player url from bookmark…")
-      if let bookmarkURL = PlaybackID.url(fromBookmark: bookmarkData, log) {
-        log.verbose("Restored player url from bookmark: \(bookmarkURL.absoluteString.pii.quoted)")
-        return bookmarkURL
+      if let idFromBookmark = PlaybackID.resolvingBookmarkData(bookmarkData, updateCache: false, log) {
+        log.verbose("Restored player url from bookmark: \(idFromBookmark.staticURL.absoluteString.pii.quoted)")
+        return idFromBookmark.staticURL
       }
     }
     return staticURL
@@ -407,12 +408,12 @@ struct PlayerSaveState: CustomStringConvertible {
       for item in playlistBookmarkData {
         // Attempt to create a PlaybackID from the bookmark first, if it is available
         let staticURL = URL(fileURLWithPath: item.path)
-        if item.volRemountURL.isEmpty || (volRemounts[item.volRemountURL] == true), let bookmarkURL = PlaybackID.url(fromBookmark: item.bookmark, log) {
-          let idWithBookmark = PlaybackID(bookmarkURL, bookmark: item.bookmark)
-          // Merge bookmark into cache
-          MediaMetaCache.shared.updateCacheEntry(idWithBookmark)
+        if item.volRemountURL.isEmpty || (volRemounts[item.volRemountURL] == true),
+           let idWithBookmark = PlaybackID.resolvingBookmarkData(item.bookmark, updateCache: true, log) {
           ids.append(idWithBookmark)
           resolvedCount += 1
+          // If the bookmark resolved, the returned PlaybackID's staticURL is guaranteed to be the most up-to-date URL.
+          let bookmarkURL = idWithBookmark.staticURL
           // Support empty storedPath. as of v1.5 this should never happen, but it is envisioned that future versions
           // may store an empty path for items which have bookmark data. Try to be forward compatible:
           if !item.path.isEmpty, PlaybackID.path(from: bookmarkURL) != item.path {

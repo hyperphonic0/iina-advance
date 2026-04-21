@@ -2014,6 +2014,8 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
     // Just don't update in this case
     guard !isAnimatingLayoutTransition, !isApplyingPWinGeo else { return }
     guard loaded else { return }
+    // Don't bother with live updates if window is not currently visible
+    guard isOpen else { return }
 
     // scroll wheel will set newer value; do not overwrite it until it is done
     if !isScrollingOrDraggingPlaySlider {

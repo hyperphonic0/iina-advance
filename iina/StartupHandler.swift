@@ -978,7 +978,7 @@ final class StartupHandler {
     // because the latter always prompts the user with an authentication dialog even if stored credentials exist.
     log.verbose("[Remount] Trying to load first bookmark from remountURL=\(volRemountURLString.pii.quoted)…")
     let firstItemBookmark = dependentItems[0].bookmark
-    if PlaybackID.url(fromBookmark: firstItemBookmark, log) != nil {
+    if PlaybackID.resolvingBookmarkData(firstItemBookmark, updateCache: false, log) != nil {
       log.verbose("[Remount] Successfully loaded bookmark from remountURL=\(volRemountURLString.pii.quoted)")
       return true
     }

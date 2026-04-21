@@ -133,13 +133,27 @@ class MediaMetaCache {
     }
   }
 
-  func getOrCreateBookmark(fromURL url: URL) -> Data? {
+  /// This is typically an expensive operation.
+  func getOrCreateBookmark(fromURL url: URL, fixStale: Bool = true) -> Data? {
     // Network URLs cannot have bookmarks
     guard url.isFileURL else { return nil }
 
     // Consult central cache to see if cached bookmark exists:
     if let bookmarkData = getBookmark(forURL: url) {
-      return bookmarkData
+      if !fixStale {
+        return bookmarkData
+      }
+
+      // Check if bookmark is stale. Need to resolve the bookmark to do this, which is
+      // typically somewhat expensive (though less than creating it from scratch):
+      var isStale = false
+      let resolvedURL = (try? URL(resolvingBookmarkData: bookmarkData, bookmarkDataIsStale: &isStale))
+      if resolvedURL != nil, !isStale {
+        // Still valid: return it
+        return bookmarkData
+      }
+      // Else: must be stale. Fall through and regenerate it
+      log.verbose("Bookmark is stale; attempting to regenerate it")
     }
 
     // Somewhat expensive: check for file existence
@@ -167,34 +181,7 @@ class MediaMetaCache {
   /// Generates a MacOS bookmark from given URL if it does not exist. May be an expensive operation!
   /// Returns `true` if bookmark was created; false if not
   func createBookmarkIfNotExist(fromURL url: URL) -> Bool {
-    // Network URLs cannot have bookmarks
-    guard url.isFileURL else { return false }
-
-    // Consult central cache to see if cached bookmark exists:
-    if getBookmark(forURL: url) != nil {
-      return false
-    }
-
-    // Somewhat expensive: check for file existence
-    guard FileManager.default.fileExists(atPath: url.path) else {
-      log.trace("Cannot create bookmark data from URL \(url.path.pii.quoted): file does not exist")
-      return false
-    }
-    do {
-      // *Very* expensive (~1.0sec during testing for local disk)
-      let bookmark = try url.bookmarkData(options: [.withSecurityScope, .securityScopeAllowOnlyReadAccess],
-                                          includingResourceValuesForKeys: nil, relativeTo: nil)
-
-      log.trace("Caching bookmark data for URL \(url.path.pii.quoted)")
-      // Update entry in central cache with the updated ID, which contains the bookmark
-      let id = PlaybackID(url, bookmark: bookmark)
-      updateCacheEntry(id)
-
-      return true
-    } catch {
-      log.error("Failed to create bookmark data from URL \(PlaybackID.path(from: url).pii.quoted): \(error)")
-      return false
-    }
+    return getOrCreateBookmark(fromURL: url) != nil
   }
 
   /// Will return a new `PlaybackID`. If bookmark data is found for it, returns a `PlaybackID` with the bookmark data.
