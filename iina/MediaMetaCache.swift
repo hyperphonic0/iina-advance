@@ -140,7 +140,7 @@ class MediaMetaCache {
 
     // Consult central cache to see if cached bookmark exists:
     if let bookmarkData = getBookmark(forURL: url) {
-      if !fixStale {
+      guard fixStale else {
         return bookmarkData
       }
 
@@ -180,7 +180,7 @@ class MediaMetaCache {
 
   /// Generates a MacOS bookmark from given URL if it does not exist. May be an expensive operation!
   /// Returns `true` if bookmark was created; false if not
-  func createBookmarkIfNotExist(fromURL url: URL) -> Bool {
+  func addBookmarkIfMissingOrStale(fromURL url: URL) -> Bool {
     return getOrCreateBookmark(fromURL: url) != nil
   }
 

@@ -398,7 +398,8 @@ struct PlayerSaveState: CustomStringConvertible {
   // MARK: - Save State / Serialize to prefs strings
 
   /// Builds a list of PlaybackID objects for the saved playlist, preferring secure bookmarks when available.
-  func buildPlaylistIDs(volRemounts: [String: Bool]) -> [PlaybackID] {
+  /// This should only be called while restoring from a prior launch.
+  func restorePlaylistIDs(volRemounts: [String: Bool]) -> [PlaybackID] {
     var ids: [PlaybackID] = []
 
     // If we have all 3 arrays and they are aligned, use them in lockstep to preserve order

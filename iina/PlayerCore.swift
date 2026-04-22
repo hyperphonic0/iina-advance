@@ -689,7 +689,7 @@ final class PlayerCore: NSObject {
               pendingResumeWhenShowingWindow = !Preference.bool(for: .pauseWhenOpen)
             }
 
-            let playlistPlaybackIDs = priorState.buildPlaylistIDs(volRemounts: volRemountURLs)
+            let playlistPlaybackIDs = priorState.restorePlaylistIDs(volRemounts: volRemountURLs)
             if !playlistPlaybackIDs.isEmpty {
               let playlistPos: Int? = priorState.int(for: .playlistPos)
               log.debug("Restoring \(playlistPlaybackIDs.count) items into playlist, indexOfCurrentItem=\(playlistPos?.description ?? "nil")")
@@ -2488,7 +2488,7 @@ final class PlayerCore: NSObject {
     var progress = 0
     for item in playlisttItemsMissingBookmarks {
       guard currentTicket == postLoadBGQTicket else { return }
-      if MediaMetaCache.shared.createBookmarkIfNotExist(fromURL: item.url) {
+      if MediaMetaCache.shared.addBookmarkIfMissingOrStale(fromURL: item.url) {
         progress += 1
       }
     }

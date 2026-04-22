@@ -228,9 +228,14 @@ struct PlaybackID: Sendable, Equatable, Hashable {
 
       if updateCache {
         if isStale {
-
-          // FIXME: enqueue task to update cached item
-
+          // Enqueue task to update cached item. Do this asynchronously because it may take some time.
+          PlayerCore.postLoadBGQ.async {
+            // Probably don't need to check current ticket...assuming there will not be too many stales
+            // to process.
+            if MediaMetaCache.shared.addBookmarkIfMissingOrStale(fromURL: bookmarkURL) {
+              log.verbose("Replaced stale bookmark for URL \(bookmarkURL.path.pii.quoted)")
+            }
+          }
         } else {
           // Merge bookmark into cache
           MediaMetaCache.shared.updateCacheEntry(idWithBookmark)

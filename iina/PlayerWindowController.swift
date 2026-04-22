@@ -1388,7 +1388,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
   func windowDidMove(_ notification: Notification) {
     guard let window = window else { return }
     guard !window.inLiveResize, !isAnimatingLayoutTransition, !isApplyingPWinGeo, !isMagnifying, !sessionState.isRestoring else { return }
-    log.verbose("WndDidMove")
+    log.trace("WndDidMove")
     guard !isAnimating else { return }
 
     // Do not allow scrolling if window recently moved! By default, multi-touch gestures can trigger scrolling

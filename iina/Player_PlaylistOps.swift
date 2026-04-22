@@ -201,7 +201,7 @@ extension PlayerCore {
     PlayerCore.postLoadBGQ.async { [self] in
       for item in itemsNeedingBookmarks {
         guard currentTicket == postLoadBGQTicket else { return }
-        if MediaMetaCache.shared.createBookmarkIfNotExist(fromURL: item.url) {
+        if MediaMetaCache.shared.addBookmarkIfMissingOrStale(fromURL: item.url) {
           log.verbose("Created bookmark data from URL \(item.url.path.pii.quoted)")
         }
       }
