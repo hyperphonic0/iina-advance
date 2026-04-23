@@ -258,7 +258,8 @@ class MenuController: NSObject, NSMenuDelegate {
     let cropMenuItemTitles = [StringConstants.none] + Aspect.aspectsInMenu + [StringConstants.custom]
     // same as aspectList above.
     let cropIdentifiers = [StringConstants.noneCropIdentifier] + Aspect.aspectsInMenu + [StringConstants.customCropIdentifier]
-    bind(menu: cropMenu, withOptions: cropMenuItemTitles, objects: cropIdentifiers, objectMap: nil, action: #selector(PlayerWindowController.menuChangeCrop(_:))) {
+    let changeCropAction = #selector(PlayerWindowController.menuChangeCrop(_:))
+    bind(menu: cropMenu, withOptions: cropMenuItemTitles, objects: cropIdentifiers, objectMap: nil, action: changeCropAction) {
       return PlayerManager.shared.activePlayer?.pwc.geo.video.selectedCropLabel == $0.representedObject as? String
     }
     // Separate "Custom..." from other crop sizes.
@@ -266,7 +267,8 @@ class MenuController: NSObject, NSMenuDelegate {
 
     // -- rotation
     let rotationTitles = Constants.rotations.map { "\($0)\(StringConstants.degree)" }
-    bind(menu: rotationMenu, withOptions: rotationTitles, objects: Constants.rotations, objectMap: nil, action: #selector(PlayerWindowController.menuChangeRotation(_:))) {
+    let rotationAction = #selector(PlayerWindowController.menuChangeRotation(_:))
+    bind(menu: rotationMenu, withOptions: rotationTitles, objects: Constants.rotations, objectMap: nil, action: rotationAction) {
       PlayerManager.shared.activePlayer?.pwc.geo.video.userRotation == $0.representedObject as? Int
     }
 
@@ -415,7 +417,8 @@ class MenuController: NSObject, NSMenuDelegate {
       let nextChapterTime = chapters[at: index+1]?.startTime ?? Double.greatestFiniteMagnitude
       let playbackPosSec = info.playbackTime.positionSec
       let isPlaying = playbackPosSec == nil ? false : VideoTime(playbackPosSec!).between(chapter.startTime, nextChapterTime)
-      let menuItem = NSMenuItem(title: menuTitle, action: #selector(PlayerWindowController.menuChapterSwitch(_:)), keyEquivalent: "")
+      let chapterSwitchAction = #selector(PlayerWindowController.menuChapterSwitch(_:))
+      let menuItem = NSMenuItem(title: menuTitle, action: chapterSwitchAction, keyEquivalent: "")
       menuItem.tag = index
       menuItem.state = isPlaying ? .on : .off
       let font = NSFont.monospacedDigitSystemFont(ofSize: 0, weight: .regular)
@@ -567,7 +570,8 @@ class MenuController: NSObject, NSMenuDelegate {
     Logger.log.trace("Updating Plugin menu")
     pluginMenu.removeAllItems()
 
-    pluginMenu.addItem(withTitle: StringConstants.managePlugins, action: #selector(AppDelegate.showPluginPreferences(_:)), keyEquivalent: "")
+    let managePluginsAction = #selector(AppDelegate.showPluginPreferences(_:))
+    pluginMenu.addItem(withTitle: StringConstants.managePlugins, action: managePluginsAction, keyEquivalent: "")
 
     let activePlayer = PlayerManager.shared.activePlayer
     if let isDisplayingPluginsPanel = activePlayer?.pwc.isTabGroupVisible(.plugins) {
@@ -664,7 +668,8 @@ class MenuController: NSObject, NSMenuDelegate {
       // Store the item with its pair - the PlayerInputContext will set the binding & deal with conflicts
       let actionDescription = "\(plugin.plugin.name) → \(menuItem.title)"
       // #MenuItemKeyBinding
-      let keyMapping = KeyMapping(rawKey: rawKey, rawAction: nil, isIINACommand: true, comment: actionDescription, sourceName: plugin.plugin.name)
+      let keyMapping = KeyMapping(rawKey: rawKey, rawAction: nil, isIINACommand: true,
+                                  comment: actionDescription, sourceName: plugin.plugin.name)
       mappingItemPairs.append((keyMapping, menuItem))
     }
     if !item.items.isEmpty {
@@ -851,7 +856,9 @@ class MenuController: NSObject, NSMenuDelegate {
   /// Instead of trying to keep track of them manually, just recurse through all the menus and find all the menu item
   /// bindings which haven't already been accounted for.
   func refreshStaticMenuItemBindings() {
-    let actionBlacklist = sectionMappingItemPairs.filter({ $0.key != MPVInputSection.Shared.STATIC_MENU_ITEMS_SECTION_NAME }).flatMap({$0.value}).compactMap({ $0.1.action })
+    let actionBlacklist = sectionMappingItemPairs.filter({ $0.key != MPVInputSection.Shared.STATIC_MENU_ITEMS_SECTION_NAME })
+      .flatMap({$0.value})
+      .compactMap({ $0.1.action })
     var staticMenuItemBindings: [KeyMapping] = []
 
     for rootMenu in NSApp.mainMenu!.items {
@@ -875,7 +882,8 @@ class MenuController: NSObject, NSMenuDelegate {
       }
     }
 
-    AppInputConfig.replaceMappings(forSharedSectionName: MPVInputSection.Shared.STATIC_MENU_ITEMS_SECTION_NAME, with: staticMenuItemBindings, onlyIfDifferent: true)
+    AppInputConfig.replaceMappings(forSharedSectionName: MPVInputSection.Shared.STATIC_MENU_ITEMS_SECTION_NAME,
+                                   with: staticMenuItemBindings, onlyIfDifferent: true)
   }
 
   private func forMenuItemAndAllDescendents(_ menuItem: NSMenuItem, do callback: (NSMenuItem) -> Void) {

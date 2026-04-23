@@ -776,9 +776,17 @@ extension PlaylistViewController: NSTableViewDelegate {
 
       switch identifier {
       case .isChosen:
-        let pointer = view.userInterfaceLayoutDirection == .rightToLeft ? StringConstants.blackLeftPointingTriangle : StringConstants.blackRightPointingTriangle
         // ▶︎ Is Playing icon
-        let text = isPlaying ? pointer : ""
+        let text: String
+        if isPlaying {
+          if view.userInterfaceLayoutDirection == .rightToLeft {
+            text = StringConstants.blackLeftPointingTriangle
+          } else {
+            text = StringConstants.blackRightPointingTriangle
+          }
+        } else {
+          text = ""
+        }
         v.textField?.setFormattedText(stringValue: text, textColor: isPlayingTextColor)
       case .trackName:
         let cellView = v as! PlaylistTrackCellView

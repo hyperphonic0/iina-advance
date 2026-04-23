@@ -680,7 +680,8 @@ extension PlayerWindowController {
     let hasAdditionalInfo = stageGeo.shouldHaveAdditionalInfo
     let osdPosition: Preference.OSDPosition = Preference.enum(for: .osdPosition)
 
-    log.verbose("[OSD] Updating constraints: hasOSD=\(hasOSD.yn) hasAddlInfo=\(hasAdditionalInfo.yn) leadingSB=\(hasLeadingSidebar.yn) trailingSB=\(hasTrailingSidebar.yn) offsetFromTop=\(offsetFromTop)")
+    log.verbose("[OSD] Updating constraints: hasOSD=\(hasOSD.yn) hasAddlInfo=\(hasAdditionalInfo.yn) "
+                + "leadingSB=\(hasLeadingSidebar.yn) trailingSB=\(hasTrailingSidebar.yn) offsetFromTop=\(offsetFromTop)")
 
     let leadingView = osdPosition == .topLeading ? (hasOSD ? osd.osdView : nil) :  (hasAdditionalInfo ? osd.additionalInfoView : nil)
     let trailingView = osdPosition == .topLeading ? (hasAdditionalInfo ? osd.additionalInfoView : nil) :  (hasOSD ? osd.osdView : nil)
@@ -998,11 +999,12 @@ extension PlayerWindowController {
 
   /// Do not call `enqueueOSDForDisplay` directly. Call `PlayerCore.sendOSD` instead.
   ///
-  /// There is a timing issue that can occur when the user holds down a key to rapidly repeat a key binding or menu item equivalent,
-  /// which should result in an OSD being displayed for each keypress. But for some reason, the task to update the OSD,
-  /// which is enqueued via `DispatchQueue.main.async` (or even `sync`), does not run at all while the key events continue to come in.
-  /// To work around this issue, we instead enqueue the tasks to display OSD using a simple LinkedList and Lock. Then when
-  /// `updateUIControls()` via the `DisplayLink` callback, the OSD messages will be dequeued & displayed.
+  /// There is a timing issue that can occur when the user holds down a key to rapidly repeat a key binding or menu item
+  /// equivalent, which should result in an OSD being displayed for each keypress. But for some reason, the task to
+  /// update the OSD, which is enqueued via `DispatchQueue.main.async` (or even `sync`), does not run at all while the
+  /// key events continue to come in.
+  /// To work around this issue, we instead enqueue the tasks to display OSD using a simple LinkedList and Lock.
+  /// Then when `updateUIControls()` via the `DisplayLink` callback, the OSD messages will be dequeued & displayed.
   fileprivate func enqueueOSDForDisplay(_ msg: OSDMessage, autoHide: Bool, accessoryViewController: NSViewController?) {
     if case .debug = msg {
       log.verbose("DebugOSD: \(msg)")
@@ -1089,7 +1091,8 @@ extension PlayerWindowController {
       let durationDelta = abs(duration - (osd.lastPlaybackDuration ?? Double.greatestFiniteMagnitude))
       guard positionDelta > Constants.OSD.osdSeekMinDeltaSec ||
             durationDelta > Constants.OSD.osdSeekMinDeltaSec else {
-        log.verbose("[OSD] Ignoring redundant request for 'seek'; neither position or duration has changed (Δp=\(positionDelta) Δd=\(durationDelta))")
+        log.verbose("[OSD] Ignoring redundant request for 'seek'; neither position or duration has changed "
+                    + "(Δp=\(positionDelta) Δd=\(durationDelta))")
         return
       }
       osd.lastPlaybackPosition = position
@@ -1109,7 +1112,9 @@ extension PlayerWindowController {
       osd.lastPlaybackDuration = player.info.playbackTime.durationSec
 
     case .crop(let newCropLabel):
-      if newCropLabel == StringConstants.noneCropIdentifier && !isInInteractiveMode && player.info.videoFiltersDisabled[Constants.FilterLabel.crop] != nil {
+      if newCropLabel == StringConstants.noneCropIdentifier,
+         !isInInteractiveMode,
+         player.info.videoFiltersDisabled[Constants.FilterLabel.crop] != nil {
         log.verbose("[OSD] Ignoring request for Crop 'None': looks like user starting to edit an existing crop")
         return
       }
@@ -1158,8 +1163,9 @@ extension PlayerWindowController {
         return
       } else if case .seek(_, _) = msg {
         /// Shift next icon into current icon, which will be used until the next call to `displayOSD()`
-        /// (although note that there can be subsequent calls to `updateOSDViews()` to update the OSD's displayed time while playing,
-        /// but those do not count as "new" OSD messages, and thus will continue to use `osd.currentSeekIcon`).
+        /// (although note that there can be subsequent calls to `updateOSDViews()` to update the OSD's displayed time
+        /// while playing, but those do not count as "new" OSD messages, and thus will continue to use
+        /// `osd.currentSeekIcon`).
         if isScrollingOrDraggingPlaySlider {
           // give up on fancy OSD for scroll wheel seek (for now)
           osd.currentSeekIcon = nil
