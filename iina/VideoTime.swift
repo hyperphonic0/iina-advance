@@ -108,13 +108,13 @@ extension VideoTime: Comparable { }
 
 func <(lhs: VideoTime, rhs: VideoTime) -> Bool {
   // ignore additional digits and compare the time in milliseconds
-  return Int(lhs.second * 1000) < Int(rhs.second * 1000)
+  return (lhs.second * 1000).rounded() < (rhs.second * 1000).rounded()
 }
 
 func ==(lhs: VideoTime, rhs: VideoTime) -> Bool {
   if lhs.second.isFinite && rhs.second.isFinite {
     // ignore additional digits and compare the time in milliseconds
-    return Int(lhs.second * 1000) == Int(rhs.second * 1000)
+    return (lhs.second * 1000).rounded() == (rhs.second * 1000).rounded()
   }
   return lhs.second == rhs.second
 }

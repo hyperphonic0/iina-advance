@@ -412,7 +412,7 @@ class MenuController: NSObject, NSMenuDelegate {
     }
     for (index, chapter) in chapters.enumerated() {
       let menuTitle = "\(padder(chapter.startTimeString)) – \(chapter.title)"
-      let nextChapterTime = chapters[at: index+1]?.startTime ?? Double.infinity
+      let nextChapterTime = chapters[at: index+1]?.startTime ?? Double.greatestFiniteMagnitude
       let playbackPosSec = info.playbackTime.positionSec
       let isPlaying = playbackPosSec == nil ? false : VideoTime(playbackPosSec!).between(chapter.startTime, nextChapterTime)
       let menuItem = NSMenuItem(title: menuTitle, action: #selector(PlayerWindowController.menuChapterSwitch(_:)), keyEquivalent: "")

@@ -795,7 +795,7 @@ extension PlaylistViewController: NSTableViewDelegate {
       let chapter = chapters[row]
 
       // next chapter time
-      let nextChapterTime = chapters[at: row+1]?.startTime ?? Double.infinity
+      let nextChapterTime = chapters[at: row+1]?.startTime ?? Double.greatestFiniteMagnitude
       let isCurrentChapter = player.info.chapter == row
       let textColor = isCurrentChapter ? isPlayingTextColor : .controlTextColor
 
