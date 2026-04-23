@@ -290,7 +290,7 @@ class Utility {
 
   /// De-duplicates a seemingly unavoidable nuisance warning
   static func setAllowedFileTypes(_ allowedFileExtensions: [String]? = nil, in panel: NSSavePanel) {
-    panel.allowedFileTypes = allowedFileExtensions
+    panel.allowedContentTypes = allowedFileExtensions?.compactMap { UTType(filenameExtension: $0) } ?? []
   }
 
   /**
