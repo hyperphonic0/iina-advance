@@ -145,6 +145,8 @@ fileprivate class ConfigEditor: SettingsAccessory.Base {
     
     self.addConfBtn = NSButton()
     self.delConfBtn = NSButton()
+    addConfBtn.bezelStyle = .push
+    delConfBtn.bezelStyle = .push
 
     super.init(l10n: l10n)
     
