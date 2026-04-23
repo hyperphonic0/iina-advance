@@ -261,12 +261,11 @@ class PlaylistViewController: NSViewController, NSMenuDelegate, SidebarTabGroupV
       let sw = Utility.Stopwatch()
 
       let doAfterReload: MainActorCallback = { [self] in
-        refreshNowPlayingIndex()
+        refreshNowPlayingIndex(thenScrollToVisible: needsScrollToCurrentItem)
         updateCachesForAllItems()
         removeBtn.isEnabled = !playlistTableView.selectedRowIndexes.isEmpty
         if needsScrollToCurrentItem {
           needsScrollToCurrentItem = false
-          scrollPlaylistToCurrentItem()
         }
         player.log.verbose("Done with playlist table reload: \(playlistTableView.numberOfRows) rows in \(sw.secElapsedString)")
       }
@@ -1072,15 +1071,8 @@ extension PlaylistViewController: NSTableViewDelegate {
     player.log.verbose("Updating nowPlayingIndex: \(oldNowPlayingIndex) → \(newNowPlayingIndex)")
     lastNowPlayingIndex = newNowPlayingIndex
 
-    // ... also make sure the old "now playing" row is redrawn so it loses its status
-    loadCachedItem(forRowIndex: oldNowPlayingIndex)
-    // If "now playing" row changed, make sure the new "now playing" row is redrawn to show its new status...
-    loadCachedItem(forRowIndex: newNowPlayingIndex)
-    // The calls to loadCachedItem should refresh the given indexes, but will go through multiple queues
-    // to do so and may be delayed by a minute or more. We need to update the nowPlaying status ASAP,
-    // so just add extra redraws right away:
-    reloadPlaylistRow(oldNowPlayingIndex)
-    reloadPlaylistRow(newNowPlayingIndex)
+    // Redraw all rows. Too difficult to try to figure out a minimal redraw set
+    reloadAllPlaylistRows()
 
     if thenScrollToVisible {
       playlistTableView.scrollRowToVisible(newNowPlayingIndex)

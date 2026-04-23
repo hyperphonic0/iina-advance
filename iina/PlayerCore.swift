@@ -2046,12 +2046,6 @@ final class PlayerCore: NSObject {
       log.error("FileStarted: failed to create media from path \(path.pii.quoted)")
       return
     }
-    if let existingPlayback = info.currentPlayback, existingPlayback.url == playbackFromPath.url {
-      guard existingPlayback.state.isNotYet(.started) else {
-        log.warn("FileStarted: found existing playback for \(existingPlayback.url.absoluteString.pii.quoted), but state is unexpected; aborting (expected: 'notYetStarted', found: \(existingPlayback.state.rawValue))")
-        return
-      }
-    }
 
     log.verbose("FileStarted: playbackPath=\(path.pii.quoted), PL#=\(String(playbackFromPath.playlistPos))")
     info.currentPlayback = playbackFromPath

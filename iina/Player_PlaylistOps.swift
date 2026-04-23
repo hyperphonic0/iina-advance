@@ -52,7 +52,7 @@ extension PlayerCore {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
 
     guard !isStopping else { return }
-    _reloadPlaylist(thenPostNotification: false, savePlayerState: false)
+    _reloadPlaylist(refreshNowPlayingIndex: false, thenPostNotification: false, savePlayerState: false)
 
     if info.playlist.count != 1 {
       log.debug("[Playlist] Expected exactly 1 item in playlist before bulk-add, but found \(info.playlist.count)."
@@ -95,9 +95,11 @@ extension PlayerCore {
                     expectedCurrentPlaylist: info.playlist,
                     newIsPlayingIndex: nowPlayingIndex,
                     onSuccess: { [self] in
-      log.verbose("[Playlist] Done adding \(playbackIDs.count) items. Playlist count is now \(info.playlist.count)")
-      displayedPlaylist = info.playlist
-      pwc.playlistView.refreshNowPlayingIndex(thenScrollToVisible: true)
+      pwc.animationPipeline.submitInstantTask { [self] in
+        log.verbose("[Playlist] Done adding \(playbackIDs.count) items. Playlist count is now \(info.playlist.count)")
+        displayedPlaylist = info.playlist
+        pwc.playlistView.refreshNowPlayingIndex(thenScrollToVisible: true)
+      }
     })
   }
 
@@ -151,11 +153,17 @@ extension PlayerCore {
     let (tableUIChange, allItemsNew): (TableUIChange, [PlaybackID])
     if pwc.playlistView.isViewLoaded {
       (tableUIChange, allItemsNew) = pwc.playlistView.playlistTableView.buildInsert(of: rowList, at: targetRowIndex,
-                                                                                    in: expectedCurrentPlaylist)
+                                                                                    in: expectedCurrentPlaylist,
+                                                                                    completionHandler: { [self] _ in
+        pwc?.playlistView.refreshNowPlayingIndex(thenScrollToVisible: false)
+      })
     } else {
       let insertIdx = targetRowIndex ?? expectedCurrentPlaylist.count
       (tableUIChange, allItemsNew) = TableUIChangeBuilder.shared.buildInsert(of: rowList, at: insertIdx,
-                                                                             in: expectedCurrentPlaylist)
+                                                                             in: expectedCurrentPlaylist,
+                                                                             completionHandler: { [self] _ in
+        pwc?.playlistView.refreshNowPlayingIndex(thenScrollToVisible: false)
+      })
     }
 
     let playlistSize = expectedCurrentPlaylist.count
@@ -248,7 +256,8 @@ extension PlayerCore {
 
     // Verify playlist state first before changing anything
     let expectedPlaylistBeforeInsert = expectedCurrentPlaylist ?? info.playlist
-    guard syncAndValidatePlaylist(expectedPlaylist: expectedPlaylistBeforeInsert) else { return }
+    guard syncAndValidatePlaylist(expectedPlaylist: expectedPlaylistBeforeInsert,
+                                  refreshNowPlayingIndex: false) else { return }
 
     // Insert at playlist.count => append
     for (workItemIndex, (insertTargetIndex, _)) in itemsAtIndexes.enumerated() {
@@ -275,13 +284,20 @@ extension PlayerCore {
     }
 
     // If `newIsPlayingIndex` is provided, use it rather than trying to derive playlistPos as that can be wrong for duplicates
+    var refreshNowPlayingIndex = true
     if let newIsPlayingIndex, let currentPlayback = info.currentPlayback,
        newIsPlayingIndex >= 0, newIsPlayingIndex < expectedPlaylistAfterInsert.count {
       info.currentPlayback = currentPlayback.clone(playlistPos: newIsPlayingIndex)
+      refreshNowPlayingIndex = false
+
+      pwc.animationPipeline.submitInstantTask { [self] in
+        pwc?.playlistView.refreshNowPlayingIndex(thenScrollToVisible: false)
+      }
     }
 
     // Now verify playlist state again to ensure changes were correct
-    guard syncAndValidatePlaylist(expectedPlaylist: expectedPlaylistAfterInsert) else { return }
+    guard syncAndValidatePlaylist(expectedPlaylist: expectedPlaylistAfterInsert,
+                                  refreshNowPlayingIndex: refreshNowPlayingIndex) else { return }
     saveState()
 
     pwc.animationPipeline.submitInstantTask { [self] in
@@ -306,7 +322,10 @@ extension PlayerCore {
   private func movePlaylistRows_TaskBody(from rowIndexes: IndexSet, to insertIndex: Int, _ undoOption: UndoOption) {
     // 1. Build UI update in main queue
     let allItemsOld = displayedPlaylist  // save in case of undo
-    let (tableUIChange, allItemsNew) = TableUIChangeBuilder.shared.buildMove(rowIndexes, to: insertIndex, in: allItemsOld)
+    let (tableUIChange, allItemsNew) = TableUIChangeBuilder.shared.buildMove(rowIndexes, to: insertIndex, in: allItemsOld,
+                                                                             completionHandler: { [self] _ in
+      pwc?.playlistView.refreshNowPlayingIndex(thenScrollToVisible: false)
+    })
 
     let moveIndexPairs = buildMpvMoveIndexPairs(from: rowIndexes, to: insertIndex)
     log.verbose("[Playlist] Moving indexes=\(rowIndexes.toArray()) → \(insertIndex); indexPairs=\(moveIndexPairs)")
@@ -332,7 +351,10 @@ extension PlayerCore {
           // Undo 1. Build UI update in main queue
           // Builds an insert. Unlike the undo for `insertPlaylistRows()`, this is non-trivial because the original
           // deleted items can be at non-contiguous indexes in the playlist.
-          let tableUIChangeUndo = tableUIChange.inverted(selectNextRowAfterDelete: playlistTableSelectNextRowAfterDelete)
+          let tableUIChangeUndo = tableUIChange.inverted(selectNextRowAfterDelete: playlistTableSelectNextRowAfterDelete,
+                                                         completionHandler: { [self] _ in
+            pwc?.playlistView.refreshNowPlayingIndex(thenScrollToVisible: false)
+          })
           let undoMoveIndexPairs = buildInvertedMpvMoveIndexPairs(from: rowIndexes, to: insertIndex, movePairs: moveIndexPairs)
           log.verbose("[Playlist] Undo move (original op: move rows=\(rowIndexes.toArray()) → \(insertIndex); "
                       + "undoMoveIndexPairs=\(undoMoveIndexPairs))")
@@ -365,7 +387,8 @@ extension PlayerCore {
       log.debug("[Playlist] Executing move of (src,dst) indexPairs=\(indexPairs)")
 
       // Verify playlist state first before changing anything. This will take proper steps on failure, so just return in that case.
-      guard syncAndValidatePlaylist(expectedPlaylist: expectedPlaylistBefore) else { return }
+      guard syncAndValidatePlaylist(expectedPlaylist: expectedPlaylistBefore,
+                                    refreshNowPlayingIndex: false) else { return }
 
       for (srcIndex, dstIndex) in indexPairs {
         let returnCode = mpv.playlistMove(srcIndex, to: dstIndex)
@@ -465,13 +488,16 @@ extension PlayerCore {
   private func __removePlaylistRow(_ rowIndexes: IndexSet, allItemsOld: [PlaybackID], _ undoOption: UndoOption) {
     // 1. Build UI update in main queue
     let (tableUIChange, allItemsNew) = TableUIChangeBuilder.shared.buildRemove(rowIndexes, in: allItemsOld,
-                                                                               selectNextRowAfterDelete: playlistTableSelectNextRowAfterDelete)
+                                                                               selectNextRowAfterDelete: playlistTableSelectNextRowAfterDelete,
+                                                                               completionHandler: { [self] _ in
+      pwc?.playlistView.refreshNowPlayingIndex(thenScrollToVisible: false)
+    })
 
     // 2. Execute backend update on mpv queue. Validate playlist before & after for consistency
     mpv.queue.async { [self] in
       log.verbose("[Playlist] Remove requested: mpvIndexes=\(rowIndexes.map{$0})")
 
-      guard syncAndValidatePlaylist(expectedPlaylist: allItemsOld) else { return }
+      guard syncAndValidatePlaylist(expectedPlaylist: allItemsOld, refreshNowPlayingIndex: false) else { return }
 
       // Remove playlist items one at a time, from top to bottom (increasing index).
       // After an item is removed, the indexes of all items below it are subtracted by 1.
@@ -512,7 +538,10 @@ extension PlayerCore {
             let indexedInsertItems = rowIndexes.enumerated().map{ ($0.element - $0.offset, allItemsOld[$0.element]) }
             assert(indexedInsertItems.map(\.0).sorted(by: { $0 < $1 }).elementsEqual(indexedInsertItems.map(\.0)),
                    "itemsAtIndexes must be sorted in ascending order, but found: \(indexedInsertItems.map(\.0))")
-            let tableUIChangeUndo = tableUIChange.inverted(selectNextRowAfterDelete: playlistTableSelectNextRowAfterDelete)
+            let tableUIChangeUndo = tableUIChange.inverted(selectNextRowAfterDelete: playlistTableSelectNextRowAfterDelete,
+                                                           completionHandler: { [self] _ in
+              pwc?.playlistView.refreshNowPlayingIndex(thenScrollToVisible: false)
+            })
 
             // 2. Execute backend update for undo on mpv queue. Validate playlist before & after for consistency
             playlistInsert(itemsAtIndexes: indexedInsertItems,
@@ -546,12 +575,15 @@ extension PlayerCore {
 
   /// Separate method launched from `playlistReorder` to avoid compiler isolation warning
   private func __playlistReorder(allItemsOld: [PlaybackID], allItemsNew: [PlaybackID], _ undoOption: UndoOption = .registerUndoRedo) {
-    let tableUIChange = TableUIChangeBuilder.shared.buildDiff(oldRows: allItemsOld, newRows: allItemsNew)
+    let tableUIChange = TableUIChangeBuilder.shared.buildDiff(oldRows: allItemsOld, newRows: allItemsNew,
+                                                              completionHandler: { [self] _ in
+      pwc?.playlistView.refreshNowPlayingIndex(thenScrollToVisible: false)
+    })
 
     // 2. Execute backend update on mpv queue. Validate playlist before & after for consistency
     mpv.queue.async { [self] in
       log.verbose("[Playlist] Reorder playlist requested")
-      guard syncAndValidatePlaylist(expectedPlaylist: allItemsOld) else { return }
+      guard syncAndValidatePlaylist(expectedPlaylist: allItemsOld, refreshNowPlayingIndex: false) else { return }
       guard let currentPlayback = info.currentPlayback else {
         log.error("[Playlist] Aborting request to reorder playlist: currentPlayback is nil!")
         return
@@ -620,10 +652,14 @@ extension PlayerCore {
 
   /// Reloads playlist from mpv, then enqueues state save & sends `iinaPlaylistChanged` notification.
   func reloadPlaylist(validateAgainst expectedPlaylist: [PlaybackID]? = nil,
+                      refreshNowPlayingIndex: Bool = true,
                       thenPostNotification: Bool = true, savePlayerState: Bool = true,
                       onSuccess: Callback? = nil) {
     mpv.queue.async { [self] in
-      _reloadPlaylist(thenPostNotification: thenPostNotification, savePlayerState: savePlayerState, onSuccess: onSuccess)
+      _reloadPlaylist(refreshNowPlayingIndex: refreshNowPlayingIndex,
+                      thenPostNotification: thenPostNotification,
+                      savePlayerState: savePlayerState,
+                      onSuccess: onSuccess)
     }
   }
 
@@ -638,6 +674,7 @@ extension PlayerCore {
   /// Expected to be called in the `mpv` queue. Use `reloadPlaylist` if calling from other threads.
   @discardableResult
   func _reloadPlaylist(validateAgainst expectedPlaylist: [PlaybackID]? = nil,
+                       refreshNowPlayingIndex: Bool = true,
                        thenPostNotification: Bool = true,
                        savePlayerState: Bool = true,
                        onSuccess: Callback? = nil) -> Bool {
@@ -669,29 +706,27 @@ extension PlayerCore {
       info.playlist = actualPlaylist
     }
 
-    if let currentPlayback = info.currentPlayback {
+    // Update playlist position. Best to get it from mpv.
+    // We will update `info.currentPlayback` here, but need to call `pwc.playlistView.refreshNowPlayingIndex`
+    // in main DQ when done (after any TableUIChange has finished executing)!
+    let playlistPos = mpv.getInt(MPVProperty.playlistPos)
+
+    if refreshNowPlayingIndex, let currentPlayback = info.currentPlayback {
       let playlist = info.playlist
       // Make sure `currentPlayback.playlistPos` still points to the playlist index of that item
-      if currentPlayback.playlistPos >= 0, currentPlayback.playlistPos < playlist.count, currentPlayback.id == playlist[currentPlayback.playlistPos] {
-        // good
-      } else {
-        // Try to find new index of playlist, becuase we can't reliabily pull it from mpv (so far...)
-        // Find matching URLs in playlist. There may be duplicates, so try to grab the closest one to the last known playlistPos ...
-        let candidateIndexes = playlist.enumerated().filter { $0.element == currentPlayback.id }.map(\.offset)
-        var bestCandidateIndex = Int.max
-        for candidateIndex in candidateIndexes {
-          if candidateIndex.distance(to: currentPlayback.playlistPos) < bestCandidateIndex {
-            bestCandidateIndex = candidateIndex
-          }
+      // Try to find new index of playlist, becuase we can't reliabily pull it from mpv (so far...)
+      // Find matching URLs in playlist. There may be duplicates, so try to grab the closest one to the last known playlistPos ...
+      let candidateIndexes = playlist.enumerated().filter { $0.element == currentPlayback.id }.map(\.offset)
+      var bestCandidateIndex = Int.max
+      for candidateIndex in candidateIndexes {
+        if candidateIndex.distance(to: currentPlayback.playlistPos) < bestCandidateIndex {
+          bestCandidateIndex = candidateIndex
         }
-        if bestCandidateIndex < playlist.count {
-          log.debug("[Playlist] After reload, currentPlayback.playlistPos (\(currentPlayback.playlistPos)) "
-                    + "no longer matches that item in playlist. Updating it to \(bestCandidateIndex)")
-          info.currentPlayback = currentPlayback.clone(playlistPos: bestCandidateIndex)
-          DispatchQueue.main.async { [self] in
-            pwc?.playlistView.refreshNowPlayingIndex()
-          }
-        }
+      }
+      if playlistPos < playlist.count {
+        log.debug("[Playlist] After reload, currentPlayback.playlistPos (\(currentPlayback.playlistPos)) "
+                  + "no longer matches that item in playlist. Updating it to \(playlistPos)")
+        info.currentPlayback = currentPlayback.clone(playlistPos: playlistPos)
       }
     }
 
@@ -708,9 +743,11 @@ extension PlayerCore {
     return passedValidation
   }
 
-  func syncAndValidatePlaylist(expectedPlaylist: [PlaybackID]) -> Bool {
+  func syncAndValidatePlaylist(expectedPlaylist: [PlaybackID], refreshNowPlayingIndex: Bool = true) -> Bool {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
-    return _reloadPlaylist(validateAgainst: expectedPlaylist, thenPostNotification: false, savePlayerState: false)
+    return _reloadPlaylist(validateAgainst: expectedPlaylist,
+                           refreshNowPlayingIndex: refreshNowPlayingIndex,
+                           thenPostNotification: false, savePlayerState: false)
   }
 
   // MARK: - Other playlist ops
