@@ -251,6 +251,7 @@ class PlaylistViewController: NSViewController, NSMenuDelegate, SidebarTabGroupV
     let playlistNew = player.info.playlist
     pwc.animationPipeline.submitInstantTask { [self] in
       let playlistOld = displayedPlaylist
+      displayedPlaylist = playlistNew
       if let nowPlayingIndex = player.info.currentPlayback?.playlistPos,
          nowPlayingIndex >= 0, nowPlayingIndex < playlistNew.count {
         // Update this prior to reload so the highlight is drawn correctly at first draw:
@@ -274,7 +275,6 @@ class PlaylistViewController: NSViewController, NSMenuDelegate, SidebarTabGroupV
         if playlistOld.count == playlistTableView.numberOfRows {
           let tableUIChange = TableUIChangeBuilder.shared.buildDiff(oldRows: playlistOld,
                                                                     newRows: playlistNew, completionHandler: { [self] _ in
-            displayedPlaylist = playlistNew
             pwc.animationPipeline.submitInstantTask {
               doAfterReload()
             }
@@ -290,7 +290,6 @@ class PlaylistViewController: NSViewController, NSMenuDelegate, SidebarTabGroupV
 
       player.log.trace("Updating playlist table via reloadData")
       playlistTableView.reloadData()
-      displayedPlaylist = player.info.playlist
       player.log.verbose("Updated playlist table via reloadData: \(playlistTableView.numberOfRows) rows")
       doAfterReload()
     }
