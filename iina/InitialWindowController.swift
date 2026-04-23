@@ -106,6 +106,7 @@ class InitialWindowController: WindowController, NSWindowDelegate {
   @IBOutlet weak var betaIndicatorView: BetaIndicatorView!
   @IBOutlet weak var betaTextField: NSTextField!
   @IBOutlet weak var lastFileContainerView: InitialWindowViewActionButton!
+  @IBOutlet weak var openFileActionBtn: InitialWindowViewActionButton!
   @IBOutlet weak var lastFileIcon: NSImageView!
   @IBOutlet weak var lastFileNameLabel: NSTextField!
   @IBOutlet weak var lastPositionLabel: NSTextField!
@@ -179,6 +180,17 @@ class InitialWindowController: WindowController, NSWindowDelegate {
 
     appIcon.unregisterDraggedTypes()
     window?.contentView?.registerForDraggedTypes([.nsFilenames, .nsURL, .string])
+
+    if #available(macOS 26.0, *) {
+      // For Tahoe onwards, replace visual effect view with glass effect
+      let glassView = ClickThroughGlassEffectView(.regular)
+      glassView.cornerRadius = 0
+      glassView.translatesAutoresizingMaskIntoConstraints = false
+      mainView.addSubview(glassView, positioned: .above, relativeTo: visualEffectView)
+      visualEffectView.removeFromSuperview()
+      glassView.addConstraintsToFillSuperview(top: 0, bottom: 0, trailing: 0)
+      glassView.leadingAnchor.constraint(equalTo: openFileActionBtn.leadingAnchor, constant: -24).isActive = true
+    }
 
     let infoDict = InfoDictionary.shared
     let (version, build) = infoDict.version
