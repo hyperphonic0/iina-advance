@@ -265,20 +265,42 @@ struct TableUIChange: Sendable {
     let log = tableView.log
     log.verbose("Executing TableUIChange type=\"\(changeType)\": removes=\(toRemove?.count ?? 0) inserts=\(toInsert?.count ?? 0) moves=\(toMove?.count ?? 0) updates=\(toUpdate?.count ?? 0) reloadExisting=\(reloadAllExistingRows.yn) selectedRows=\(newSelectedRowIndexes?.count.description ?? "nil")")
 
+    // Prevent AppKit crash by validating  invalid index
+    var expectedRowCount = tableView.numberOfRows
+
     switch changeType {
 
     case .removeRows:
-      if let indexes = toRemove {
-        tableView.removeRows(at: indexes, withAnimation: removeAnimation)
+      if let toRemove {
+        for idx in toRemove {
+          guard idx < expectedRowCount else {
+            log.error("Cannot remove row at index \(idx) because there are only \(expectedRowCount) rows! Aborting TableUIChange removeRows.")
+            return
+          }
+        }
+        tableView.removeRows(at: toRemove, withAnimation: removeAnimation)
       }
 
     case .insertRows:
-      if let indexes = toInsert {
-        tableView.insertRows(at: indexes, withAnimation: insertAnimation)
+      if let toInsert {
+        for idx in toInsert {
+          guard idx <= expectedRowCount else {
+            log.error("Cannot insert row at index \(idx) because there are only \(expectedRowCount) rows! Aborting TableUIChange insertRows.")
+            return
+          }
+          expectedRowCount += 1
+        }
+        tableView.insertRows(at: toInsert, withAnimation: insertAnimation)
       }
 
     case .moveRows:
       if let movePairs = toMove {
+        for (oldIndex, newIndex) in movePairs {
+          guard oldIndex <= expectedRowCount, newIndex <= expectedRowCount else {
+            log.error("Cannot move row from index \(oldIndex) to \(newIndex) because there are only \(expectedRowCount) rows! Aborting TableUIChange moveRows.")
+            return
+          }
+        }
         for (oldIndex, newIndex) in movePairs {
           log.verbose("TableUIChange: Moving row \(oldIndex) → \(newIndex)")
           tableView.moveRow(at: oldIndex, to: newIndex)
@@ -307,10 +329,33 @@ struct TableUIChange: Sendable {
           break
         }
         // Remember, AppKit expects the order of operations to be: 1. Delete, 2. Insert, 3. Move
+        for idx in toRemove {
+          guard idx < expectedRowCount else {
+            log.error("Cannot remove row at index \(idx) because there are only \(expectedRowCount) rows! Aborting TableUIChange wholeTableDiff.")
+            return
+          }
+        }
         tableView.removeRows(at: toRemove, withAnimation: removeAnimation)
+        expectedRowCount = tableView.numberOfRows
+        for idx in toInsert {
+          guard idx <= expectedRowCount else {
+            log.error("Cannot insert row at index \(idx) because there are only \(expectedRowCount) rows! Stopping TableUIChange wholeTableDiff.")
+            // Prevent AppKit crash by returning instead of calling with invalid index. However the table may be left
+            // in a partially updated state...
+            return
+          }
+          expectedRowCount += 1
+        }
         tableView.insertRows(at: toInsert, withAnimation: insertAnimation)
+        expectedRowCount = tableView.numberOfRows
         for (oldIndex, newIndex) in movePairs {
           log.verbose("Executing changes from diff: moving row: \(oldIndex) → \(newIndex)")
+          guard oldIndex <= expectedRowCount, newIndex <= expectedRowCount else {
+            log.error("Cannot move row from index \(oldIndex) to \(newIndex) because there are only \(expectedRowCount) rows! Stopping TableUIChange wholeTableDiff.")
+            // Prevent AppKit crash by returning instead of calling with invalid index. However the table may be left
+            // in a partially updated state...
+            return
+          }
           tableView.moveRow(at: oldIndex, to: newIndex)
         }
       }

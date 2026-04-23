@@ -1127,6 +1127,7 @@ final class PlayerCore: NSObject {
         // Do not enqueue after window is closed (and info.currentPlayback is nil)
         sendOSD(.stop)
         DispatchQueue.main.async { [self] in
+          displayedPlaylist = []  // reset to match info.playlist
           videoView.stopDisplayLink()
         }
       }
@@ -2219,8 +2220,10 @@ final class PlayerCore: NSObject {
       latestTicket += 1
       return latestTicket
     }
+    let currentPlaylist = info.playlist
     PlayerCore.postLoadBGQ.asyncAfter(deadline: DispatchTime.now() + TimeConstants.autoLoadDelay) { [self] in
-      fileLoaded_doPostLoadBGQWork(for: currentPlayback, currentTicket: currentTicket,
+      fileLoaded_doPostLoadBGQWork(for: currentPlayback, currentPlaylist: currentPlaylist,
+                                   currentTicket: currentTicket,
                                    shouldAutoLoadFiles: shouldAutoLoadFiles,
                                    priorStateIfRestoring: priorStateIfRestoring)
     }
@@ -2421,6 +2424,7 @@ final class PlayerCore: NSObject {
 
   /// Auto load via background queue
   private func fileLoaded_doPostLoadBGQWork(for currentPlayback: Playback,
+                                            currentPlaylist: [PlaybackID],
                                             currentTicket: Int,
                                             shouldAutoLoadFiles: Bool,
                                             priorStateIfRestoring: PlayerSaveState?) {
@@ -2483,8 +2487,7 @@ final class PlayerCore: NSObject {
     // Create bookmarks for playlist items (if not already done).
     // This can be expensive - perhaps ~1sec per item!
     let swGenBMs = Utility.Stopwatch()
-    let playlist = info.playlist
-    let playlisttItemsMissingBookmarks = playlist.filter{ !$0.isNetworkResource && $0.bookmark == nil }
+    let playlisttItemsMissingBookmarks = currentPlaylist.filter{ !$0.isNetworkResource && $0.bookmark == nil }
     var progress = 0
     for item in playlisttItemsMissingBookmarks {
       guard currentTicket == postLoadBGQTicket else { return }
@@ -2492,7 +2495,7 @@ final class PlayerCore: NSObject {
         progress += 1
       }
     }
-    log.verbose("Filled in \(progress) / \(playlisttItemsMissingBookmarks.count) missing bookmarks for playlist (\(playlist.count) total) in "
+    log.verbose("Filled in \(progress) / \(playlisttItemsMissingBookmarks.count) missing bookmarks for playlist (\(currentPlaylist.count) total) in "
                 + swGenBMs.secElapsedString)
 
     mpv.queue.async { [self] in

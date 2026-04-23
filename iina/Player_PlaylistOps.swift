@@ -96,6 +96,7 @@ extension PlayerCore {
                     newIsPlayingIndex: nowPlayingIndex,
                     onSuccess: { [self] in
       log.verbose("[Playlist] Done adding \(playbackIDs.count) items. Playlist count is now \(info.playlist.count)")
+      displayedPlaylist = info.playlist
       pwc.playlistView.refreshNowPlayingIndex(thenScrollToVisible: true)
     })
   }

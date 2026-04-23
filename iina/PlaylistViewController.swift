@@ -248,46 +248,51 @@ class PlaylistViewController: NSViewController, NSMenuDelegate, SidebarTabGroupV
   private func reloadPlaylistTable(animate: Bool) {
     // Be sure to access playlist data only from within mpv queue
     assert(DispatchQueue.isExecutingIn(player.mpv.queue))
-    let playlistOld = displayedPlaylist
     let playlistNew = player.info.playlist
-    if let nowPlayingIndex = player.info.currentPlayback?.playlistPos,
-       nowPlayingIndex >= 0, nowPlayingIndex < playlistNew.count {
-      DispatchQueue.main.async { [self] in
+    pwc.animationPipeline.submitInstantTask { [self] in
+      let playlistOld = displayedPlaylist
+      if let nowPlayingIndex = player.info.currentPlayback?.playlistPos,
+         nowPlayingIndex >= 0, nowPlayingIndex < playlistNew.count {
         // Update this prior to reload so the highlight is drawn correctly at first draw:
         lastNowPlayingIndex = nowPlayingIndex
       }
-    }
 
-    let sw = Utility.Stopwatch()
+      let sw = Utility.Stopwatch()
 
-    let doAfterReload: MainActorCallback = { [self] in
-      refreshNowPlayingIndex()
-      updateCachesForAllItems()
-      removeBtn.isEnabled = !playlistTableView.selectedRowIndexes.isEmpty
-      if needsScrollToCurrentItem {
-        needsScrollToCurrentItem = false
-        scrollPlaylistToCurrentItem()
-      }
-      player.log.verbose("Done with playlist table reload in \(sw.secElapsedString)")
-    }
-
-    if animate {
-      let tableUIChange = TableUIChangeBuilder.shared.buildDiff(oldRows: playlistOld,
-                                                                newRows: playlistNew, completionHandler: { [self] _ in
-        displayedPlaylist = playlistNew
-        pwc.animationPipeline.submitInstantTask {
-          doAfterReload()
+      let doAfterReload: MainActorCallback = { [self] in
+        refreshNowPlayingIndex()
+        updateCachesForAllItems()
+        removeBtn.isEnabled = !playlistTableView.selectedRowIndexes.isEmpty
+        if needsScrollToCurrentItem {
+          needsScrollToCurrentItem = false
+          scrollPlaylistToCurrentItem()
         }
-      })
-      player.log.verbose("Updating playlist table via diff")
-      playlistTableView.post(tableUIChange)
-    } else {
-      pwc.animationPipeline.submitInstantTask { [self] in
-        player.log.trace("Updating playlist table via reloadData")
-        playlistTableView.reloadData()
-        player.log.verbose("Updated playlist table via reloadData: \(playlistTableView.numberOfRows) rows")
-        doAfterReload()
+        player.log.verbose("Done with playlist table reload: \(playlistTableView.numberOfRows) rows in \(sw.secElapsedString)")
       }
+
+      if animate {
+        if playlistOld.count == playlistTableView.numberOfRows {
+          let tableUIChange = TableUIChangeBuilder.shared.buildDiff(oldRows: playlistOld,
+                                                                    newRows: playlistNew, completionHandler: { [self] _ in
+            displayedPlaylist = playlistNew
+            pwc.animationPipeline.submitInstantTask {
+              doAfterReload()
+            }
+          })
+          player.log.verbose("Updating playlist table via diff: will have \(playlistNew.count) total rows")
+          playlistTableView.post(tableUIChange)
+          return
+        } else {
+          player.log.debug("Playlist table row count (\(playlistTableView.numberOfRows)) != expected \(playlistOld.count):"
+                           + " doing straight playlist table reload")
+        }
+      }
+
+      player.log.trace("Updating playlist table via reloadData")
+      playlistTableView.reloadData()
+      displayedPlaylist = player.info.playlist
+      player.log.verbose("Updated playlist table via reloadData: \(playlistTableView.numberOfRows) rows")
+      doAfterReload()
     }
   }
 
@@ -358,12 +363,11 @@ class PlaylistViewController: NSViewController, NSMenuDelegate, SidebarTabGroupV
     assert(DispatchQueue.isExecutingIn(PlayerCore.playlistMetaLoadDQ))
     guard playlistTotalDurationIsReady else { return }
 
-    let playlist: [PlaybackID] = displayedPlaylist
-    let urls = playlist.map { $0.url }
-    let totalDuration = MediaMetaCache.shared.calculateTotalDuration(urls)
-
-    player.log.trace("Playlist: recalculated total duration: \(totalDuration)")
     pwc.animationPipeline.submitInstantTask { [self] in
+      let playlist: [PlaybackID] = displayedPlaylist
+      let urls = playlist.map { $0.url }
+      let totalDuration = MediaMetaCache.shared.calculateTotalDuration(urls)
+      player.log.trace("Playlist: recalculated total duration: \(totalDuration)")
       playlistTotalDuration = totalDuration
       showTotalDuration()
     }
@@ -847,6 +851,7 @@ extension PlaylistViewController: NSTableViewDelegate {
   }
 
   /// Rebuilds playlist table's `Track Name` column cell
+  @MainActor
   private func updateCellForPlaylistTrackNameColumn(_ cellView: PlaylistTrackCellView, rowIndex: Int, isPlaying: Bool) {
     guard let cachedMeta = getOrCreateMeta(forRowIndex: rowIndex) else {
       player.log.error("No playlist item found for rowIndex \(rowIndex). Skipping cell update")
@@ -922,7 +927,7 @@ extension PlaylistViewController: NSTableViewDelegate {
     reloadData(playlist: true, chapters: false)
   }
 
-  fileprivate func fileHistoryDidUpdate(_ noti: Notification) {
+  @MainActor fileprivate func fileHistoryDidUpdate(_ noti: Notification) {
     guard !AppDelegate.shared.isTerminating else { return }
     guard let url = noti.userInfo?["url"] as? URL else {
       player.log.error("Cannot update file history: no url found in userInfo!")
@@ -938,7 +943,7 @@ extension PlaylistViewController: NSTableViewDelegate {
     }
   }
 
-  private func getOrCreateMeta(forRowIndex rowIndex: Int) -> MediaMeta? {
+  @MainActor private func getOrCreateMeta(forRowIndex rowIndex: Int) -> MediaMeta? {
     guard rowIndex >= 0 else { return nil }
     let playlistItems = displayedPlaylist
     player.log.trace("Playlist: reloading cache for row \(rowIndex)/\(playlistItems.count)")
