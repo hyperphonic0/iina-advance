@@ -108,8 +108,8 @@ final class MediaPlayerIntegration {
   private func attachRemoteCommands() {
     Logger.log.trace("Attaching MediaPlayer remote commands")
     let remoteCommand = MPRemoteCommandCenter.shared()
-    remoteCommand.playCommand.addTarget(handler: buildCmdHandler(forKey: "PLAY", fallbackAction: { p, _ in p.resume() }))
-    remoteCommand.pauseCommand.addTarget(handler: buildCmdHandler(forKey: "PAUSE", fallbackAction: { p, _ in p.pause() }))
+    remoteCommand.playCommand.addTarget(handler: buildCmdHandler(forKey: "PLAYONLY", fallbackAction: { p, _ in p.resume() }))
+    remoteCommand.pauseCommand.addTarget(handler: buildCmdHandler(forKey: "PAUSEONLY", fallbackAction: { p, _ in p.pause() }))
     remoteCommand.togglePlayPauseCommand.addTarget(handler: buildCmdHandler(forKey: "PLAYPAUSE", fallbackAction: { p, _ in p.togglePause() }))
     remoteCommand.stopCommand.addTarget(handler: buildCmdHandler(forKey: "STOP", fallbackAction: { p, _ in p.stop() }))
     remoteCommand.nextTrackCommand.addTarget(handler: buildCmdHandler(forKey: "NEXT", fallbackAction: { p, _ in p.navigateInPlaylist(nextMedia: true) }))
@@ -122,14 +122,14 @@ final class MediaPlayerIntegration {
       player.setSpeed(Double((event as! MPChangePlaybackRateCommandEvent).playbackRate))
     })
 
-    let seekForwardInterval = formPreferredIntervalsValue("GO_FORWARD")
+    let seekForwardInterval = formPreferredIntervalsValue("FORWARD")
     remoteCommand.skipForwardCommand.preferredIntervals = [NSNumber(value: seekForwardInterval)]
-    remoteCommand.skipForwardCommand.addTarget(handler: buildCmdHandler(forKey: "GO_FORWARD", fallbackAction: { player, event in
+    remoteCommand.skipForwardCommand.addTarget(handler: buildCmdHandler(forKey: "FORWARD", fallbackAction: { player, event in
       player.seek(relativeSecond: Double(seekForwardInterval), option: .defaultValue)
     }))
-    let seekBackwardInterval = formPreferredIntervalsValue("GO_BACK")
+    let seekBackwardInterval = formPreferredIntervalsValue("REWIND")
     remoteCommand.skipBackwardCommand.preferredIntervals = [NSNumber(value: seekBackwardInterval)]
-    remoteCommand.skipBackwardCommand.addTarget(handler: buildCmdHandler(forKey: "GO_BACK", fallbackAction: { player, event in
+    remoteCommand.skipBackwardCommand.addTarget(handler: buildCmdHandler(forKey: "REWIND", fallbackAction: { player, event in
       player.seek(relativeSecond: -seekBackwardInterval, option: .defaultValue)
     }))
     remoteCommand.changePlaybackPositionCommand.addTarget(handler: buildCmdHandler{ player, event in
