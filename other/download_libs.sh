@@ -1,5 +1,7 @@
 #!/bin/bash
 
+PROJECT_NAME='iina'
+
 # universal | arm64 | x86_64
 ARCH="universal"
 # github | iina (use iina to get the binary included in the latest release)
@@ -16,12 +18,6 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
-
-# Reset in case getopts has been used previously in the shell.
-if ! OPTS=$(getopt -o "h": --long "arch:,yt-dlp-src:,parallel:,skip-plugins,help": -n 'parse-options' -- "$@"); then
-  echo -e "${RED}Failed parsing options.${NC}" >&2
-  exit 1
-fi
 
 printUsageHelp() {
   echo
@@ -98,6 +94,15 @@ while [[ $# -gt 0 ]]; do
     PARALLEL_DOWNLOADS=$2
     shift 2
     ;;
+  --parallel=*)
+    PARALLEL_DOWNLOADS=${1#*=}
+    if [[ -z "$PARALLEL_DOWNLOADS" ]]; then
+      echo -e "${RED}You need to specify a number of parallel downloads when using --parallel${NC}" >&2
+      printUsageHelp
+      exit 1
+    fi
+    shift
+    ;;
   --skip-plugins)
     SKIP_PLUGINS=true
     shift
@@ -151,21 +156,22 @@ esac
 
 SCRIPT_PATH=$(realpath "$0")
 ROOT_PATH=$(dirname "$SCRIPT_PATH")
-ROOT_PATH="$ROOT_PATH/.."
+
+if [[ $(basename "$ROOT_PATH") != "$PROJECT_NAME" ]]; then
+  while [[ "$ROOT_PATH" != "/" && $(basename "$ROOT_PATH") != "$PROJECT_NAME" ]]; do
+    ROOT_PATH=$(dirname "$ROOT_PATH")
+  done
+  if [[ "$ROOT_PATH" == "/" ]]; then
+    echo -e "${RED}Unable to find the root directory '$PROJECT_NAME' containing the script file.${NC}" >&2
+    exit 1
+  fi
+fi
 
 DEPS_PATH="$ROOT_PATH/deps"
 LIB_PATH="$DEPS_PATH/lib"
 EXEC_PATH="$DEPS_PATH/executable"
+PLUGIN_PATH="$DEPS_PATH/plugins"
 YT_DLP_PATH="$EXEC_PATH/youtube-dl"
-
-# Do some checks to make sure script hasn't been moved.
-# Can be reasonably certain the project root is correct if it contains each of the 4 expected subdirectories.
-for REQ_PATH in "$DEPS_PATH" "$LIB_PATH" "$EXEC_PATH" "$YT_DLP_PATH"; do
-  if [[ ! -d "$DEPS_PATH" ]]; then
-    echo -e "${RED}Could not find directory: $REQ_PATH${NC}"
-    exit 1
-  fi
-done
 
 IFS=$'\n' read -r -d '' -a files < <(curl -s "${DYLIBS_DOWNLOAD_PATH}/filelist.txt" && printf '\0')
 
@@ -306,4 +312,3 @@ download_plugin "iina/plugin-userscript" "iina-plugin-userscript" || exit 1
 download_plugin "iina/plugin-opensub" "iina-plugin-opensub" || exit 1
 
 echo -e "${GREEN}All downloads completed.${NC}"
-
