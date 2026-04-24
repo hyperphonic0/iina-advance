@@ -2010,24 +2010,29 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
   /// Updates all UI controls
   @MainActor
   func updateUIControls(_ playbackTime: PlaybackTimeInfo, _ cacheState: CacheState?, rangesDidChange: Bool, isPaused: Bool) {
-    // This method is often run outside of the animation queue, which can be dangerous.
-    // Just don't update in this case
-    guard !isAnimatingLayoutTransition, !isApplyingPWinGeo else { return }
     guard loaded else { return }
-    // Don't bother with live updates if window is not currently visible
-    guard isOpen else { return }
+    let isScrollingOrDraggingPlaySlider = isScrollingOrDraggingPlaySlider
 
-    // scroll wheel will set newer value; do not overwrite it until it is done
     if !isScrollingOrDraggingPlaySlider {
+      // Need to update playback time even if not updating the window UI, because this info is relied on
+      // by Now Playing info (class MediaPlayerIntegration)
       player.info.playbackTime = playbackTime
       if let cacheState {
         player.info.cacheState = cacheState
       }
-      if rangesDidChange {
-        // Redraw PlaySlider to reflect change:
-        if let osc = currentControlBar, !osc.isHidden {
-          playSlider.needsDisplay = true
-        }
+    }
+
+    // This method is often run outside of the animation queue, which can be dangerous.
+    // Just don't update UI when animating:
+    guard !isAnimatingLayoutTransition, !isApplyingPWinGeo else { return }
+    // Don't bother with live updates if window is not currently visible
+    guard isOpen else { return }
+
+    // scroll wheel will set newer value; do not overwrite it until it is done
+    if !isScrollingOrDraggingPlaySlider && rangesDidChange {
+      // Redraw PlaySlider to reflect change:
+      if let osc = currentControlBar, !osc.isHidden {
+        playSlider.needsDisplay = true
       }
     }
 
