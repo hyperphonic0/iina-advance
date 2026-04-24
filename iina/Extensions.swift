@@ -1151,12 +1151,10 @@ extension CGImage {
 
     file.write(pngData)
 
-    if #available(macOS 10.15, *) {
-      do {
-        try file.close()
-      } catch {
-        Logger.log("Failed to close file: \(path.pii.quoted)", level: .error)
-      }
+    do {
+      try file.close()
+    } catch {
+      Logger.log("Failed to close file: \(path.pii.quoted)", level: .error)
     }
     return true
   }
@@ -1886,20 +1884,12 @@ extension NSAppearance {
 
   /// Height of the camera housing on this screen if this screen has an embedded camera.
   var cameraHousingHeight: CGFloat? {
-    if #available(macOS 12.0, *) {
-      return safeAreaInsets.top == 0.0 ? nil : safeAreaInsets.top
-    } else {
-      return nil
-    }
+    return safeAreaInsets.top == 0.0 ? nil : safeAreaInsets.top
   }
 
   var frameWithoutCameraHousing: NSRect {
-    if #available(macOS 12.0, *) {
-      let frame = self.frame
-      return NSRect(origin: frame.origin, size: CGSize(width: frame.width, height: frame.height - safeAreaInsets.top))
-    } else {
-      return self.frame
-    }
+    let frame = self.frame
+    return NSRect(origin: frame.origin, size: CGSize(width: frame.width, height: frame.height - safeAreaInsets.top))
   }
 
   var hasCameraHousing: Bool {
@@ -1907,21 +1897,13 @@ extension NSAppearance {
   }
 
   var cameraHeightToFrameHeightRatio: CGFloat {
-    if #available(macOS 12.0, *) {
-      return safeAreaInsets.top / frame.height
-    } else {
-      return 0
-    }
+    return safeAreaInsets.top / frame.height
   }
 
   /// • `nonCameraHeightToFrameHeightRatio >= cameraHeightToFrameHeightRatio` (or should be).
   /// • `nonCameraHeightToFrameHeightRatio + cameraHeightToFrameHeightRatio == 1`.
   var nonCameraHeightToFrameHeightRatio: CGFloat {
-    if #available(macOS 12.0, *) {
-      return 1 - (safeAreaInsets.top / frame.height)
-    } else {
-      return 1
-    }
+    return 1 - (safeAreaInsets.top / frame.height)
   }
 
   var displayId: UInt32 {
@@ -1929,10 +1911,7 @@ extension NSAppearance {
   }
 
   var screenID: String {
-    if #available(macOS 10.15, *) {
-      return "\(displayId):\(localizedName)"
-    }
-    return "\(displayId)"
+    return "\(displayId):\(localizedName)"
   }
 
   // Returns nil on failure (not sure if success is guaranteed)

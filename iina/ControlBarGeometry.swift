@@ -198,13 +198,7 @@ struct ControlBarGeometry: Sendable, CustomStringConvertible {
     case .seek:
       arrowIconHeight = (playIconSize * stepIconScaleFactor).rounded()
     case .speed, .playlist:
-      if #available(macOS 11.0, *) {
-        // Using built-in MacOS symbols
-        arrowIconHeight = (playIconSize * systemArrowSymbolScaleFactor).rounded()
-      } else {
-        // Legacy custom icons are scaled already:
-        arrowIconHeight = playIconSize
-      }
+      arrowIconHeight = (playIconSize * systemArrowSymbolScaleFactor).rounded()
     }
     let leftArrowImage = ControlBarGeometry.leftArrowImage(given: arrowButtonAction)
     self.arrowIconWidth = leftArrowImage.deriveWidth(fromHeight: arrowIconHeight)

@@ -335,12 +335,7 @@ class PrefPluginViewController: PreferenceViewController, PreferenceWindowEmbedd
     let block = {
       let alert = NSAlert()
       let permissionListView = PrefPluginPermissionListView()
-      let permissionWidth: Int
-      if #available(macOS 11.0, *) {
-        permissionWidth = 500
-      } else {
-        permissionWidth = 280
-      }
+      let permissionWidth: Int = 500
       let scrollView = NSScrollView(frame: NSRect(x: 0, y: 0, width: permissionWidth, height: 300))
       permissionListView.translatesAutoresizingMaskIntoConstraints = false
       alert.messageText = NSLocalizedString("alert.title_warning", comment: "Warning")

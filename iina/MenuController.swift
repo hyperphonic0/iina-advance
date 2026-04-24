@@ -616,23 +616,19 @@ class MenuController: NSObject, NSMenuDelegate {
         counter += 1
       }
 
-      if #available(macOS 12.0, *) {
-        let devToolItem = NSMenuItem()
-        devToolItem.title = instance.plugin.name
+      let devToolItem = NSMenuItem()
+      devToolItem.title = instance.plugin.name
+      developerTool.submenu?.addItem(
+        menuItem(forPluginInstance: instance, tag: JavasctiptDevTool.JSMenuItemInstance))
+      if let globalInst = instance.plugin.globalInstance {
         developerTool.submenu?.addItem(
-          menuItem(forPluginInstance: instance, tag: JavasctiptDevTool.JSMenuItemInstance))
-        if let globalInst = instance.plugin.globalInstance {
-          developerTool.submenu?.addItem(
-            menuItem(forPluginInstance: globalInst, tag: JavasctiptDevTool.JSMenuItemInstance))
-        }
+          menuItem(forPluginInstance: globalInst, tag: JavasctiptDevTool.JSMenuItemInstance))
       }
 
       pluginMenu.addItem(.separator())
     }
 
-    if #available(macOS 12.0, *) {
-      pluginMenu.addItem(developerTool)
-    }
+    pluginMenu.addItem(developerTool)
     pluginMenu.addItem(withTitle: NSLocalizedString("menu.reload_plugins", comment: "Reload All Plugins"),
                        action: #selector(PlayerWindowController.reloadAllPlugins(_:)), keyEquivalent: "")
 

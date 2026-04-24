@@ -828,7 +828,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   /// This is about conformance to [NSSecureCoding](https://developer.apple.com/documentation/foundation/nssecurecoding)
   /// which protects against object substitution attacks. If an application does not implement this method then a warning will be emitted
   /// reporting secure coding is not enabled for restorable state.
-  @available(macOS 12.0, *)
   @MainActor
   func applicationSupportsSecureRestorableState(_ app: NSApplication) -> Bool {
     return true

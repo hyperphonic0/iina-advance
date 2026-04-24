@@ -321,9 +321,7 @@ class Utility {
     input.cell?.isScrollable = true
     input.isBezeled = true
     input.bezelStyle = .roundedBezel
-    if #available(macOS 11.0, *) {
-      input.controlSize = .large
-    }
+    input.controlSize = .large
     if let inputValue = inputValue {
       input.stringValue = inputValue
     }
@@ -627,26 +625,21 @@ class Utility {
   }
 
   static func icon(for url: URL?) -> NSImage {
-    if #available(macOS 11.0, *) {
-      if let url {
-        if let uttype = getBestUTTypeForExt(url.pathExtension) {
-          return NSWorkspace.shared.icon(for: uttype)
-        }
-        if !url.isFileURL {
-          // Assume it is network stream
-          if let netStreamImg = NSImage(systemSymbolName: "network", accessibilityDescription: "Network Stream") {
-            return netStreamImg
-          }
-          return NSWorkspace.shared.icon(for: .url)
-        }
+    if let url {
+      if let uttype = getBestUTTypeForExt(url.pathExtension) {
+        return NSWorkspace.shared.icon(for: uttype)
       }
-      return NSWorkspace.shared.icon(for: .data)
-    } else {
-      return NSWorkspace.shared.icon(forFileType: url?.pathExtension ?? "")
+      if !url.isFileURL {
+        // Assume it is network stream
+        if let netStreamImg = NSImage(systemSymbolName: "network", accessibilityDescription: "Network Stream") {
+          return netStreamImg
+        }
+        return NSWorkspace.shared.icon(for: .url)
+      }
     }
+    return NSWorkspace.shared.icon(for: .data)
   }
 
-  @available(macOS 11.0, *)
   static func getBestUTTypeForExt(_ ext: String) -> UTType? {
     let uttypeList = UTType.types(tag: ext, tagClass: .filenameExtension, conformingTo: nil)
     for uttype in uttypeList {

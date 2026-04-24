@@ -182,12 +182,10 @@ actor ThumbnailCache {
       file.write(jpegData)
     }
 
-    if #available(macOS 10.15, *) {
-      do {
-        try file.close()
-      } catch {
-        log.error("Failed to close file: \(path.pii.quoted)")
-      }
+    do {
+      try file.close()
+    } catch {
+      log.error("Failed to close file: \(path.pii.quoted)")
     }
 
     needsRefresh = true

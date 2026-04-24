@@ -170,10 +170,8 @@ final class HistoryWindowController: WindowController, NSOutlineViewDelegate, NS
       accessory.layoutAttribute = .trailing
       window.addTitlebarAccessoryViewController(accessory)
 
-      if #available(macOS 11.0, *) {
-        window.titlebarSeparatorStyle = .automatic  // or .line, .none, .shadow
-        accessory.automaticallyAdjustsSize = false
-      }
+      window.titlebarSeparatorStyle = .automatic  // or .line, .none, .shadow
+      accessory.automaticallyAdjustsSize = false
     }
 
     // Override the automatic key-view loop to ensure correct order

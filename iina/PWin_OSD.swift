@@ -396,7 +396,6 @@ final class OSDState {
 
   @MainActor
   fileprivate func updateIconSize(isIconVisible: Bool) {
-    guard #available(macOS 11.0, *) else { return }
     let iconHeight, iconWidth: CGFloat
 
     // Don't want to animate the following
@@ -946,8 +945,6 @@ extension PlayerWindowController {
 
   @MainActor
   private func updateOSDIcon(from message: OSDMessage) {
-    guard #available(macOS 11.0, *) else { return }
-
     var icon: NSImage? = nil
     var isIconGrayedOut = false
 
@@ -1139,44 +1136,42 @@ extension PlayerWindowController {
     log.verbose("[OSD] Setting lastDisplayedMsg = \(msg)")
     osd.lastDisplayedMsg = msg
 
-    if #available(macOS 11.0, *) {
-      /// The pseudo-OSDMessage `seekRelative`, if present, contains the step time for a relative seek.
-      /// But because it needs to be parsed from the mpv log, it is sent as a separate msg which arrives immediately
-      /// prior to the `seek` msg. With some smart logic, the info from the two messages can be combined to display
-      /// the most appropriate "jump" icon in the OSD in addition to the time display & progress bar.
-      if case .seekRelative(let stepString) = msg, let step = Double(stepString) {
-        log.verbose("[OSD] Showing '\(msg)'")
+    /// The pseudo-OSDMessage `seekRelative`, if present, contains the step time for a relative seek.
+    /// But because it needs to be parsed from the mpv log, it is sent as a separate msg which arrives immediately
+    /// prior to the `seek` msg. With some smart logic, the info from the two messages can be combined to display
+    /// the most appropriate "jump" icon in the OSD in addition to the time display & progress bar.
+    if case .seekRelative(let stepString) = msg, let step = Double(stepString) {
+      log.verbose("[OSD] Showing '\(msg)'")
 
-        let isBackward = step < 0
-        let accDescription = "Relative Seek \(isBackward ? "Backward" : "Forward")"
-        var name: String
-        switch abs(step) {
-        case 5, 10, 15, 30, 45, 60, 75, 90:
-          let absStep = Int(abs(step))
-          name = isBackward ? "gobackward.\(absStep)" : "goforward.\(absStep)"
-        default:
-          name = isBackward ? "gobackward.minus" : "goforward.plus"
-        }
-        /// Set icon for next msg, which is expected to be a `seek`
-        osd.nextSeekIcon = NSImage(systemSymbolName: name, accessibilityDescription: accDescription)!
-        /// Done with `seekRelative` msg. It is not used for display.
-        return
-      } else if case .seek(_, _) = msg {
-        /// Shift next icon into current icon, which will be used until the next call to `displayOSD()`
-        /// (although note that there can be subsequent calls to `updateOSDViews()` to update the OSD's displayed time
-        /// while playing, but those do not count as "new" OSD messages, and thus will continue to use
-        /// `osd.currentSeekIcon`).
-        if isScrollingOrDraggingPlaySlider {
-          // give up on fancy OSD for scroll wheel seek (for now)
-          osd.currentSeekIcon = nil
-          osd.nextSeekIcon = nil
-        } else if osd.nextSeekIcon != nil {
-          osd.currentSeekIcon = osd.nextSeekIcon
-          osd.nextSeekIcon = nil
-        }
-      } else {
-        osd.currentSeekIcon = nil
+      let isBackward = step < 0
+      let accDescription = "Relative Seek \(isBackward ? "Backward" : "Forward")"
+      var name: String
+      switch abs(step) {
+      case 5, 10, 15, 30, 45, 60, 75, 90:
+        let absStep = Int(abs(step))
+        name = isBackward ? "gobackward.\(absStep)" : "goforward.\(absStep)"
+      default:
+        name = isBackward ? "gobackward.minus" : "goforward.plus"
       }
+      /// Set icon for next msg, which is expected to be a `seek`
+      osd.nextSeekIcon = NSImage(systemSymbolName: name, accessibilityDescription: accDescription)!
+      /// Done with `seekRelative` msg. It is not used for display.
+      return
+    } else if case .seek(_, _) = msg {
+      /// Shift next icon into current icon, which will be used until the next call to `displayOSD()`
+      /// (although note that there can be subsequent calls to `updateOSDViews()` to update the OSD's displayed time
+      /// while playing, but those do not count as "new" OSD messages, and thus will continue to use
+      /// `osd.currentSeekIcon`).
+      if isScrollingOrDraggingPlaySlider {
+        // give up on fancy OSD for scroll wheel seek (for now)
+        osd.currentSeekIcon = nil
+        osd.nextSeekIcon = nil
+      } else if osd.nextSeekIcon != nil {
+        osd.currentSeekIcon = osd.nextSeekIcon
+        osd.nextSeekIcon = nil
+      }
+    } else {
+      osd.currentSeekIcon = nil
     }
 
     // Restart timer

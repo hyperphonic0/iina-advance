@@ -1010,10 +1010,7 @@ struct ScreenMeta {
   }
 
   var screenID: String {
-    if #available(macOS 10.15, *) {
-      return "\(displayID):\(name)"
-    }
-    return "\(displayID)"
+    "\(displayID):\(name)"
   }
 
   func matches(_ otherScreen: NSScreen) -> Bool {

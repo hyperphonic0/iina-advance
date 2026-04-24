@@ -1378,9 +1378,7 @@ extension PlayerWindowController {
 
     fadeableViews.applyVisibility(iconAndTitleText, titleTextField, documentIconButton)
 
-    if #available(macOS 11.0, *) {
-      window.titlebarSeparatorStyle = .automatic  // or .line, .none, .shadow
-    }
+    window.titlebarSeparatorStyle = .automatic  // or .line, .none, .shadow
   }
 
   private func addTitleBarAccessoryViews() {
@@ -1404,9 +1402,7 @@ extension PlayerWindowController {
       accessory.view = leadingTitleBarAccessoryView
       accessory.fullScreenMinHeight = Constants.standardTitleBarHeight
       accessory.layoutAttribute = .leading
-      if #available(macOS 11.0, *) {
-        accessory.automaticallyAdjustsSize = false
-      }
+      accessory.automaticallyAdjustsSize = false
     }
 
     if trailingTitlebarAccesoryViewController == nil {
@@ -1416,9 +1412,7 @@ extension PlayerWindowController {
       accessory.view = trailingTitleBarAccessoryView
       accessory.fullScreenMinHeight = Constants.standardTitleBarHeight
       accessory.layoutAttribute = .trailing
-      if #available(macOS 11.0, *) {
-        accessory.automaticallyAdjustsSize = false
-      }
+      accessory.automaticallyAdjustsSize = false
     }
 
     if window.titlebarAccessoryViewControllers.count == 1 {

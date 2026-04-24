@@ -647,10 +647,6 @@ extension MPVController {
   /// Determine if this Mac has an Apple Silicon chip.
   /// - Returns: `true` if running on a Mac with an Apple Silicon chip, `false` otherwise.
   private func runningOnAppleSilicon() -> Bool {
-    // Old versions of macOS do not support Apple Silicon.
-    if #unavailable(macOS 11.0) {
-      return false
-    }
     var sysinfo = utsname()
     let result = uname(&sysinfo)
     guard result == EXIT_SUCCESS else {

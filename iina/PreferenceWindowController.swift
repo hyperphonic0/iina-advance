@@ -45,13 +45,6 @@ extension PreferenceWindowEmbeddable {
 
 class CustomCellView: NSTableCellView {
   @IBOutlet weak var leadingConstraint: NSLayoutConstraint!
-
-  override func viewWillDraw() {
-    if #unavailable (macOS 11.0) {
-      leadingConstraint.constant = 20
-    }
-    super.viewWillDraw()
-  }
 }
 
 
@@ -226,12 +219,6 @@ class PreferenceWindowController: WindowController, NSWindowDelegate {
     completionTableView.dataSource = self
 
     detailViewBottomConstraint = prefDetailContentView.bottomAnchor.constraint(equalTo: prefDetailContentView.superview!.bottomAnchor)
-
-    // NSTableView's "Source List" style is only available with MacOS 11.0+ and includes a built-in 10pt offset for its highlights.
-    // But for older MacOS versions, the style will default to "full width" with no highlight offset, which will touch the Search field.
-    if #unavailable(macOS 11.0) {
-      navTableSearchFieldSpacingConstraint.constant = 10.0
-    }
 
 #if compiler(>=6.2) // only when using Xcode 26+
 

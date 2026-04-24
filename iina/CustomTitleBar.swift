@@ -358,14 +358,6 @@ final class CustomTitleBar {
 
     button.imageScaling = .scaleProportionallyUpOrDown
 
-    if #unavailable (macOS 11.0) {
-      // Needed for older versions of MacOS which use the legacy icons, which do not expand on their own
-      let iconHeight = Constants.standardTitleBarHeight - 10 // 18
-      let iconWidth = image.deriveWidth(fromHeight: iconHeight)
-      button.heightAnchor.constraint(equalToConstant: iconHeight).isActive = true
-      button.widthAnchor.constraint(equalToConstant: iconWidth).isActive = true
-    }
-
     button.actionSymbolEffectFunc = actionSymbolEffectFunc
   }
 }
