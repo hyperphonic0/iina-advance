@@ -382,6 +382,10 @@ struct LayoutState {
     LayoutState.titleBarVisibility(for: mode, topBarPlacement: topBarPlacement, isLegacyStyle: isLegacyStyle)
   }
 
+  func topBarAppearance(targetWindowAppearance: NSAppearance) -> NSAppearance {
+    topBarColorScheme.hasClearBG ? NSAppearance(iinaTheme: .dark)! : targetWindowAppearance
+  }
+
   fileprivate static func titleBarVisibility(for mode: PlayerWindowMode,
                                              topBarPlacement: Preference.PanelPlacement,
                                              isLegacyStyle: Bool) -> VisibilityMode {

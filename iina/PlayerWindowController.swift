@@ -692,12 +692,12 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
       playlistView.updateTableColors(effectiveAppearance: windowEffectiveAppearance)
     }
 
-    let topBarAppearance = layoutState.topBarColorScheme.hasClearBG ? NSAppearance(iinaTheme: .dark)! : windowEffectiveAppearance
+    let topBarAppearance = layoutState.topBarAppearance(targetWindowAppearance: windowEffectiveAppearance)
     /// Setting `window.appearance` will trigger a change to `#keyPath(window.effectiveAppearance)`.
     /// Need to call this to set native title bar colors.
     window.appearance = topBarAppearance
     /// Call this to change all other colors
-    contentView.appearance = windowEffectiveAppearance
+    contentView.appearance = topBarAppearance
     osd.updateColors(windowAppearance: windowEffectiveAppearance)
     oscBarRenderer = BarRenderer(windowAppearance: windowEffectiveAppearance,
                                  colorScheme: layoutState.oscColorScheme,

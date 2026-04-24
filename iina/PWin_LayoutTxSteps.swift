@@ -358,8 +358,6 @@ extension PlayerWindowController {
     let theme: Preference.Theme = Preference.enum(for: .themeMaterial)
     // Can be nil, which means dynamic system appearance as set by MacOS (via NSApp)
     let targetWindowAppearance: NSAppearance = NSAppearance(iinaTheme: theme) ?? window.effectiveAppearance
-    let topBarAppearance = outputLayout.topBarColorScheme.hasClearBG ? NSAppearance(iinaTheme: .dark)! : targetWindowAppearance
-    log.verbose("TopBarAppearance: \(topBarAppearance.isDark ? "DARK" : "LIGHT")")
 
     // Do this here so that (1) BarRenderer regenerates close enough to mid-animation (so bar thickness changes pleasantly),
     // & (2) window.appearance is updated before updating styling of any window views!
@@ -462,10 +460,15 @@ extension PlayerWindowController {
 
     // - Top Bar
 
-    topBar.rebuildTopBarViewIfNeeded(targetLayout: outputLayout, targetAppearance: topBarAppearance, superview: contentView, log)
+    // Unlike the other panels, do not set the topBar's appearance explicitly.
+    // It will inherit from window.contentView's appearance, which must be set to the desired topBar
+    // appearance to ensure that the native title bar's appearance is set correctly.
+    topBar.rebuildTopBarViewIfNeeded(targetLayout: outputLayout, superview: contentView, log)
     if topBar.view.superview == nil {
       contentView.addSubview(topBar.view)
     }
+    log.verbose("TopBarAppearance: target=\(outputLayout.topBarAppearance(targetWindowAppearance: targetWindowAppearance).isDark ? "DARK" : "LIGHT") "
+                + "actual=\(topBar.view.effectiveAppearance.isDark ? "DARK" : "LIGHT")")
 
     if !transition.isWindowInitialLayout {
       rebuildPanelConstraints(transition, stage: .midTransitionHiddenUpdates)
@@ -834,12 +837,11 @@ extension PlayerWindowController {
       log.verbose("Skipped applyThemeMaterial due to missing window or screen")
     }
 
+    let topBarAppearance = outputLayout.topBarAppearance(targetWindowAppearance: targetWindowAppearance)
     topBarAppearance.performAsCurrentDrawingAppearance { [self] in
       let topBarColorScheme = outputLayout.topBarColorScheme
-      log.verbose("Updating topBarView appearance to \(topBarColorScheme.description), isDark=\(topBarAppearance.isDark.yesno)")
+      log.verbose("Updating topBarView appearance to \(topBarColorScheme.description), isDark=\(topBarAppearance.isDark ? "DARK" : "LIGHT")")
       topBar.bottomBorder.isHidden = topBarColorScheme != .visualEffectView
-      topBar.view.appearance = topBarAppearance
-      topBar.contentView.appearance = topBarAppearance
       topBar.view.needsDisplay = true
       topBar.contentView.needsDisplay = true
 
