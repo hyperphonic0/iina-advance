@@ -124,7 +124,6 @@ Fixes and improvements to IINA Advance are more than welcome. For now, please fe
 *(copied from upstream IINA)*
 
 ### Official Plugins
-- **[More Seeking](https://github.com/iina/plugin-more-seeking)** (`iina/plugin-more-seeking`) - Advanced seeking controls.
 - **[Online Media](https://github.com/iina/plugin-online-media)** (`iina/plugin-online-media`) - Enhances online streaming and downloading.
 - **[OpenSubtitles](https://github.com/iina/plugin-opensub)** (`iina/plugin-opensub`) - Search and download subtitles.
 - **[User Scripts](https://github.com/iina/plugin-userscript)** (`iina/plugin-userscript`) - Run custom JavaScript snippets.
