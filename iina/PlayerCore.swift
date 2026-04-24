@@ -686,7 +686,8 @@ final class PlayerCore: NSObject {
             } else if let wasPaused = priorState.bool(for: .paused) {
               pendingResumeWhenShowingWindow = !wasPaused
             } else {
-              pendingResumeWhenShowingWindow = !Preference.bool(for: .pauseWhenOpen)
+              pendingResumeWhenShowingWindow = !shouldPauseOnFileOpen()
+              log.warn("Could not determine pause state to restore; falling back using prefs: willResume=\(pendingResumeWhenShowingWindow.yn)")
             }
 
             let playlistPlaybackIDs = priorState.restorePlaylistIDs(volRemounts: volRemountURLs)
@@ -699,13 +700,12 @@ final class PlayerCore: NSObject {
             return
 
           } else if isInteractivePlayer {
-            log.debug("Pausing playback until window is done opening")
             // Pause until window opens, to avoid blips or other loading unpleasantness.
             mpv.setFlag(MPVOption.PlaybackControl.pause, true)
 
-            let shouldStayPaused = getPauseFromUserOptions() ?? Preference.bool(for: .pauseWhenOpen)
-            log.debug("Setting pendingResumeWhenShowingWindow = \(pendingResumeWhenShowingWindow.yn)")
+            let shouldStayPaused = shouldPauseOnFileOpen()
             pendingResumeWhenShowingWindow = !shouldStayPaused
+            log.debug("Paused playback until window is done opening; will resume when shown=\(pendingResumeWhenShowingWindow.yn)")
 
           } else {
             log.verbose("Player is non-interactive; skipping playback pause prior to window open")
@@ -989,6 +989,10 @@ final class PlayerCore: NSObject {
     log.verbose("Updating mpv keepaspect-window synchronously: done")
   }
 
+  func shouldPauseOnFileOpen() -> Bool {
+    getPauseFromUserOptions() ?? Preference.bool(for: .pauseWhenOpen)
+  }
+
   func togglePause() {
     mpv.queue.async { [self] in
       _togglePause()
@@ -1130,6 +1134,11 @@ final class PlayerCore: NSObject {
           displayedPlaylist = []  // reset to match info.playlist
           videoView.stopDisplayLink()
         }
+      }
+
+      if !mpv.getFlag(MPVOption.PlaybackControl.pause) {
+        log.debug("Pausing playback before sending stop command")
+        mpv.setFlag(MPVOption.PlaybackControl.pause, true, level: .verbose)
       }
 
       // Do not send a stop command to mpv if it is already stopped. This happens when quitting is

@@ -790,11 +790,22 @@ extension PlayerCore {
     mpv.queue.async { [self] in
       guard !isStopping else { return }
       log.verbose("[Playlist] Changing mpv playlist-pos to \(pos)")
+      if !mpv.getFlag(MPVOption.PlaybackControl.pause) {
+        log.verbose("Pausing playback before playing entry at index \(pos) in the playlist")
+        mpv.setFlag(MPVOption.PlaybackControl.pause, true, level: .verbose)
+      }
       mpv.command(.playlistPlayIndex, args: [String(pos)], level: .verbose)
     }
   }
 
   /// Play the next or the previous entry in the playlist.
+  /// - Important: This method will ensure playback is paused before changing the position in the playlist. If playback is not
+  ///     paused, audio can start playing before video is shown. This is most noticeable with high resolution videos encoded with
+  ///     newer high compression codecs (such as AV1), when running on older Macs that lack support for hardware decoding of the
+  ///     codec used. Playback will be started once the video has been loaded and the size of the video is known (unless the "Pause"
+  ///     setting is enabled under "When media is opened"). Playback is only paused when the user manually changes the position in
+  ///     the playlist in order to not disrupt gapless audio.
+  /// - Parameter nextMedia: When `true` play the next entry in the playlist; otherwise play the previous entry.
   func navigateInPlaylist(nextMedia: Bool) {
     mpv.queue.async { [self] in
       guard !isStopping else { return }
@@ -806,6 +817,10 @@ extension PlayerCore {
         if playlistPos == 0 {
           seek(absoluteSecond: 0)
         } else {
+          if !mpv.getFlag(MPVOption.PlaybackControl.pause) {
+            log.verbose("Pausing playback before playing \(nextMedia ? "next" : "previous") entry in playlist")
+            mpv.setFlag(MPVOption.PlaybackControl.pause, true, level: .verbose)
+          }
           mpv.command(.playlistPrev, checkError: false)
         }
       }
