@@ -443,6 +443,8 @@ extension PlayerWindowController {
     || transition.isBottomBarPlacementOrStyleChanging || transition.isBottomBarOpening
     if needsBottomBarUpdate {
       bottomBar.rebuildBottomBarView(colorScheme: transition.outputLayout.oscColorScheme, log)
+      let bottomBarAppearance = outputLayout.oscColorScheme.hasClearBG ? NSAppearance(iinaTheme: .dark)! : targetWindowAppearance
+      bottomBar.view.appearance = bottomBarAppearance
       // Just add the new view now. It will have its Z order corrected in `rebuildPanelConstraints`.
       window.contentView!.addSubview(bottomBar.view)
     }
@@ -460,11 +462,9 @@ extension PlayerWindowController {
 
     // - Top Bar
 
-    topBarAppearance.performAsCurrentDrawingAppearance {
-      topBar.rebuildTopBarViewIfNeeded(targetLayout: outputLayout, targetAppearance: topBarAppearance, superview: contentView, log)
-      if topBar.view.superview == nil {
-        contentView.addSubview(topBar.view)
-      }
+    topBar.rebuildTopBarViewIfNeeded(targetLayout: outputLayout, targetAppearance: topBarAppearance, superview: contentView, log)
+    if topBar.view.superview == nil {
+      contentView.addSubview(topBar.view)
     }
 
     if !transition.isWindowInitialLayout {

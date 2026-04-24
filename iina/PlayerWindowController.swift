@@ -705,7 +705,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
     oscKnobRenderer.invalidateCachedKnobs()
 
     // TODO: clean up this nasty code
-    let oscAppearance = layoutState.oscColorScheme.hasClearBG ? NSAppearance(iinaTheme: .dark)! : contentView.effectiveAppearance
+    let oscAppearance = layoutState.oscColorScheme.hasClearBG ? NSAppearance(iinaTheme: .dark)! : windowEffectiveAppearance
     oscAppearance.performAsCurrentDrawingAppearance {
       playSliderCell.abLoopA.updateKnobImage(to: .loopKnob)
       playSliderCell.abLoopB.updateKnobImage(to: .loopKnob)
