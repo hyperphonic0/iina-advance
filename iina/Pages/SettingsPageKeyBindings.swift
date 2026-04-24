@@ -72,8 +72,7 @@ fileprivate class ConfigEditor: SettingsAccessory.Base {
   let chooserPopupButton: NSPopUpButton
   let addConfBtn: NSButton
   let delConfBtn: NSButton
-  let addKeyMappingBtn: NSButton
-
+  
   var mappingController: NSArrayController
   
   static let defaultConfigMap: KeyValuePairs<String, String> = [
@@ -146,7 +145,6 @@ fileprivate class ConfigEditor: SettingsAccessory.Base {
     
     self.addConfBtn = NSButton()
     self.delConfBtn = NSButton()
-    self.addKeyMappingBtn = NSButton()
 
     super.init(l10n: l10n)
     
@@ -177,6 +175,7 @@ fileprivate class ConfigEditor: SettingsAccessory.Base {
     chooserView.addSubview(chooserStackView)
     chooserStackView.padding(.all(8))
     
+    let addKeyMappingBtn = NSButton()
     addKeyMappingBtn.translatesAutoresizingMaskIntoConstraints = false
     addKeyMappingBtn.imagePosition = .imageOnly
     addKeyMappingBtn.bezelStyle = .circular
@@ -445,7 +444,7 @@ fileprivate class ConfigEditor: SettingsAccessory.Base {
 
   private func changeButtonEnabledStatus() {
     let shouldEnableEdit = isCurrentConfigEditable()
-    [delConfBtn, addKeyMappingBtn].forEach { $0.isEnabled = shouldEnableEdit }
+    delConfBtn.isEnabled = shouldEnableEdit
   }
   
   /// Check whether or not a new config file with provided filename should be created.
