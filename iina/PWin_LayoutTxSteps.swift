@@ -439,7 +439,8 @@ extension PlayerWindowController {
 
     // Unclear why bottomBar.view sometimes fails to update its appearance along with the other views.
     // Workaround: force redraw when appearanceDidChange
-    let needsBottomBarUpdate = transition.isWindowInitialLayout || transition.isBottomBarPlacementOrStyleChanging || (contentView.effectiveAppearance != bottomBar.view.effectiveAppearance)
+    let needsBottomBarUpdate = transition.isWindowInitialLayout || appearanceDidChange
+    || transition.isBottomBarPlacementOrStyleChanging || transition.isBottomBarOpening
     if needsBottomBarUpdate {
       bottomBar.rebuildBottomBarView(colorScheme: transition.outputLayout.oscColorScheme, log)
       // Just add the new view now. It will have its Z order corrected in `rebuildPanelConstraints`.

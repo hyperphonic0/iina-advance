@@ -271,6 +271,10 @@ extension PlayerWindowController {
                                      || (inputLayout.controlBarGeo.timeLabelsWrapSlider != outputLayout.controlBarGeo.timeLabelsWrapSlider)))
     }
 
+    var isBottomBarOpening: Bool {
+      return !inputLayout.hasBottomBar && outputLayout.hasBottomBar
+    }
+
     /// Note: this may not include OSC
     var isBottomBarPlacementChanging: Bool {
       return inputLayout.bottomBarPlacement != outputLayout.bottomBarPlacement
