@@ -116,10 +116,8 @@ class SettingsPageUI: SettingsPage {
         SettingsItem.Switch()
           .image(name: "slider.horizontal.below.square.and.square.filled")
           .bindTo(.showRemainingTime)
-          .withDetailView {
-            SettingsItem.Switch()
-              .bindTo(.scaleRemainingTime)
-          }
+        SettingsItem.Switch()
+          .bindTo(.scaleRemainingTime)
         SettingsItem.Switch()
           .bindTo(.enableScrollOverSliders)
       }
