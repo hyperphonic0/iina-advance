@@ -311,6 +311,10 @@ extension PlayerWindowController {
                                 useLeadingSidebar: Bool, useTrailingSidebar: Bool) {
     let contentView = window!.contentView!
 
+    let theme: Preference.Theme = Preference.enum(for: .themeMaterial)
+    // Can be nil, which means dynamic system appearance as set by MacOS (via NSApp)
+    let targetWindowAppearance: NSAppearance = NSAppearance(iinaTheme: theme) ?? NSApp.effectiveAppearance
+
     // Add/remove viewportView if needed
     if useViewport {
       // This adds videoView, viewportView & spacers if not already added
@@ -329,7 +333,7 @@ extension PlayerWindowController {
         log.verbose("Adding leadingSidebarView to window contentView")
         contentView.addSubview(leadingSidebarView, positioned: .above, relativeTo: viewportView)
       }
-      leadingSidebarView.appearance = contentView.appearance
+      leadingSidebarView.appearance = targetWindowAppearance
     } else {
       leadingSidebarConstraints = nil  // disables constraints
       if leadingSidebarView.superview != nil {
@@ -342,7 +346,7 @@ extension PlayerWindowController {
         log.verbose("Adding trailingSidebarView to window contentView")
         contentView.addSubview(trailingSidebarView, positioned: .above, relativeTo: viewportView)
       }
-      trailingSidebarView.appearance = contentView.appearance
+      trailingSidebarView.appearance = targetWindowAppearance
     } else {
       trailingSidebarConstraints = nil  // disables constraints
       if trailingSidebarView.superview != nil {

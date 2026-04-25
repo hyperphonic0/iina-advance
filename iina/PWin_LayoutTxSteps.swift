@@ -688,6 +688,9 @@ extension PlayerWindowController {
         addFloatingControlBarToViewportView()
         controlBarFloating.updatePreferredBarWidth()
 
+        let oscAppearance = outputLayout.oscColorScheme.hasClearBG ? NSAppearance(iinaTheme: .dark)! : targetWindowAppearance
+        controlBarFloating.view.appearance = oscAppearance
+
         let floatingUpperView = controlBarFloating.topRowView
         if !floatingUpperView.views.contains(fragToolbarView) {
           floatingUpperView.addView(fragToolbarView, in: .trailing)

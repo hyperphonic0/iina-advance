@@ -696,8 +696,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
     /// Setting `window.appearance` will trigger a change to `#keyPath(window.effectiveAppearance)`.
     /// Need to call this to set native title bar colors.
     window.appearance = topBarAppearance
-    /// Call this to change all other colors
-    contentView.appearance = topBarAppearance
+    // Do not set contentView's appearance; that will affect blending of top bar. Set views a la carte elsewhere
     osd.updateColors(windowAppearance: windowEffectiveAppearance)
     oscBarRenderer = BarRenderer(windowAppearance: windowEffectiveAppearance,
                                  colorScheme: layoutState.oscColorScheme,
