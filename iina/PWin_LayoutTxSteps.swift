@@ -353,24 +353,19 @@ extension PlayerWindowController {
     fadeableViews.clearFadeableSets()
 
     let oldAppearance = contentView.effectiveAppearance
-    /// Do not set `window.appearance`! It causes race conditions which lead to wrong colors of top panel (which we sometimes want to override).
-    /// Set `window.contentView.appearance` instead.
-    let theme: Preference.Theme = Preference.enum(for: .themeMaterial)
-    // Can be nil, which means dynamic system appearance as set by MacOS (via NSApp)
-    let targetWindowAppearance: NSAppearance = NSAppearance(iinaTheme: theme) ?? NSApp.effectiveAppearance
 
     // Do this here so that (1) BarRenderer regenerates close enough to mid-animation (so bar thickness changes pleasantly),
     // & (2) window.appearance is updated before updating styling of any window views!
     if let screen = window.screen {
-      applyThemeMaterial(using: transition.outputLayout, targetWindowAppearance, window, screen)
-      window.display()  // Call this to avoid race condition setting top bar view to "tinted glass" with non-system appearance
+      applyThemeMaterial(using: transition.outputLayout, window, screen)
     } else {
       // In some rare cases, window might be off screen its frame size is zero (the latter can happen when exiting music mode with no
       // playlist & no video), in which case window.screen will be nil. Just log & continue. In principle, applyThemeMaterial will still
       // be called via windowDidChangeScreen.
       log.verbose("Skipped applyThemeMaterial due to missing window or screen")
     }
-    let appearanceDidChange = oldAppearance != contentView.effectiveAppearance
+    let targetWindowAppearance = AppDelegate.shared.targetWindowAppearance
+    let appearanceDidChange = oldAppearance != targetWindowAppearance
 
     switch transition.outputLayout.mode {
     case .fullScreenInteractive, .windowedInteractive:
@@ -493,6 +488,10 @@ extension PlayerWindowController {
     }
     if topBar.view.superview == nil {
       contentView.addSubview(topBar.view)
+    }
+    topBar.view.appearance = topBarAppearance
+    for subview in topBar.view.subviews {
+      subview.appearance = topBarAppearance
     }
 
     log.verbose("TopBarAppearance: target=\(topBarAppearance.isDark ? "DARK" : "LIGHT") "
@@ -855,17 +854,6 @@ extension PlayerWindowController {
     // So that panels toggling between "inside" and "outside" don't change until they need to (but FS is OK)
     if !transition.isTogglingFullScreen {
       updatePanelBlendingModes(to: outputLayout)
-    }
-
-    // Do this here so that (1) BarRenderer regenerates close enough to mid-animation (so bar thickness changes pleasantly),
-    // & (2) window.appearance is updated before updating styling of any window views!
-    if let screen = window.screen {
-      applyThemeMaterial(using: transition.outputLayout, targetWindowAppearance, window, screen)
-    } else {
-      // In some rare cases, window might be off screen its frame size is zero (the latter can happen when exiting music mode with no
-      // playlist & no video), in which case window.screen will be nil. Just log & continue. In principle, applyThemeMaterial will still
-      // be called via windowDidChangeScreen.
-      log.verbose("Skipped applyThemeMaterial due to missing window or screen")
     }
 
     // Other misc views

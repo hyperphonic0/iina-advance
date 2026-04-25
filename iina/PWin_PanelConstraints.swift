@@ -310,10 +310,7 @@ extension PlayerWindowController {
                                 useTopBar: Bool, useBottomBar: Bool,
                                 useLeadingSidebar: Bool, useTrailingSidebar: Bool) {
     let contentView = window!.contentView!
-
-    let theme: Preference.Theme = Preference.enum(for: .themeMaterial)
-    // Can be nil, which means dynamic system appearance as set by MacOS (via NSApp)
-    let targetWindowAppearance: NSAppearance = NSAppearance(iinaTheme: theme) ?? NSApp.effectiveAppearance
+    let targetWindowAppearance = AppDelegate.shared.targetWindowAppearance
 
     // Add/remove viewportView if needed
     if useViewport {

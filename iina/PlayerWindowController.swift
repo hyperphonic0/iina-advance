@@ -684,27 +684,27 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
   /// Set material & theme (light or dark mode) for OSC and title bar.
   /// Make sure this is running inside an animation task too!
   @MainActor
-  func applyThemeMaterial(using layoutState: LayoutState, _ windowEffectiveAppearance: NSAppearance, _ window: NSWindow, _ screen: NSScreen) {
-    log.verbose("Applying theme material for screen \(screen.screenID.pii.quoted): windowIsDark=\(windowEffectiveAppearance.isDark.yesno)")
-    let contentView = window.contentView!
+  func applyThemeMaterial(using layoutState: LayoutState, _ window: NSWindow, _ screen: NSScreen) {
+    let targetWindowAppearance = AppDelegate.shared.targetWindowAppearance
+    let topBarAppearance = layoutState.topBarAppearance(targetWindowAppearance: targetWindowAppearance)
+    log.verbose("Applying theme material for screen \(screen.screenID.pii.quoted): window=\(targetWindowAppearance.isDark ? "DARK" : "LIGHT") topBar=\(topBarAppearance.isDark ? "DARK" : "LIGHT")")
 
     if playlistView.isViewLoaded {
-      playlistView.updateTableColors(effectiveAppearance: windowEffectiveAppearance)
+      playlistView.updateTableColors(effectiveAppearance: targetWindowAppearance)
     }
 
-    let topBarAppearance = layoutState.topBarAppearance(targetWindowAppearance: windowEffectiveAppearance)
     /// Setting `window.appearance` will trigger a change to `#keyPath(window.effectiveAppearance)`.
     /// Need to call this to set native title bar colors.
     window.appearance = topBarAppearance
     // Do not set contentView's appearance; that will affect blending of top bar. Set views a la carte elsewhere
-    osd.updateColors(windowAppearance: windowEffectiveAppearance)
-    oscBarRenderer = BarRenderer(windowAppearance: windowEffectiveAppearance,
+    osd.updateColors(windowAppearance: targetWindowAppearance)
+    oscBarRenderer = BarRenderer(windowAppearance: targetWindowAppearance,
                                  colorScheme: layoutState.oscColorScheme,
                                  sliderBarHeight_Normal: layoutState.controlBarGeo.sliderBarHeightNormal)
     oscKnobRenderer.invalidateCachedKnobs()
 
     // TODO: clean up this nasty code
-    let oscAppearance = layoutState.oscColorScheme.hasClearBG ? NSAppearance(iinaTheme: .dark)! : windowEffectiveAppearance
+    let oscAppearance = layoutState.oscColorScheme.hasClearBG ? NSAppearance(iinaTheme: .dark)! : targetWindowAppearance
     oscAppearance.performAsCurrentDrawingAppearance {
       playSliderCell.abLoopA.updateKnobImage(to: .loopKnob)
       playSliderCell.abLoopB.updateKnobImage(to: .loopKnob)
@@ -715,6 +715,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
       playSlider.needsDisplay = true
       volumeSlider.needsDisplay = true
     }
+    let contentView = window.contentView!
     contentView.needsDisplay = true
   }
 
@@ -1331,7 +1332,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
 
       animationPipeline.submitInstantTask({ [self] in
         log.verbose("WndDidChangeScreen wNum=\(window.windowNumber): frame=\(window.frame) screenID=\(screen.screenID.quoted) screenFrame=\(screen.frame)")
-        applyThemeMaterial(using: currentLayout, window.effectiveAppearance, window, screen)  // scaleFactor may have changed
+        applyThemeMaterial(using: currentLayout, window, screen)  // scaleFactor may have changed
         videoView.refreshAllVideoDisplayState()
         player.events.emit(.windowScreenChanged)
       })

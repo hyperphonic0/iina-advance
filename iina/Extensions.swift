@@ -2221,7 +2221,7 @@ extension NSView {
       return
     }
 
-    let shadowColor = scheme == .tintedGlass && iinaAppearance.isDark ? Constants.Color.whiteShadowNS : Constants.Color.blackShadowNS
+    let shadowColor = scheme == .tintedGlass && effectiveAppearance.isDark ? Constants.Color.whiteShadowNS : Constants.Color.blackShadowNS
     let radiusMultiplier, radiusConstant, x, y: CGFloat
 
     switch controlType {

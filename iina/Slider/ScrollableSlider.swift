@@ -156,7 +156,7 @@ class ScrollableSliderCell: NSSliderCell {
     if hasClearBG {
       return NSAppearance(iinaTheme: .dark)
     }
-    return slider.window?.contentView?.iinaAppearance
+    return slider.effectiveAppearance
   }
 
   var isDarkMode: Bool {

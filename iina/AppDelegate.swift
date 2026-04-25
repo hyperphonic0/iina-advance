@@ -1051,6 +1051,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     alert.runModal()
   }
 
+  /// Returns the intended appearance for player windows (light or dark), based on the `themeMaterial` pref,
+  /// and taking into account the currently configured system theme.
+  var targetWindowAppearance: NSAppearance {
+    let theme: Preference.Theme = Preference.enum(for: .themeMaterial)
+    // Can be nil, which means dynamic system appearance as set by MacOS (via NSApp)
+    return NSAppearance(iinaTheme: theme) ?? NSApp.effectiveAppearance
+  }
 
   // MARK: - Recent Documents
 
