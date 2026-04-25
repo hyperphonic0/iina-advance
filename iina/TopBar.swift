@@ -118,7 +118,6 @@ final class TopControlBarView: ClickThroughView {
       view.subviews = subviews
     }
 
-//    view.appearance = targetAppearance
     return view
   }
 

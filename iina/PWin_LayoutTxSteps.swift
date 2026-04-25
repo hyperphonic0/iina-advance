@@ -486,13 +486,6 @@ extension PlayerWindowController {
       // Colors for custom title bar controls
       customTitleBar?.setColors(topBarColorScheme: topBarColorScheme)
     }
-    if topBar.view.superview == nil {
-      contentView.addSubview(topBar.view)
-    }
-    topBar.view.appearance = topBarAppearance
-    for subview in topBar.view.subviews {
-      subview.appearance = topBarAppearance
-    }
 
     log.verbose("TopBarAppearance: target=\(topBarAppearance.isDark ? "DARK" : "LIGHT") "
                 + "actual=\(topBar.view.effectiveAppearance.isDark ? "DARK" : "LIGHT")")

@@ -24,9 +24,6 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
   /** For blacking out other screens. */
   var blackWindows: [NSWindow] = []
 
-  /// See `PWin_Observers.swift`.
-  var cachedEffectiveAppearanceName: String? = nil
-
   // MARK: - View Controllers
 
   /// The quick setting sidebar (video, audio, subtitles).
@@ -715,8 +712,6 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
       playSlider.needsDisplay = true
       volumeSlider.needsDisplay = true
     }
-    let contentView = window.contentView!
-    contentView.needsDisplay = true
   }
 
   func updateArrowButtonAccelerationFromPrefs() {

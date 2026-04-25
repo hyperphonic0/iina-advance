@@ -395,7 +395,8 @@ extension PlayerWindowController {
     }
   }
 
-  override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
+  override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?,
+                             context: UnsafeMutableRawPointer?) {
     guard let keyPath = keyPath else { return }
 
     switch keyPath {
@@ -405,10 +406,10 @@ extension PlayerWindowController {
         /// For that, we follow `appleColorPreferencesChangedNotification`.
         /// Compare `NSApp.effectiveAppearance`, not window appearance (that can change via `themeMaterial` pref
         /// which we handle elsewhere).
-        let effectiveAppearanceName = window!.effectiveAppearance.name.rawValue
-        guard cachedEffectiveAppearanceName != effectiveAppearanceName else { return }
-        log.verbose("Window appearance changed to: \(effectiveAppearanceName)")
-        cachedEffectiveAppearanceName = effectiveAppearanceName
+        let targetAppearance = AppDelegate.shared.targetWindowAppearance
+        let currentAppearance = window!.effectiveAppearance
+        guard currentAppearance != targetAppearance else { return }
+        log.verbose("Window appearance changed to: \(currentAppearance.isDark ? "DARK" : "LIGHT")")
         // This will call applyThemeMaterial
         updateTitleBarAndOSC()
       }
