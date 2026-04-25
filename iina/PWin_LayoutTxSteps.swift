@@ -357,7 +357,7 @@ extension PlayerWindowController {
     /// Set `window.contentView.appearance` instead.
     let theme: Preference.Theme = Preference.enum(for: .themeMaterial)
     // Can be nil, which means dynamic system appearance as set by MacOS (via NSApp)
-    let targetWindowAppearance: NSAppearance = NSAppearance(iinaTheme: theme) ?? window.effectiveAppearance
+    let targetWindowAppearance: NSAppearance = NSAppearance(iinaTheme: theme) ?? NSApp.effectiveAppearance
 
     // Do this here so that (1) BarRenderer regenerates close enough to mid-animation (so bar thickness changes pleasantly),
     // & (2) window.appearance is updated before updating styling of any window views!
@@ -437,9 +437,9 @@ extension PlayerWindowController {
 
     // Unclear why bottomBar.view sometimes fails to update its appearance along with the other views.
     // Workaround: force redraw when appearanceDidChange
-    let needsBottomBarUpdate = transition.isWindowInitialLayout || appearanceDidChange
+    let needsBottomBarRebuild = transition.isWindowInitialLayout || appearanceDidChange
     || transition.isBottomBarPlacementOrStyleChanging || transition.isBottomBarOpening
-    if needsBottomBarUpdate {
+    if needsBottomBarRebuild {
       bottomBar.rebuildBottomBarView(colorScheme: transition.outputLayout.oscColorScheme, log)
       let bottomBarAppearance = outputLayout.oscColorScheme.hasClearBG ? NSAppearance(iinaTheme: .dark)! : targetWindowAppearance
       bottomBar.view.appearance = bottomBarAppearance
@@ -460,14 +460,42 @@ extension PlayerWindowController {
 
     // - Top Bar
 
+    let needsTopBarRebuild = transition.isWindowInitialLayout || appearanceDidChange
+    || (transition.inputLayout.topBarColorScheme != outputLayout.topBarColorScheme)
     // Unlike the other panels, do not set the topBar's appearance explicitly.
     // It will inherit from window.contentView's appearance, which must be set to the desired topBar
     // appearance to ensure that the native title bar's appearance is set correctly.
-    topBar.rebuildTopBarViewIfNeeded(targetLayout: outputLayout, superview: contentView, log)
+    topBar.rebuildTopBarViewIfNeeded(targetLayout: outputLayout, force: needsTopBarRebuild, log)
+    let topBarAppearance = outputLayout.topBarAppearance(targetWindowAppearance: targetWindowAppearance)
+    topBarAppearance.performAsCurrentDrawingAppearance { [self] in
+      let topBarColorScheme = outputLayout.topBarColorScheme
+      topBar.bottomBorder.isHidden = topBarColorScheme != .visualEffectView
+
+      // Colors for native controls. Do this after applying theme!
+      if outputLayout.leadingSidebarToggleButton.isShowable {
+        leadingSidebarToggleButton.setColors(for: topBarColorScheme, .titleBarButton)
+        leadingSidebarToggleButton.needsDisplay = true
+      }
+      if outputLayout.trailingSidebarToggleButton.isShowable {
+        trailingSidebarToggleButton.setColors(for: topBarColorScheme, .titleBarButton)
+        trailingSidebarToggleButton.needsDisplay = true
+      }
+      onTopButton.setColors(for: topBarColorScheme, .titleBarButton)
+      onTopButton.needsDisplay = true
+
+      if let titleTextField {
+        titleTextField.addShadow(topBarColorScheme, .titleText)
+        titleTextField.needsDisplay = true
+      }
+
+      // Colors for custom title bar controls
+      customTitleBar?.setColors(topBarColorScheme: topBarColorScheme)
+    }
     if topBar.view.superview == nil {
       contentView.addSubview(topBar.view)
     }
-    log.verbose("TopBarAppearance: target=\(outputLayout.topBarAppearance(targetWindowAppearance: targetWindowAppearance).isDark ? "DARK" : "LIGHT") "
+
+    log.verbose("TopBarAppearance: target=\(topBarAppearance.isDark ? "DARK" : "LIGHT") "
                 + "actual=\(topBar.view.effectiveAppearance.isDark ? "DARK" : "LIGHT")")
 
     if !transition.isWindowInitialLayout {
@@ -835,35 +863,6 @@ extension PlayerWindowController {
       // playlist & no video), in which case window.screen will be nil. Just log & continue. In principle, applyThemeMaterial will still
       // be called via windowDidChangeScreen.
       log.verbose("Skipped applyThemeMaterial due to missing window or screen")
-    }
-
-    let topBarAppearance = outputLayout.topBarAppearance(targetWindowAppearance: targetWindowAppearance)
-    topBarAppearance.performAsCurrentDrawingAppearance { [self] in
-      let topBarColorScheme = outputLayout.topBarColorScheme
-      log.verbose("Updating topBarView appearance to \(topBarColorScheme.description), isDark=\(topBarAppearance.isDark ? "DARK" : "LIGHT")")
-      topBar.bottomBorder.isHidden = topBarColorScheme != .visualEffectView
-      topBar.view.needsDisplay = true
-      topBar.contentView.needsDisplay = true
-
-      // Colors for native controls. Do this after applying theme!
-      if outputLayout.leadingSidebarToggleButton.isShowable {
-        leadingSidebarToggleButton.setColors(for: topBarColorScheme, .titleBarButton)
-        leadingSidebarToggleButton.needsDisplay = true
-      }
-      if outputLayout.trailingSidebarToggleButton.isShowable {
-        trailingSidebarToggleButton.setColors(for: topBarColorScheme, .titleBarButton)
-        trailingSidebarToggleButton.needsDisplay = true
-      }
-      onTopButton.setColors(for: topBarColorScheme, .titleBarButton)
-      onTopButton.needsDisplay = true
-
-      if let titleTextField {
-        titleTextField.addShadow(topBarColorScheme, .titleText)
-        titleTextField.needsDisplay = true
-      }
-
-      // Colors for custom title bar controls
-      customTitleBar?.setColors(topBarColorScheme: topBarColorScheme)
     }
 
     // Other misc views

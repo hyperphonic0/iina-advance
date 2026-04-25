@@ -123,41 +123,40 @@ final class TopControlBarView: ClickThroughView {
   }
 
   /// Returns `true` if view needed to be rebuilt
-  func rebuildTopBarViewIfNeeded(targetLayout: LayoutState, superview: NSView, _ log: any Logger.Subsystem) {
+  func rebuildTopBarViewIfNeeded(targetLayout: LayoutState,
+                                 force: Bool, _ log: any Logger.Subsystem) {
     guard #available(macOS 26.0, *) else { return }
 
-    let topBarColorScheme: Preference.PanelColorScheme = targetLayout.topBarColorScheme
-    switch topBarColorScheme {
-    case .clearGlass:
-      if let glassView = view as? TopBarGlassEffectView, glassView.style == .clear, glassView.effectiveAppearance.isDark {
-        // good
-        return
-      }
-    case .tintedGlass:
-      // Workaround for race condition when changing Glass theme (MacOS 26): rebuild the view if appearance is different
-      if let glassView = view as? TopBarGlassEffectView, glassView.style == .regular {
-        return
-      }
-
-    case .clearGradient:
-      if view as? TopBarGradientView != nil {
-        return
-      }
-
-    case .visualEffectView, .none:
-      if view as? TopBarVisualEffectView != nil {
-        return
+    if !force {
+      let topBarColorScheme: Preference.PanelColorScheme = targetLayout.topBarColorScheme
+      switch topBarColorScheme {
+      case .clearGlass:
+        if let glassView = view as? TopBarGlassEffectView, glassView.style == .clear, glassView.effectiveAppearance.isDark {
+          // good
+          return
+        }
+      case .tintedGlass:
+        // Workaround for race condition when changing Glass theme (MacOS 26): rebuild the view if appearance is different
+        if let glassView = view as? TopBarGlassEffectView, glassView.style == .regular {
+          return
+        }
+        
+      case .clearGradient:
+        if view as? TopBarGradientView != nil {
+          return
+        }
+        
+      case .visualEffectView, .none:
+        if view as? TopBarVisualEffectView != nil {
+          return
+        }
       }
     }
-    rebuildTopBarView(targetLayout: targetLayout, superview: superview, log)
-  }
 
-  fileprivate func rebuildTopBarView(targetLayout: LayoutState, superview: NSView, _ log: any Logger.Subsystem) {
     log.verbose("[Load] Rebuilding topBarView: colorScheme=\(targetLayout.topBarColorScheme)")
     view.removeFromSuperview()
     let subviews = [titleBarView, controlBarTop, bottomBorder]
     view = TopBar.buildView(targetLayout: targetLayout, subviews: subviews)
-    superview.addSubview(view)
     configureView()
   }
 

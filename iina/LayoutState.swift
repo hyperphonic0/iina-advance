@@ -383,7 +383,10 @@ struct LayoutState {
   }
 
   func topBarAppearance(targetWindowAppearance: NSAppearance) -> NSAppearance {
-    topBarColorScheme.hasClearBG ? NSAppearance(iinaTheme: .dark)! : targetWindowAppearance
+    if topBarColorScheme.hasClearBG {
+      return NSAppearance(iinaTheme: .dark)!
+    }
+    return targetWindowAppearance
   }
 
   fileprivate static func titleBarVisibility(for mode: PlayerWindowMode,
