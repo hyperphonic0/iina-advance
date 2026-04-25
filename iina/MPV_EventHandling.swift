@@ -510,14 +510,17 @@ extension MPVController {
 
     case MPVOption.Subtitles.subScale:
       guard let subScale = property.doubleData(log) else { break }
+      player.log.verbose("Δ mpv prop: 'sub-scale' = \(subScale)")
       player.subScaleChanged(subScale)
 
     case MPVOption.Subtitles.secondarySubPos:
       guard let ssubPos = property.doubleData(log) else { break }
+      player.log.verbose("Δ mpv prop: 'secondary-sub-pos' = \(ssubPos)")
       player.secondarySubPosChanged(ssubPos)
 
     case MPVOption.Subtitles.subPos:
       guard let subPos = property.doubleData(log) else { break }
+      player.log.verbose("Δ mpv prop: 'sub-pos' = \(subPos)")
       player.subPosChanged(subPos)
 
     case MPVOption.Subtitles.subFont:

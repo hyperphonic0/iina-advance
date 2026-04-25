@@ -453,57 +453,37 @@ final class PlayerCore: NSObject {
     mpv.setString(MPVOption.Subtitles.secondarySid, "auto")
     // `hwdec` is handled in `mpvSetInitialOptions`
     mpv.resetToDefault(MPVOption.Video.deinterlace)
-    info.deinterlace = mpv.getFlag(MPVOption.Video.deinterlace)
 
     mpv.resetToDefault(MPVOption.Video.videoZoom)
 
     mpv.resetToDefault(MPVOption.Equalizer.brightness)
-    info.brightness = mpv.getInt(MPVOption.Equalizer.brightness)
     mpv.resetToDefault(MPVOption.Equalizer.contrast)
-    info.contrast = mpv.getInt(MPVOption.Equalizer.contrast)
     mpv.resetToDefault(MPVOption.Equalizer.saturation)
-    info.saturation = mpv.getInt(MPVOption.Equalizer.saturation)
     mpv.resetToDefault(MPVOption.Equalizer.gamma)
-    info.gamma = mpv.getInt(MPVOption.Equalizer.gamma)
     mpv.resetToDefault(MPVOption.Equalizer.hue)
-    info.hue = mpv.getInt(MPVOption.Equalizer.hue)
 
     mpv.resetToDefault(MPVOption.Video.videoAspectOverride)
     mpv.resetToDefault(MPVOption.Video.videoRotate)
 
-    info.isSubVisible = true
     mpv.resetToDefault(MPVOption.Subtitles.subVisibility)
-    info.isSecondSubVisible = true
     mpv.resetToDefault(MPVOption.Subtitles.secondarySubVisibility)
-    info.subDelay = 0
     mpv.resetToDefault(MPVOption.Subtitles.subDelay)
-    info.sub2Delay = 0
     mpv.resetToDefault(MPVOption.Subtitles.secondarySubDelay)
-    info.subPos = 0
     mpv.resetToDefault(MPVOption.Subtitles.subPos)
-    info.sub2Pos = 0
     mpv.resetToDefault(MPVOption.Subtitles.secondarySubPos)
-    info.subScale = 0
     mpv.resetToDefault(MPVOption.Subtitles.subScale)
 
     // PlaybackInfo cached values for these will be read in at window open:
     mpv.resetToDefault(MPVOption.PlaybackControl.loopPlaylist)
     mpv.resetToDefault(MPVOption.PlaybackControl.loopFile)
 
-    info.playSpeed = 1.0
     mpv.resetToDefault(MPVOption.PlaybackControl.speed)
 
     mpv.resetToDefault(MPVOption.Audio.volume)
-    info.volume = mpv.getDouble(MPVOption.Audio.volume)
-    // `info.maxVolume` will be reset in `mpvSetInitialOptions`
     mpv.resetToDefault(MPVOption.Audio.mute)
-    info.isMuted = mpv.getFlag(MPVOption.Audio.mute)
     mpv.resetToDefault(MPVOption.Audio.audioDelay)
-    info.audioDelay = mpv.getDouble(MPVOption.Audio.audioDelay)
     mpv.resetToDefault(MPVOption.PlaybackControl.abLoopA)
-    info.abLoopA = mpv.getDouble(MPVOption.PlaybackControl.abLoopA)
     mpv.resetToDefault(MPVOption.PlaybackControl.abLoopB)
-    info.abLoopB = mpv.getDouble(MPVOption.PlaybackControl.abLoopB)
 
     info.videoFiltersDisabled = [:]
     removeAllVideoFilters(notify: false)
@@ -737,12 +717,39 @@ final class PlayerCore: NSObject {
             setLoopMode(loopMode == .file ? .file : .playlist)
           }
 
+          // Update cached values. Some of the controls in Quick Settings may try to submit these values when init'd
           if let loopFile = mpv.getString(MPVOption.PlaybackControl.loopFile) {
             info.loopFile = loopFile
           }
           if let loopPlaylist = mpv.getString(MPVOption.PlaybackControl.loopPlaylist) {
             info.loopPlaylist = loopPlaylist
           }
+
+          info.subScale = mpv.getDouble(MPVOption.Subtitles.subScale)
+          info.subPos = mpv.getDouble(MPVOption.Subtitles.subPos)
+          info.sub2Pos = mpv.getDouble(MPVOption.Subtitles.secondarySubPos)
+          info.subDelay = mpv.getDouble(MPVOption.Subtitles.subDelay)
+          info.sub2Delay = mpv.getDouble(MPVOption.Subtitles.secondarySubDelay)
+          info.subFontSize = mpv.getInt(MPVOption.Subtitles.subFontSize)
+          info.audioDelay = mpv.getDouble(MPVOption.Audio.audioDelay)
+          info.playSpeed = mpv.getDouble(MPVOption.PlaybackControl.speed)
+
+          info.isSubVisible = mpv.getFlag(MPVOption.Subtitles.subVisibility)
+          info.isSecondSubVisible = mpv.getFlag(MPVOption.Subtitles.secondarySubVisibility)
+
+          info.deinterlace = mpv.getFlag(MPVOption.Video.deinterlace)
+          info.brightness = mpv.getInt(MPVOption.Equalizer.brightness)
+          info.contrast = mpv.getInt(MPVOption.Equalizer.contrast)
+          info.saturation = mpv.getInt(MPVOption.Equalizer.saturation)
+          info.gamma = mpv.getInt(MPVOption.Equalizer.gamma)
+          info.hue = mpv.getInt(MPVOption.Equalizer.hue)
+
+          info.volume = mpv.getDouble(MPVOption.Audio.volume)
+          // `info.maxVolume` will be reset in `mpvSetInitialOptions`
+          info.isMuted = mpv.getFlag(MPVOption.Audio.mute)
+          info.audioDelay = mpv.getDouble(MPVOption.Audio.audioDelay)
+          info.abLoopA = mpv.getDouble(MPVOption.PlaybackControl.abLoopA)
+          info.abLoopB = mpv.getDouble(MPVOption.PlaybackControl.abLoopB)
         }
       }
     }
