@@ -58,6 +58,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   }
 
   static let iinaPluginSystemEnabled = Preference.bool(for: .iinaEnablePluginSystem)
+  let IINA_ENABLE_NEW_SETTINGS = false
 
   @MainActor let startupHandler = StartupHandler()
   private let shutdownHandler = ShutdownHandler()
@@ -884,8 +885,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
   @MainActor
   @IBAction func showPreferencesWindow(_ sender: AnyObject?) {
-    Logger.log("Opening Preferences window", level: .verbose)
-    preferenceWindowController.openWindow(nil)
+    Logger.log.verbose("Opening Preferences window")
+    if #available(macOS 11.0, *), IINA_ENABLE_NEW_SETTINGS {
+      SettingsWindow.default.show()
+    } else {
+      preferenceWindowController.openWindow(self)
+    }
   }
 
   @MainActor

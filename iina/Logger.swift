@@ -23,13 +23,20 @@ struct Logger {
 
   // MARK: - Level
 
-  enum Level: Int, Comparable, CustomStringConvertible {
+  enum Level: Int, Comparable, CustomStringConvertible, CaseIterable, InitializingFromKey {
+
+    init?(key: Preference.Key) {
+      self.init(rawValue: Preference.integer(for: key))
+    }
+
+    static var defaultValue: Logger.Level = .debug
+
     static func < (lhs: Level, rhs: Level) -> Bool {
       return lhs.rawValue < rhs.rawValue
     }
 
     /// Don't really care about race conditions here; would rather have faster performance
-    nonisolated(unsafe) static var preferred: Level = .error
+    nonisolated(unsafe) static var preferred: Level = Level(rawValue: Preference.integer(for: .logLevel).clamped(to: 0...3))!
 
     case trace = -1
     case verbose

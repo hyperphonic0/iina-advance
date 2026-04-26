@@ -692,6 +692,12 @@ extension Double {
 }
 
 extension CGFloat {
+  var unifiedDouble: Double {
+    get {
+      return Double(copysign(1, self))
+    }
+  }
+
   var groupedStringUpTo6Decimals: String {
     return Double(self).groupedStringUpTo6Decimals
   }
@@ -1504,6 +1510,16 @@ extension NSImage {
     fatalError("Could not find SF Symbol: \(names)")
   }
 
+  // A failable version of `findSFSymbol`, primarily used for settings pages.
+  @available(macOS 11.0, *)
+  static func findSFSymbol(_ names: [String]) -> NSImage? {
+    for name in names {
+      if let symbol = NSImage(systemSymbolName: name, accessibilityDescription: nil) {
+        return symbol
+      }
+    }
+    return nil
+  }
 }
 
 
@@ -1511,7 +1527,9 @@ extension NSImage {
 
 extension NSMenu {
   @discardableResult
-  func addItem(forRows targetRows: IndexSet? = nil, withTitle string: String, action selector: Selector? = nil, target: AnyObject? = nil,
+  func addItem(forRows targetRows: IndexSet? = nil,
+               withTitle string: String, image: [String]? = nil,
+               action selector: Selector? = nil, target: AnyObject? = nil,
                tag: Int? = nil, obj: Any? = nil, stateOn: Bool = false, enabled: Bool = true) -> NSMenuItem {
     let menuItem: NSMenuItem
     if let targetRows = targetRows {
@@ -1524,6 +1542,11 @@ extension NSMenu {
     menuItem.target = target
     menuItem.state = stateOn ? .on : .off
     menuItem.isEnabled = enabled
+
+    if #available(macOS 11.0, *), let image = image {
+      menuItem.image = NSImage.findSFSymbol(image)
+    }
+
     self.addItem(menuItem)
     return menuItem
   }

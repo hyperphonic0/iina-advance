@@ -82,6 +82,8 @@ class PrefPluginViewController: PreferenceViewController, PreferenceWindowEmbedd
   var pluginPreferencesWebViewHeight: NSLayoutConstraint!
   var pluginPreferencesViewController: PrefPluginPreferencesViewController!
 
+  private lazy var pluginManager: PluginManager = PluginManager(window: self.tableView.window!)
+
   private var defaultPluginsData: [[String: Any]] = []
   private var queue = DispatchQueue(label: "com.iina_advance.plugin-install", qos: .userInteractive)
 
@@ -414,7 +416,7 @@ class PrefPluginViewController: PreferenceViewController, PreferenceWindowEmbedd
       Utility.showAlert(key, arguments: [], sheetWindow: self.view.window!)
       return
     } catch let error {
-      handleInstallationError(error)
+      pluginManager.handleInstallationError(error)
       return
     }
 
@@ -423,7 +425,7 @@ class PrefPluginViewController: PreferenceViewController, PreferenceWindowEmbedd
     newPluginSourceTextField.isEnabled = false
     newPluginInstallBtn.isEnabled = false
 
-    queue.async {
+    Task {
       defer {
         DispatchQueue.main.async {
           self.pluginInstallationProgressIndicator.stopAnimation(self)
@@ -433,7 +435,7 @@ class PrefPluginViewController: PreferenceViewController, PreferenceWindowEmbedd
           self.view.window!.endSheet(self.newPluginSheet)
         }
       }
-      self.installPlugin(fromGitHubString: source)
+      await self.pluginManager.install(gitHubString: source)
     }
   }
 
@@ -442,15 +444,15 @@ class PrefPluginViewController: PreferenceViewController, PreferenceWindowEmbedd
 
     Utility.quickOpenPanel(title: "Install from local package",
                            chooseDir: false, sheetWindow: view.window, allowedFileTypes: ["iinaplgz"]) { url in
-      self.queue.async {
-        self.installPlugin(fromLocalPackageURL: url)
+      Task {
+        await self.pluginManager.install(localPackageURL: url)
       }
     }
   }
   
   @objc func installPluginAction(localPackageURL url: URL) {
-    self.queue.async {
-      self.installPlugin(fromLocalPackageURL: url)
+    Task {
+      await self.pluginManager.install(localPackageURL: url)
     }
   }
 
@@ -460,10 +462,8 @@ class PrefPluginViewController: PreferenceViewController, PreferenceWindowEmbedd
 
   @IBAction func uninstallPlugin(_ sender: Any) {
     guard let currentPlugin = currentPlugin else { return }
-    Utility.quickAskPanel("plugin_uninstall", titleArgs: [currentPlugin.name], sheetWindow: view.window!) { response in
-      if response == .alertFirstButtonReturn {
-        currentPlugin.enabled = false
-        currentPlugin.remove()
+    Task { @MainActor in
+      if await self.pluginManager.uninstall(currentPlugin) {
         self.clearPluginPage()
         self.tableView.reloadData()
       }
@@ -479,119 +479,24 @@ class PrefPluginViewController: PreferenceViewController, PreferenceWindowEmbedd
     guard let currentPlugin = currentPlugin else { return }
     pluginCheckUpdatesProgressIndicator.startAnimation(self)
     pluginCheckUpdatesBtn.isEnabled = false
+    pluginCheckUpdatesBtn.title = NSLocalizedString("plugin.updating", comment: "")
 
-    currentPlugin.checkForUpdates() { [unowned self] version in
-      DispatchQueue.main.async {
-        defer {
-          self.pluginCheckUpdatesProgressIndicator.stopAnimation(self)
-          self.pluginCheckUpdatesBtn.isEnabled = true
-        }
-
-        guard let version = version else {
-          Utility.showAlert("plugin_no_update", style: .informational, sheetWindow: self.view.window!)
-          return
-        }
-        Utility.quickAskPanel("plugin_update_found", titleArgs: [currentPlugin.name], messageArgs: [version, currentPlugin.version], sheetWindow: self.view.window!) { response in
-          guard response == .alertFirstButtonReturn else { return }
-          DispatchQueue.main.async {
-            self.updatePlugin()
-          }
-        }
+    Task { @MainActor in
+      let (res, newPlugin) = await self.pluginManager.update(currentPlugin)
+      if res == .installed, let newPlugin = newPlugin {
+        self.currentPlugin = newPlugin
+        self.tableView.reloadData()
+        self.loadPluginPage(newPlugin)
       }
+      self.pluginCheckUpdatesProgressIndicator.stopAnimation(self)
+      self.pluginCheckUpdatesBtn.isEnabled = true
+      self.pluginCheckUpdatesBtn.title = NSLocalizedString("plugin.check_for_updates", comment: "")
     }
   }
 
   // Enable/disable the Install btn as the user types: disabled if text entry is empty or only whitespace
   private func updateNewPluginInstallBtnEnablement() {
     newPluginInstallBtn.isEnabled = !newPluginSourceTextField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-  }
-
-  private func showNewPluginPermissions(_ plugin: JavascriptPlugin) {
-    showPermissionsSheet(forPlugin: plugin, previousPlugin: nil) { ok in
-      guard ok else {
-        plugin.remove()
-        return
-      }
-      // check whether a duplicate plugin exists, if yes, replace
-      if let pos = JavascriptPlugin.plugins.firstIndex(where: { $0.identifier == plugin.identifier }) {
-        Utility.quickAskPanel("plugin_reinstall", titleArgs: [plugin.name], sheetWindow: self.view.window!) { response in
-          if response == .alertFirstButtonReturn {
-            // uninstall the old plugins
-            let oldPlugin = JavascriptPlugin.plugins[pos]
-            oldPlugin.enabled = false
-            oldPlugin.remove()
-            self.clearPluginPage()
-            // install the new plugin
-            plugin.normalizePath()
-            JavascriptPlugin.plugins.insert(plugin, at: pos)
-            plugin.enabled = true
-            self.tableView.reloadData()
-          } else {
-            plugin.remove()
-          }
-        }
-      } else {
-        plugin.normalizePath()
-        JavascriptPlugin.plugins.append(plugin)
-        plugin.enabled = true
-        self.tableView.reloadData()
-      }
-    }
-  }
-
-  private func installPlugin(fromGitHubString string: String) {
-    do {
-      let plugin = try JavascriptPlugin.create(fromGitURL: string)
-      showNewPluginPermissions(plugin)
-    } catch let error {
-      self.handleInstallationError(error)
-    }
-  }
-
-  private func installPlugin(fromLocalPackageURL url: URL) {
-    do {
-      let plugin = try JavascriptPlugin.create(fromPackageURL: url)
-      showNewPluginPermissions(plugin)
-    } catch let error {
-      self.handleInstallationError(error)
-    }
-  }
-
-  private func updatePlugin() {
-    guard let currentPlugin = currentPlugin else { return }
-    pluginCheckUpdatesProgressIndicator.startAnimation(self)
-    pluginCheckUpdatesBtn.isEnabled = false
-    pluginCheckUpdatesBtn.title = NSLocalizedString("plugin.updating", comment: "")
-
-    defer {
-      self.pluginCheckUpdatesProgressIndicator.stopAnimation(self)
-      pluginCheckUpdatesBtn.title = NSLocalizedString("plugin.check_for_updates", comment: "")
-      pluginCheckUpdatesBtn.isEnabled = true
-    }
-
-    do {
-      guard let newPlugin = try currentPlugin.updated() else { return }
-      let install = {
-        if let pos = currentPlugin.remove() {
-          JavascriptPlugin.plugins.insert(newPlugin, at: pos)
-        }
-        newPlugin.normalizePath()
-        newPlugin.reloadGlobalInstance()
-        PlayerCore.reloadPluginForAll(newPlugin, forced: true)
-        self.currentPlugin = newPlugin
-        self.tableView.reloadData()
-        self.loadPluginPage(newPlugin)
-      }
-      if newPlugin.permissions.subtracting(currentPlugin.permissions).isEmpty {
-        install()
-      } else {
-        showPermissionsSheet(forPlugin: newPlugin, previousPlugin: currentPlugin) { ok in
-          if ok { install() }
-        }
-      }
-    } catch let error {
-      handleInstallationError(error)
-    }
   }
 }
 

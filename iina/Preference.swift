@@ -46,6 +46,8 @@ struct Preference {
 
     static let actionAfterLaunch = Key("actionAfterLaunch")
     static let alwaysOpenInNewWindow = Key("alwaysOpenInNewWindow")
+    // TODO: consider implementing in IINA Advance with more intuitive wording
+    static let groupSimultaneousOpensInPlaylist = Key("groupSimultaneousOpensInPlaylist")
     /// • This setting only applies when `alwaysOpenInNewWindow` is `true`.
     /// • By default, when manually opening (e.g. double-clicking from the Finder, or dragging onto the IINA icon)
     ///   a file that's already loaded in an IINA window, IINA conforms the the standard MacOS behavior: a new window
@@ -730,15 +732,12 @@ struct Preference {
     }
   }
 
-
-  enum Theme: Int, InitializingFromKey {
+  enum Theme: Int, InitializingFromKey, CaseIterable {
     case dark = 0
-    /// Obsolete
-    case ultraDark // 1
-    case light // 2
-    /// Obsolete
-    case mediumLight // 3
-    case system // 4
+    // case ultraDark // 1
+    case light = 2
+    // case mediumLight // 3
+    case system = 4
 
     static let defaultValue = Theme.dark
 
@@ -952,7 +951,7 @@ struct Preference {
     }
   }
 
-  enum SeekOption: Int, InitializingFromKey {
+  enum SeekOption: Int, InitializingFromKey, CaseIterable {
     case keyframes = 0
     case exact
     case auto
@@ -964,7 +963,7 @@ struct Preference {
     }
   }
 
-  enum MouseClickAction: Int, InitializingFromKey {
+  enum MouseClickAction: Int, InitializingFromKey, CaseIterable {
     case none = 0
     case fullscreen
     case pause
@@ -981,13 +980,13 @@ struct Preference {
     }
   }
 
-  enum ScrollAction: Int, InitializingFromKey {
+  enum ScrollAction: Int, InitializingFromKey, CaseIterable {
     /// Ideally, `none` would be `0`, but we need to support legacy behavior
     case volume = 0
-    case seek
-    case none
-    case passToMpv
-    case playbackSpeed
+    case seek = 1
+    case none = 2
+    // case passToMpv = 3
+    case playbackSpeed = 4
 
     static let defaultValue = ScrollAction.volume
 
@@ -996,7 +995,7 @@ struct Preference {
     }
   }
 
-  enum PinchAction: Int, InitializingFromKey {
+  enum PinchAction: Int, InitializingFromKey, CaseIterable {
     /// Ideally, `none` would be `0`, but we need to support legacy behavior
     case windowSize = 0
     case fullScreen
@@ -1021,7 +1020,7 @@ struct Preference {
     }
   }
 
-  enum IINAAutoLoadAction: Int, InitializingFromKey {
+  enum IINAAutoLoadAction: Int, InitializingFromKey, CaseIterable {
     case disabled = 0
     case mpvFuzzy
     case iina
@@ -1070,7 +1069,7 @@ struct Preference {
   /// [secondary-sub-ass-override](https://mpv.io/manual/stable/#options-secondary-sub-ass-override) options.
   ///- Important: In order to preserve backward compatibility with enum values stored in user's settings `scale` and `no`were
   ///     added to the end of the enumeration. This is why the constants are not ordered from least impactful to most impactful.
-  enum SubOverrideLevel: Int, InitializingFromKey {
+  enum SubOverrideLevel: Int, InitializingFromKey, CaseIterable {
     case yes = 0
     case force
     case strip
@@ -1096,7 +1095,7 @@ struct Preference {
     }
   }
 
-  enum SubAlign: Int, InitializingFromKey {
+  enum SubAlign: Int, InitializingFromKey, CaseIterable {
     case top = 0  // left
     case center
     case bottom  // right
@@ -1128,7 +1127,7 @@ struct Preference {
     }
   }
 
-  enum RTSPTransportation: Int, InitializingFromKey {
+  enum RTSPTransportation: Int, InitializingFromKey, CaseIterable {
     case lavf = 0
     case tcp
     case udp
@@ -1152,7 +1151,7 @@ struct Preference {
     }
   }
 
-  enum ScreenshotFormat: Int, InitializingFromKey {
+  enum ScreenshotFormat: Int, InitializingFromKey, CaseIterable {
     case png = 0
     case jpg
     case jpeg
@@ -1178,7 +1177,7 @@ struct Preference {
     }
   }
 
-  enum HardwareDecoderOption: Int, InitializingFromKey {
+  enum HardwareDecoderOption: Int, InitializingFromKey, CaseIterable {
     case disabled = 0
     case auto
     case autoCopy
@@ -1202,7 +1201,7 @@ struct Preference {
     }
   }
 
-  enum ToneMappingAlgorithmOption: Int, InitializingFromKey {
+  enum ToneMappingAlgorithmOption: Int, InitializingFromKey, CaseIterable {
     case auto = 0
     case clip
     case mobius
@@ -1255,7 +1254,7 @@ struct Preference {
     }
   }
 
-  enum ResizeWindowOption: Int, InitializingFromKey {
+  enum ResizeWindowOption: Int, InitializingFromKey, CaseIterable {
     case fitScreen = 0
     case videoSize05
     case videoSize10
@@ -1279,7 +1278,7 @@ struct Preference {
     }
   }
 
-  enum WindowBehaviorWhenPip: Int, InitializingFromKey, CustomStringConvertible {
+  enum WindowBehaviorWhenPip: Int, InitializingFromKey, CustomStringConvertible, CaseIterable {
     case doNothing = 0
     case hide
     case minimize
@@ -1390,7 +1389,7 @@ struct Preference {
     }
   }
 
-  enum ReplayGainOption: Int, InitializingFromKey {
+  enum ReplayGainOption: Int, InitializingFromKey, CaseIterable {
     case no = 0
     case track
     case album
@@ -1412,7 +1411,7 @@ struct Preference {
     }
   }
 
-  enum GaplessAudioOption: Int, InitializingFromKey {
+  enum GaplessAudioOption: Int, InitializingFromKey, CaseIterable {
     case disabled = 0
     case weak
     case strong
@@ -1438,9 +1437,15 @@ struct Preference {
     }
   }
 
-  enum DefaultRepeatMode: Int {
+  enum DefaultRepeatMode: Int, InitializingFromKey, CaseIterable {
+    static var defaultValue = DefaultRepeatMode.playlist
+
     case playlist = 0
     case file
+
+    init?(key: Key) {
+      self.init(rawValue: Preference.integer(for: key))
+    }
   }
 
   // MARK: - Defaults
@@ -1449,6 +1454,7 @@ struct Preference {
     .receiveBetaUpdate: false,
     .actionAfterLaunch: ActionAfterLaunch.welcomeWindow.rawValue,
     .alwaysOpenInNewWindow: true,
+    .groupSimultaneousOpensInPlaylist: false,
     .allowDuplicatePlayers: false,
     .enableCmdN: true,
     .globalColorScheme: PanelColorScheme.tintedGlass.rawValue,

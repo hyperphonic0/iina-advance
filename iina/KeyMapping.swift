@@ -14,7 +14,7 @@ final class KeyMapping: NSObject, Codable, Sendable {
 
   let isIINACommand: Bool
 
-  // The MPV comment
+  /// The MPV comment, often `nil`.
   let comment: String?
 
   /// Only non-empty for items with menu items.
@@ -23,10 +23,13 @@ final class KeyMapping: NSObject, Codable, Sendable {
   // MARK: Key
 
   let rawKey: String
+  /// The mpv format of the key sequence, using a well-known format which allows for an exact string
+  /// comparison with another normalized mpv keystroke
   let normalizedMpvKey: String
+  /// The key sequence formatted as it would be in a Mac menu bar items.
   var normalizedMacKey: String? { KeyCodeHelper.normalizedMacKeySequence(from: normalizedMpvKey) }
 
-  // For UI
+  /// For display in UI
   var prettyKey: String {
     if let normalizedMacKey = normalizedMacKey {
       return normalizedMacKey
@@ -42,7 +45,7 @@ final class KeyMapping: NSObject, Codable, Sendable {
     return rawAction.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
   }
 
-  // The action with @iina removed (if applicable), but otherwise not formatted
+  /// The action with @iina removed (if applicable), but otherwise not normalized or formatted
   let rawAction: String?
 
   /// Similar to rawAction, but includes the #@iina prefix if appropriate, and
@@ -53,7 +56,7 @@ final class KeyMapping: NSObject, Codable, Sendable {
     return isIINACommand ? ("\(KeyMapping.IINA_PREFIX) " + joined) : joined
   }
 
-  // The human-language description of the action
+  /// The human-language description of the action
   var readableCommand: String? {
     guard let action else { return nil }
     return KeyBindingTranslator.readableCommand(fromAction: action, isIINACommand: isIINACommand)
@@ -73,8 +76,8 @@ final class KeyMapping: NSObject, Codable, Sendable {
     return ""
   }
 
-  // This is a rare occurrence. The section, if it exists, will be the first element in `action` & surrounded by curly braces.
-  // Leave it inside `rawAction` and `action` so that it will be easy to edit in the UI.
+  /// This is a rare occurrence. The section, if it exists, will be the first element in `action` & surrounded by
+  /// curly braces. Leave it inside `rawAction` and `action` so that it will be easy to edit in the UI.
   var destinationSection: String? {
     if let action, action.count > 1 {
       var token = action[0]
@@ -85,7 +88,7 @@ final class KeyMapping: NSObject, Codable, Sendable {
     return nil
   }
 
-  // Convenience method. Returns true if action is "ignore"
+  /// Convenience method. Returns true if action is "ignore"
   var isIgnored: Bool {
     rawAction == MPVCommand.ignore.rawValue
   }
@@ -101,8 +104,8 @@ final class KeyMapping: NSObject, Codable, Sendable {
   }
 
 
-  // Note: neither `rawKey` nor `rawAction` paranms should start with `KeyMapping.IINA_PREFIX`.
-  // (If this is an IINA command, use `isIINACommand: true`)
+  /// Note: neither `rawKey` nor `rawAction` paranms should start with `KeyMapping.IINA_PREFIX`.
+  /// (If this is an IINA command, use `isIINACommand: true`)
   init(rawKey: String, rawAction: String?, isIINACommand: Bool, comment: String? = nil, sourceName: String? = nil) {
     assert(!rawKey.hasPrefix(KeyMapping.IINA_PREFIX) && (rawAction == nil || !rawAction!.hasPrefix(KeyMapping.IINA_PREFIX)),
            "Bad input to KeyMapping init")
@@ -131,7 +134,7 @@ final class KeyMapping: NSObject, Codable, Sendable {
 
   static func addIINAPrefix(to string: String) -> String { KeyMapping.IINA_PREFIX + " " + string }
 
-  // Serialized form, suitable for writing to a single line of mpv's input.conf
+  /// Serialized form, suitable for writing to a single line of mpv's input.conf
   var confFileFormat: String {
     let iinaPrefix = isIINACommand ? "\(KeyMapping.IINA_PREFIX) " : ""
     let commentString = (comment == nil || comment!.isEmpty) ? "" : "   #\(comment!)"
