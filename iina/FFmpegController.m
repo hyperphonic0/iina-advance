@@ -578,8 +578,9 @@ return -1;\
         // supported as output pixel format" to the console. As a workaround we convert to
         // AV_PIX_FMT_RGBA64LE and then convert the components to floating point.
         pFrameRGB->format = AV_PIX_FMT_RGBA64LE;
-        bitmapInfo = kCGImageByteOrder16Little | kCGImageAlphaPremultipliedLast |
-            kCGBitmapFloatComponents;
+        bitmapInfo = (CGBitmapInfo)kCGImageByteOrder16Little |
+                     (CGBitmapInfo)kCGImageAlphaPremultipliedLast |
+                     kCGBitmapFloatComponents;
     }
 
     // Determine required buffer size and allocate the buffer.
