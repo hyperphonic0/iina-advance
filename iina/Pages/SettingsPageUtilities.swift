@@ -130,8 +130,10 @@ class SettingsPageUtilities: SettingsPage {
     guard let window = (sender as? NSView)?.window else { return }
     Utility.quickAskPanel("clear_cache", sheetWindow: window) { respond in
       guard respond == .alertFirstButtonReturn else { return }
-      ThumbnailCache.clearThumbnailCache()
-      self.updateThumbnailCacheStat()
+      Task {
+        await ThumbnailCache.shared.clearThumbnailCache()
+        self.updateThumbnailCacheStat()
+      }
     }
   }
 }

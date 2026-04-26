@@ -245,7 +245,7 @@ actor ThumbnailCache {
     return result
   }
 
-  func clearThumbnailCache() {
+  func clearThumbnailCache() async {
     try? FileManager.default.removeItem(atPath: Utility.thumbnailCacheURL.path)
     Utility.createDirIfNotExist(url: Utility.thumbnailCacheURL)
   }
