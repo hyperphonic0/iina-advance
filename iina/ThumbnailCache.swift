@@ -245,6 +245,11 @@ actor ThumbnailCache {
     return result
   }
 
+  func clearThumbnailCache() {
+    try? FileManager.default.removeItem(atPath: Utility.thumbnailCacheURL.path)
+    Utility.createDirIfNotExist(url: Utility.thumbnailCacheURL)
+  }
+
   private func deleteCacheFile(at pathURL: URL) {
     // try deleting corrupted cache
     do {
