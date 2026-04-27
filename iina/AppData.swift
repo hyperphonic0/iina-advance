@@ -258,6 +258,7 @@ struct Constants {
     static let V1_4_4 = 11
     static let V1_5 = 12
     static let V1_5_1 = 13
+    static let V1_5_2 = 14
   }
 
   struct Menu {

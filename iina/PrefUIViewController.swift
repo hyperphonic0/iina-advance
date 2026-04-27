@@ -101,6 +101,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
 
   @IBOutlet weak var themeMenu: NSMenu!
   @IBOutlet weak var globalColorSchemeContainerView: NSView!
+  @IBOutlet weak var globalColorSchemeBottomSpacer: NSView!
   @IBOutlet weak var topBarPositionContainerView: NSView!
   @IBOutlet weak var topBarColorSchemeHStackView: NSView!
   @IBOutlet weak var showTopBarTriggerContainerView: NSView!
@@ -220,6 +221,21 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     wConstraint.priority = .defaultHigh  // avoid conflicting constraints
     wConstraint.isActive = true
     oscToolbarStackViewWidthConstraint = wConstraint
+
+    if #unavailable(macOS 26.0) {
+      // Remove Clear Glass, Tinted Glass options from OSC color scheme popup
+      if let oscColorSchemePopup: NSPopUpButton = oscBottomColorSchemeHStackView.subviews.compactMap( { $0 as? NSPopUpButton }).first {
+        if let menu = oscColorSchemePopup.menu {
+          let items = menu.items
+          for item in items {
+            if item.tag == 3 || item.tag == 4 {
+              menu.removeItem(item)
+            }
+          }
+        }
+      }
+    }
+
 
     IINAAnimation.disableAnimation {
       // Initial update: do now to prevent unexpected animations during restore
@@ -521,18 +537,20 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     var viewHidePairs: [(NSView, Bool)] = []
 
     viewHidePairs.append((globalColorSchemeContainerView, !hasMacOS26))
+    viewHidePairs.append((globalColorSchemeBottomSpacer, !hasMacOS26))
+    
     viewHidePairs.append((topBarPositionContainerView, !hasTopBar))
     let showTopBarColorScheme = hasMacOS26 && !useGlobalColorScheme && (ib.topBarPlacement == .insideViewport) && !oscIsTop
-    viewHidePairs.append((topBarColorSchemeHStackView, !showTopBarColorScheme ))
+    viewHidePairs.append((topBarColorSchemeHStackView, !showTopBarColorScheme))
     viewHidePairs.append((topBarColorSchemeCentralHStackView, !showTopBarColorScheme))
     viewHidePairs.append((showTopBarTriggerContainerView, !showTopBarTrigger))
 
     viewHidePairs.append((oscForceSingleRowContainerView, !showForceSingleRowCheckbox))
     viewHidePairs.append((oscTimeLabelsAlwaysWrapSliderStackView, !hasTwoRowOSC))
 
-    let showBottomBarColorScheme = !useGlobalColorScheme && oscIsOverlay && (oscIsTop || oscIsBottom)
-    viewHidePairs.append((oscBottomColorSchemeHStackView, !showBottomBarColorScheme))
-    viewHidePairs.append((oscBottomColorSchemeCentralHStackView, !showBottomBarColorScheme))
+    let showOSCColorScheme = !useGlobalColorScheme && oscIsOverlay && (oscIsTop || oscIsBottom)
+    viewHidePairs.append((oscBottomColorSchemeHStackView, !showOSCColorScheme))
+    viewHidePairs.append((oscBottomColorSchemeCentralHStackView, !(hasMacOS26 && showOSCColorScheme)))
     viewHidePairs.append((oscBottomPlacementContainerView, !oscIsBottom))
 
     let showFloatingOSCColorScheme = hasMacOS26 && oscIsFloating && !useGlobalColorScheme

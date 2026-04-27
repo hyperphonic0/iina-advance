@@ -525,7 +525,6 @@
 		E3DC53982A28F0DC002A5A48 /* JavascriptAPIInput.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3DC53972A28F0DC002A5A48 /* JavascriptAPIInput.swift */; };
 		E3DE8DCD1FD8166A0021921C /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3DE8DCC1FD8166A0021921C /* main.swift */; };
 		E3DE8DD31FD848BA0021921C /* iina-cli in Copy Executables */ = {isa = PBXBuildFile; fileRef = E3DE8DCA1FD8166A0021921C /* iina-cli */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
-		E3ECC89E1FE9A6D900BED8C7 /* MPVGeometryDef.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3ECC89D1FE9A6D900BED8C7 /* MPVGeometryDef.swift */; };
 		E3EC8C412F92E6BA00FBB51E /* PluginManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3EC8C402F92E69C00FBB51E /* PluginManager.swift */; };
 		E3EC8C432F94330400FBB51E /* Dialog.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3EC8C422F9432FD00FBB51E /* Dialog.swift */; };
 		E3EC8C462F9475C600FBB51E /* PluginStorePanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3EC8C452F9475BC00FBB51E /* PluginStorePanel.swift */; };
@@ -534,6 +533,7 @@
 		E3EC8C4C2F95AD9D00FBB51E /* SettingsVideoAudioLocalizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = E3EC8C4B2F95AD9D00FBB51E /* SettingsVideoAudioLocalizable.strings */; };
 		E3EC8C4E2F95ADA000FBB51E /* SettingsSubtitesLocalizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = E3EC8C4D2F95ADA000FBB51E /* SettingsSubtitesLocalizable.strings */; };
 		E3EC8C502F95B0A700FBB51E /* ConstraintsSugar.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3EC8C4F2F95B09D00FBB51E /* ConstraintsSugar.swift */; };
+		E3ECC89E1FE9A6D900BED8C7 /* MPVGeometryDef.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3ECC89D1FE9A6D900BED8C7 /* MPVGeometryDef.swift */; };
 		E3FC31461FE1501E00B9B86F /* PowerSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3FC31451FE1501E00B9B86F /* PowerSource.swift */; };
 		E3FEC1332A30400F00CFD845 /* PluginInputManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3FEC1322A30400F00CFD845 /* PluginInputManager.swift */; };
 		E3FF5AC02938582F0019CE45 /* JavascriptDevTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3FF5ABF2938582F0019CE45 /* JavascriptDevTool.swift */; };
@@ -2140,7 +2140,6 @@
 		E38BA1BF253E54F2000B551D /* JavascriptAPIGlobal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JavascriptAPIGlobal.swift; sourceTree = "<group>"; };
 		E38BA1C3254110BD000B551D /* JavascriptMessageHub.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JavascriptMessageHub.swift; sourceTree = "<group>"; };
 		E38BD4AE20054BD9007635FC /* PlayerWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerWindow.swift; sourceTree = "<group>"; };
-		E393669923BDD1850070D626 /* IINA Advance.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "IINA Advance.entitlements"; sourceTree = "<group>"; };
 		E38EA58F2F2EE40E00FB51CE /* SettingsPageNetwork.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsPageNetwork.swift; sourceTree = "<group>"; };
 		E38EA5912F2EE4E300FB51CE /* SettingsControlLocalizable.strings */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; path = SettingsControlLocalizable.strings; sourceTree = "<group>"; };
 		E38EA5922F2EE4E300FB51CE /* SettingsLocalizationKeysControl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsLocalizationKeysControl.swift; sourceTree = "<group>"; };
@@ -2159,6 +2158,7 @@
 		E38EA5AD2F31429900FB51CE /* SettingsPagePlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsPagePlugin.swift; sourceTree = "<group>"; };
 		E38EA5AF2F3142C700FB51CE /* SettingsLocalizationKeysPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsLocalizationKeysPlugin.swift; sourceTree = "<group>"; };
 		E38EA5B02F3142C700FB51CE /* SettingsPluginLocalizable.strings */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; path = SettingsPluginLocalizable.strings; sourceTree = "<group>"; };
+		E393669923BDD1850070D626 /* IINA Advance.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "IINA Advance.entitlements"; sourceTree = "<group>"; };
 		E3958563253133E80096811F /* SidebarTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarTabView.swift; sourceTree = "<group>"; };
 		E3958564253133E80096811F /* SidebarTabView.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = SidebarTabView.xib; sourceTree = "<group>"; };
 		E3958585253309C90096811F /* PluginSidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PluginSidebarView.swift; sourceTree = "<group>"; };
@@ -2180,7 +2180,6 @@
 		E3DC53972A28F0DC002A5A48 /* JavascriptAPIInput.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JavascriptAPIInput.swift; sourceTree = "<group>"; };
 		E3DE8DCA1FD8166A0021921C /* iina-cli */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "iina-cli"; sourceTree = BUILT_PRODUCTS_DIR; };
 		E3DE8DCC1FD8166A0021921C /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
-		E3ECC89D1FE9A6D900BED8C7 /* MPVGeometryDef.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MPVGeometryDef.swift; sourceTree = "<group>"; };
 		E3EC8C402F92E69C00FBB51E /* PluginManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PluginManager.swift; sourceTree = "<group>"; };
 		E3EC8C422F9432FD00FBB51E /* Dialog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Dialog.swift; sourceTree = "<group>"; };
 		E3EC8C452F9475BC00FBB51E /* PluginStorePanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PluginStorePanel.swift; sourceTree = "<group>"; };
@@ -2189,6 +2188,7 @@
 		E3EC8C4B2F95AD9D00FBB51E /* SettingsVideoAudioLocalizable.strings */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; path = SettingsVideoAudioLocalizable.strings; sourceTree = "<group>"; };
 		E3EC8C4D2F95ADA000FBB51E /* SettingsSubtitesLocalizable.strings */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; path = SettingsSubtitesLocalizable.strings; sourceTree = "<group>"; };
 		E3EC8C4F2F95B09D00FBB51E /* ConstraintsSugar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConstraintsSugar.swift; sourceTree = "<group>"; };
+		E3ECC89D1FE9A6D900BED8C7 /* MPVGeometryDef.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MPVGeometryDef.swift; sourceTree = "<group>"; };
 		E3FC31451FE1501E00B9B86F /* PowerSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PowerSource.swift; sourceTree = "<group>"; };
 		E3FEC1322A30400F00CFD845 /* PluginInputManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PluginInputManager.swift; sourceTree = "<group>"; };
 		E3FF5ABF2938582F0019CE45 /* JavascriptDevTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JavascriptDevTool.swift; sourceTree = "<group>"; };
@@ -3664,7 +3664,6 @@
 				D140E81C285A0BEF00067094 /* LinkedList.swift in Sources */,
 				D1D87E02292B2AEE00737886 /* BiDictionary.swift in Sources */,
 				519872FF26879B9B00F84BCC /* AccessibilityPreferences.swift in Sources */,
-				511BF43E2E1305C800E9721E /* MiniPlaySlider.swift in Sources */,
 				E34BC2AC2C27DAE900A94680 /* SettingsHelper.swift in Sources */,
 				E38EA5AC2F3088F300FB51CE /* SettingsLocalizationKeysUtils.swift in Sources */,
 				842904E21F0EC01600478376 /* AutoFileMatcher.swift in Sources */,
@@ -3776,7 +3775,6 @@
 				D1CC81202EFD5F9100D9785F /* MenuItemMatcher.swift in Sources */,
 				D1F2B09D2CFF272100F995B3 /* MediaPlayerIntegration.swift in Sources */,
 				84AABE941DBFAF1A00D138FD /* FontPickerWindowController.swift in Sources */,
-				844C59E71F7C143D008D1B00 /* CacheManager.swift in Sources */,
 				E3EC8C502F95B0A700FBB51E /* ConstraintsSugar.swift in Sources */,
 				E34EAA83251A36CE00057F27 /* JavascriptAPIFile.swift in Sources */,
 				E32712B024EAA14500359DAB /* ScreenshootOSDView.swift in Sources */,
@@ -5290,12 +5288,12 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
-				CURRENT_PROJECT_VERSION = 13;
+				CURRENT_PROJECT_VERSION = 14;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = PG2MG2559L;
 				GCC_PREPROCESSOR_DEFINITIONS = "GL_SILENCE_DEPRECATION=1";
 				MACOSX_DEPLOYMENT_TARGET = 14.6;
-				MARKETING_VERSION = 1.5.1;
+				MARKETING_VERSION = 1.5.2;
 				SKIP_INSTALL = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_STRICT_CONCURRENCY = complete;
@@ -5308,7 +5306,7 @@
 			baseConfigurationReference = 496498882919E47900CD61A5 /* iina.xcconfig */;
 			buildSettings = {
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
-				CURRENT_PROJECT_VERSION = 13;
+				CURRENT_PROJECT_VERSION = 14;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = PG2MG2559L;
 				INFOPLIST_KEY_CFBundleDisplayName = "IINA Advance";
@@ -5320,7 +5318,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/deps/lib",
 				);
-				MARKETING_VERSION = 1.5.1;
+				MARKETING_VERSION = 1.5.2;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.iina-advance";
 				SKIP_INSTALL = NO;
 				SWIFT_STRICT_CONCURRENCY = minimal;
@@ -5353,12 +5351,12 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
-				CURRENT_PROJECT_VERSION = 13;
+				CURRENT_PROJECT_VERSION = 14;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = PG2MG2559L;
 				GCC_PREPROCESSOR_DEFINITIONS = "GL_SILENCE_DEPRECATION=1";
 				MACOSX_DEPLOYMENT_TARGET = 14.6;
-				MARKETING_VERSION = 1.5.1;
+				MARKETING_VERSION = 1.5.2;
 				SKIP_INSTALL = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_STRICT_CONCURRENCY = complete;
@@ -5371,7 +5369,7 @@
 			baseConfigurationReference = 496498882919E47900CD61A5 /* iina.xcconfig */;
 			buildSettings = {
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
-				CURRENT_PROJECT_VERSION = 13;
+				CURRENT_PROJECT_VERSION = 14;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = PG2MG2559L;
 				INFOPLIST_KEY_CFBundleDisplayName = "IINA Advance";
@@ -5383,7 +5381,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/deps/lib",
 				);
-				MARKETING_VERSION = 1.5.1;
+				MARKETING_VERSION = 1.5.2;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.iina-advance";
 				SKIP_INSTALL = NO;
 				SWIFT_STRICT_CONCURRENCY = minimal;
@@ -5416,12 +5414,12 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
-				CURRENT_PROJECT_VERSION = 13;
+				CURRENT_PROJECT_VERSION = 14;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = PG2MG2559L;
 				GCC_PREPROCESSOR_DEFINITIONS = "GL_SILENCE_DEPRECATION=1";
 				MACOSX_DEPLOYMENT_TARGET = 14.6;
-				MARKETING_VERSION = 1.5.1;
+				MARKETING_VERSION = 1.5.2;
 				SKIP_INSTALL = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_STRICT_CONCURRENCY = complete;
@@ -5436,12 +5434,12 @@
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CODE_SIGN_IDENTITY = "Apple Development";
-				CURRENT_PROJECT_VERSION = 13;
+				CURRENT_PROJECT_VERSION = 14;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = PG2MG2559L;
 				GCC_PREPROCESSOR_DEFINITIONS = "GL_SILENCE_DEPRECATION=1";
 				MACOSX_DEPLOYMENT_TARGET = 14.6;
-				MARKETING_VERSION = 1.5.1;
+				MARKETING_VERSION = 1.5.2;
 				SKIP_INSTALL = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_STRICT_CONCURRENCY = complete;
@@ -5454,7 +5452,7 @@
 			baseConfigurationReference = 496498882919E47900CD61A5 /* iina.xcconfig */;
 			buildSettings = {
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
-				CURRENT_PROJECT_VERSION = 13;
+				CURRENT_PROJECT_VERSION = 14;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = PG2MG2559L;
 				INFOPLIST_KEY_CFBundleDisplayName = "IINA Advance";
@@ -5466,7 +5464,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/deps/lib",
 				);
-				MARKETING_VERSION = 1.5.1;
+				MARKETING_VERSION = 1.5.2;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.iina-advance";
 				SKIP_INSTALL = NO;
 				SWIFT_STRICT_CONCURRENCY = minimal;
@@ -5482,7 +5480,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application";
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 13;
+				CURRENT_PROJECT_VERSION = 14;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = PG2MG2559L;
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = PG2MG2559L;
@@ -5496,7 +5494,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/deps/lib",
 				);
-				MARKETING_VERSION = 1.5.1;
+				MARKETING_VERSION = 1.5.2;
 				OTHER_CODE_SIGN_FLAGS = "--deep --timestamp";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.iina-advance";
 				PROVISIONING_PROFILE_SPECIFIER = "";

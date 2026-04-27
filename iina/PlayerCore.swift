@@ -18,8 +18,6 @@ final class PlayerCore: NSObject {
     /// To determine idle state, check whether `info.currentPlayback` is `nil`.
     case started
 
-    // TODO: add states for playing, paused
-
     /// Whether stopping of this player has been initiated.
     case stopping
 
