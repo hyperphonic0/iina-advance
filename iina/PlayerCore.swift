@@ -1809,7 +1809,8 @@ final class PlayerCore: NSObject {
   }
 
   func toggleHardwareDecoding(_ enable: Bool) {
-    let value = Preference.HardwareDecoderOption(rawValue: Preference.integer(for: .hardwareDecoder))?.mpvString ?? "auto"
+    let value = String(describing: Preference.enum(for: .hardwareDecoder) as
+                       Preference.HardwareDecoderOption)
     mpv.queue.async { [self] in
       guard isActive else { return }
       mpv.setString(MPVOption.Video.hwdec, enable ? value : "no")

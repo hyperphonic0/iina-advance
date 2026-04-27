@@ -25,11 +25,7 @@ struct Logger {
 
   enum Level: Int, Comparable, CustomStringConvertible, CaseIterable, InitializingFromKey {
 
-    init?(key: Preference.Key) {
-      self.init(rawValue: Preference.integer(for: key))
-    }
-
-    static var defaultValue: Logger.Level = .debug
+    static var defaultValue = Level.debug
 
     static func < (lhs: Level, rhs: Level) -> Bool {
       return lhs.rawValue < rhs.rawValue
@@ -37,6 +33,10 @@ struct Logger {
 
     /// Don't really care about race conditions here; would rather have faster performance
     nonisolated(unsafe) static var preferred: Level = Level(rawValue: Preference.integer(for: .logLevel).clamped(to: 0...3))!
+
+    init?(key: Preference.Key) {
+      self.init(rawValue: Preference.integer(for: key))
+    }
 
     case trace = -1
     case verbose
@@ -568,6 +568,13 @@ struct Logger {
                                     _ appendNewlineAtTheEnd: Bool, _ date: Date = Date()) -> String {
     let time = dateFormatter.string(from: date)
     return "\(time) |\(subsystem.rawValue) \(level.description)| \(message)\(appendNewlineAtTheEnd ? "\n" : "")"
+  }
+
+  /// Whether the logger is emitting messages at the given level.
+  /// - Parameter level: The log level to check.
+  /// - Returns: `true` if messages at the given level will be emitted; `false` if the logger is suppressing messages at this level.
+  static func isEmitting(_ level: Level) -> Bool {
+    isEnabled(level)
   }
 
   /// Log a message.

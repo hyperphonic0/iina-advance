@@ -180,6 +180,13 @@ fileprivate enum AudioDriver: Int, InitializingFromKey, CaseIterable {
   init?(key: Preference.Key) {
     self.init(rawValue: Preference.integer(for: key))
   }
+
+  var description: String {
+    switch self {
+    case .coreAudio: "coreAudio"
+    case .avFoundation: "avFoundation"
+    }
+  }
 }
 
 
