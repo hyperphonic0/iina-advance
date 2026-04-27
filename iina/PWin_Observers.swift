@@ -172,15 +172,22 @@ extension PlayerWindowController {
 
   func addAllObservers() {
     notiHandler.addAllObservers()
-    addObserver(self, forKeyPath: #keyPath(window.effectiveAppearance), options: [.old, .new], context: nil)
+    appAppearanceObservation = NSApp.observe(\.effectiveAppearance, options: [.new, .old]) { [self] app, change in
+      let oldAppearance = change.oldValue
+      let newAppearance = change.newValue
+      log.verbose("NSApp appearance changed: dark=\(oldAppearance?.isDark.yn ?? "nil") → dark=\(newAppearance?.isDark.yn ?? "nil")")
+
+      animationPipeline.submitInstantTask({ [self] in
+        updateTitleBarAndOSC()
+      })
+    }
     log.verbose("Done adding all observers")
   }
 
   func removeAllObservers() {
     notiHandler.removeAllObservers()
-    ObjcUtils.silenced { [self] in
-      removeObserver(self, forKeyPath: #keyPath(window.effectiveAppearance))
-    }
+    appAppearanceObservation?.invalidate()
+    appAppearanceObservation = nil
     log.verbose("Done removing all observers")
   }
 
@@ -389,29 +396,6 @@ extension PlayerWindowController {
       animationPipeline.submitInstantTask { [self] in
         let videoGeo = geo.video
         quickSettingView.updateSegmentLabelsForVideoTab(using: videoGeo)
-      }
-    default:
-      return
-    }
-  }
-
-  override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?,
-                             context: UnsafeMutableRawPointer?) {
-    guard let keyPath = keyPath else { return }
-
-    switch keyPath {
-    case #keyPath(window.effectiveAppearance):
-      animationPipeline.submitInstantTask { [self] in
-        /// This indicates light/dark mode was toggled. But this won't be sent when `controlAccentColor` changes...
-        /// For that, we follow `appleColorPreferencesChangedNotification`.
-        /// Compare `NSApp.effectiveAppearance`, not window appearance (that can change via `themeMaterial` pref
-        /// which we handle elsewhere).
-        let targetAppearance = AppDelegate.shared.targetWindowAppearance
-        let currentAppearance = window!.effectiveAppearance
-        guard currentAppearance != targetAppearance else { return }
-        log.verbose("Window appearance changed to: \(currentAppearance.isDark ? "DARK" : "LIGHT")")
-        // This will call applyThemeMaterial
-        updateTitleBarAndOSC()
       }
     default:
       return

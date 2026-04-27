@@ -142,7 +142,7 @@ class PlaylistViewController: NSViewController, NSMenuDelegate, SidebarTabGroupV
     sortBtn.toolTip = NSLocalizedString("mini_player.sort", comment: "sort")
 
     // Use contentView appearance (for now)
-    updateTableColors(effectiveAppearance: player.pwc.window!.contentView!.effectiveAppearance)
+    updateTableColors(effectiveAppearance: AppDelegate.shared.targetWindowAppearance)
 
     hideTotalDuration()
     reloadData(playlist: true, chapters: true, animate: false)

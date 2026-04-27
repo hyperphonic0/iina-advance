@@ -60,6 +60,8 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
 
   /// For responding to changes to app prefs & other notifications
   var notiHandler: NotificationHandler!
+  var appAppearanceObservation: NSKeyValueObservation?
+
 
   var oscBarRenderer: BarRenderer?
   let oscKnobRenderer = KnobRenderer()
@@ -684,15 +686,21 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
   func applyThemeMaterial(using layoutState: LayoutState, _ window: NSWindow, _ screen: NSScreen) {
     let targetWindowAppearance = AppDelegate.shared.targetWindowAppearance
     let topBarAppearance = layoutState.topBarAppearance(targetWindowAppearance: targetWindowAppearance)
-    log.verbose("Applying theme material for screen \(screen.screenID.pii.quoted): window=\(targetWindowAppearance.isDark ? "DARK" : "LIGHT") topBar=\(topBarAppearance.isDark ? "DARK" : "LIGHT")")
+    log.verbose("Applying theme material for screen \(screen.screenID.pii.quoted): "
+                + "window=\(targetWindowAppearance.isDark ? "DARK" : "LIGHT") "
+                + "topBar=\(topBarAppearance.isDark ? "DARK" : "LIGHT") "
+                + "currentWindow=\(window.effectiveAppearance.isDark ? "DARK" : "LIGHT")")
+
+    /// Need to call this to set native title bar colors.
+    if window.effectiveAppearance != topBarAppearance {
+      log.verbose("Changing window appearance: \(window.effectiveAppearance.isDark ? "DARK" : "LIGHT") > \(topBarAppearance.isDark ? "DARK" : "LIGHT")")
+      window.appearance = topBarAppearance
+    }
 
     if playlistView.isViewLoaded {
       playlistView.updateTableColors(effectiveAppearance: targetWindowAppearance)
     }
 
-    /// Setting `window.appearance` will trigger a change to `#keyPath(window.effectiveAppearance)`.
-    /// Need to call this to set native title bar colors.
-    window.appearance = topBarAppearance
     // Do not set contentView's appearance; that will affect blending of top bar. Set views a la carte elsewhere
     osd.updateColors(windowAppearance: targetWindowAppearance)
     oscBarRenderer = BarRenderer(windowAppearance: targetWindowAppearance,
@@ -1327,7 +1335,6 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
 
       animationPipeline.submitInstantTask({ [self] in
         log.verbose("WndDidChangeScreen wNum=\(window.windowNumber): frame=\(window.frame) screenID=\(screen.screenID.quoted) screenFrame=\(screen.frame)")
-        applyThemeMaterial(using: currentLayout, window, screen)  // scaleFactor may have changed
         videoView.refreshAllVideoDisplayState()
         player.events.emit(.windowScreenChanged)
       })

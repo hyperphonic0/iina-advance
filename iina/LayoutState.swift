@@ -389,6 +389,13 @@ struct LayoutState {
     return targetWindowAppearance
   }
 
+  func oscBarAppearance(targetWindowAppearance: NSAppearance) -> NSAppearance {
+    if oscColorScheme.hasClearBG {
+      return NSAppearance(iinaTheme: .dark)!
+    }
+    return targetWindowAppearance
+  }
+
   fileprivate static func titleBarVisibility(for mode: PlayerWindowMode,
                                              topBarPlacement: Preference.PanelPlacement,
                                              isLegacyStyle: Bool) -> VisibilityMode {

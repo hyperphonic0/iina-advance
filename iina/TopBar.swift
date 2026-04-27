@@ -28,6 +28,7 @@ final fileprivate class TopBarGlassEffectView: ClickThroughGlassEffectView {
     wantsLayer = true
     cornerRadius = 0
   }
+
   required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 }
 
@@ -139,7 +140,7 @@ final class TopControlBarView: ClickThroughView {
         if let glassView = view as? TopBarGlassEffectView, glassView.style == .regular {
           return
         }
-        
+
       case .clearGradient:
         if view as? TopBarGradientView != nil {
           return

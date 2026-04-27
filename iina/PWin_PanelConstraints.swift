@@ -92,7 +92,7 @@ extension PlayerWindowController {
     log.verbose("RebuildPanels: VP=\(useViewport.yn) Bottom=\(useBottomBar.yn) Top=\(useTopBar.yn) Leading=\(useLeadingSidebar.yn) Trailing=\(useTrailingSidebar.yn)")
 
     // - Add window subviews in a well-defined order (before adding constraints between them)
-    addOrRemoveViews(for: stage, stageGeo: stageGeo, log,
+    addOrRemoveViews(for: stage, stageGeo: stageGeo, stageLayout: stageLayout, log,
                      useViewport: useViewport,
                      useTopBar: useTopBar,
                      useBottomBar: useBottomBar,
@@ -305,7 +305,9 @@ extension PlayerWindowController {
     updateWindowFrameIfNeeded(for: stage, stageGeo, in: transition, log)
   }
 
-  private func addOrRemoveViews(for stage: LayoutTransition.Stage, stageGeo: PWinGeometry, _ log: any Logger.Subsystem,
+  private func addOrRemoveViews(for stage: LayoutTransition.Stage, stageGeo: PWinGeometry,
+                                stageLayout: LayoutState,
+                                _ log: any Logger.Subsystem,
                                 useViewport: Bool,
                                 useTopBar: Bool, useBottomBar: Bool,
                                 useLeadingSidebar: Bool, useTrailingSidebar: Bool) {
@@ -356,8 +358,14 @@ extension PlayerWindowController {
     // Add/remove bottomBar.view if needed
     if useBottomBar {
       if !contentView.containsSubview(bottomBar.view) {
-        log.verbose("Adding bottomBar.view to window contentView")
+        log.verbose("Adding bottomBar.view to window.contentView")
         contentView.addSubview(bottomBar.view, positioned: .above, relativeTo: viewportView)
+      }
+      if stage.isAtLeast(.midTransitionHiddenUpdates) {
+        let bottomBarAppearance = stageLayout.oscColorScheme.hasClearBG ? NSAppearance(iinaTheme: .dark)! : targetWindowAppearance
+        log.verbose("BottomBar appearance=\(bottomBarAppearance.isDark ? "DARK" : "LIGHT")")
+        // Set this explicitly to ensure it overrides its parent style, which may not match
+        bottomBar.view.appearance = bottomBarAppearance
       }
     } else {
       if bottomBar.view.superview != nil {
@@ -372,6 +380,26 @@ extension PlayerWindowController {
         log.verbose("Adding topBarView to window contentView")
         contentView.addSubview(topBar.view, positioned: .above, relativeTo: viewportView)
       }
+      if stage.isAtLeast(.midTransitionHiddenUpdates) {
+        let topBarAppearance = stageLayout.topBarAppearance(targetWindowAppearance: targetWindowAppearance)
+        log.verbose("TopBar appearance=\(topBarAppearance.isDark ? "DARK" : "LIGHT")")
+        topBar.view.appearance = topBarAppearance
+        topBar.contentView.appearance = topBarAppearance
+        topBar.titleBarView.appearance = topBarAppearance
+        for subview in topBar.view.subviews {
+          subview.appearance = topBarAppearance
+          for subsubview in subview.subviews {
+            subsubview.appearance = topBarAppearance
+          }
+        }
+        for subview in topBar.contentView.subviews {
+          subview.appearance = topBarAppearance
+          for subsubview in subview.subviews {
+            subsubview.appearance = topBarAppearance
+          }
+        }
+      }
+
     } else {
       if topBar.view.superview != nil {
         log.verbose("Removing topBarView from superview")

@@ -352,7 +352,9 @@ extension PlayerWindowController {
 
     fadeableViews.clearFadeableSets()
 
-    let oldAppearance = contentView.effectiveAppearance
+    let oldAppearance = window.effectiveAppearance
+    let targetWindowAppearance = AppDelegate.shared.targetWindowAppearance
+    let appearanceDidChange = oldAppearance != targetWindowAppearance
 
     // Do this here so that (1) BarRenderer regenerates close enough to mid-animation (so bar thickness changes pleasantly),
     // & (2) window.appearance is updated before updating styling of any window views!
@@ -364,8 +366,6 @@ extension PlayerWindowController {
       // be called via windowDidChangeScreen.
       log.verbose("Skipped applyThemeMaterial due to missing window or screen")
     }
-    let targetWindowAppearance = AppDelegate.shared.targetWindowAppearance
-    let appearanceDidChange = oldAppearance != targetWindowAppearance
 
     switch transition.outputLayout.mode {
     case .fullScreenInteractive, .windowedInteractive:
@@ -436,10 +436,7 @@ extension PlayerWindowController {
     || transition.isBottomBarPlacementOrStyleChanging || transition.isBottomBarOpening
     if needsBottomBarRebuild {
       bottomBar.rebuildBottomBarView(colorScheme: transition.outputLayout.oscColorScheme, log)
-      let bottomBarAppearance = outputLayout.oscColorScheme.hasClearBG ? NSAppearance(iinaTheme: .dark)! : targetWindowAppearance
-      bottomBar.view.appearance = bottomBarAppearance
-      // Just add the new view now. It will have its Z order corrected in `rebuildPanelConstraints`.
-      window.contentView!.addSubview(bottomBar.view)
+      /// It will be added to window.contentView & its Z order corrected in `rebuildPanelConstraints`.
     }
 
     /// Show dividing line only for `.outsideViewport` bottom bar. Don't show in music mode as it doesn't look good
@@ -455,14 +452,15 @@ extension PlayerWindowController {
 
     // - Top Bar
 
-    let needsTopBarRebuild = transition.isWindowInitialLayout || appearanceDidChange
-    || (transition.inputLayout.topBarColorScheme != outputLayout.topBarColorScheme)
-    // Unlike the other panels, do not set the topBar's appearance explicitly.
-    // It will inherit from window.contentView's appearance, which must be set to the desired topBar
-    // appearance to ensure that the native title bar's appearance is set correctly.
-    topBar.rebuildTopBarViewIfNeeded(targetLayout: outputLayout, force: needsTopBarRebuild, log)
     let topBarAppearance = outputLayout.topBarAppearance(targetWindowAppearance: targetWindowAppearance)
     topBarAppearance.performAsCurrentDrawingAppearance { [self] in
+      let needsTopBarRebuild = transition.isWindowInitialLayout || appearanceDidChange
+      || (transition.inputLayout.topBarColorScheme != outputLayout.topBarColorScheme)
+      // Unlike the other panels, do not set the topBar's appearance explicitly.
+      // It will inherit from window.contentView's appearance, which must be set to the desired topBar
+      // appearance to ensure that the native title bar's appearance is set correctly.
+      topBar.rebuildTopBarViewIfNeeded(targetLayout: outputLayout, force: needsTopBarRebuild, log)
+
       let topBarColorScheme = outputLayout.topBarColorScheme
       topBar.bottomBorder.isHidden = topBarColorScheme != .visualEffectView
 
@@ -513,31 +511,33 @@ extension PlayerWindowController {
     let onTopButtonVisibility = transition.outputLayout.computeOnTopButtonVisibility(isOnTop: isOnTop)
 
     if outputLayout.titleBar.isShowable, transition.outputLayout.isLegacyStyle {
-      let legacyTitleBar: CustomTitleBarViewController
-      // Custom title bar
-      if let customTitleBar {
-        legacyTitleBar = customTitleBar
-      } else {
-        legacyTitleBar = CustomTitleBarViewController(transition.outputLayout, self)
-        customTitleBar = legacyTitleBar
+      topBarAppearance.performAsCurrentDrawingAppearance { [self] in
+        let legacyTitleBar: CustomTitleBarViewController
+        // Custom title bar
+        if let customTitleBar {
+          legacyTitleBar = customTitleBar
+        } else {
+          legacyTitleBar = CustomTitleBarViewController(transition.outputLayout, self)
+          customTitleBar = legacyTitleBar
 
-        // Prep views to fade in later
-        legacyTitleBar.view.alphaValue = 0
-        for btn in legacyTitleBar.trafficLightButtons {
-          btn.alphaValue = 0
-          btn.isHidden = true
+          // Prep views to fade in later
+          legacyTitleBar.view.alphaValue = 0
+          for btn in legacyTitleBar.trafficLightButtons {
+            btn.alphaValue = 0
+            btn.isHidden = true
+          }
         }
-      }
 
-      if transition.outputLayout.mode == .musicMode {
-        legacyTitleBar.addViewTo(superview: contentView)
-      } else {
-        legacyTitleBar.addViewTo(superview: topBar.titleBarView)
+        if transition.outputLayout.mode == .musicMode {
+          legacyTitleBar.addViewTo(superview: contentView)
+        } else {
+          legacyTitleBar.addViewTo(superview: topBar.titleBarView)
+        }
+        fadeableViews.applyOnlyIfHidden(outputLayout.leadingSidebarToggleButton, to: legacyTitleBar.leadingSidebarToggleButton)
+        fadeableViews.applyOnlyIfHidden(outputLayout.trailingSidebarToggleButton, to: legacyTitleBar.trailingSidebarToggleButton)
+        fadeableViews.applyOnlyIfHidden(onTopButtonVisibility, to: legacyTitleBar.onTopButton)
+        fadeableViews.applyOnlyIfHidden(outputLayout.titleIconAndText, to: legacyTitleBar.titleIconAndTextStackView)
       }
-      fadeableViews.applyOnlyIfHidden(outputLayout.leadingSidebarToggleButton, to: legacyTitleBar.leadingSidebarToggleButton)
-      fadeableViews.applyOnlyIfHidden(outputLayout.trailingSidebarToggleButton, to: legacyTitleBar.trailingSidebarToggleButton)
-      fadeableViews.applyOnlyIfHidden(onTopButtonVisibility, to: legacyTitleBar.onTopButton)
-      fadeableViews.applyOnlyIfHidden(outputLayout.titleIconAndText, to: legacyTitleBar.titleIconAndTextStackView)
     }
 
     fadeableViews.applyOnlyIfHidden(outputLayout.leadingSidebarToggleButton, to: leadingSidebarToggleButton)
@@ -621,6 +621,7 @@ extension PlayerWindowController {
     // [Re-]add OSC:
     if outputLayout.enableOSC {
       assert(!outputLayout.isMusicMode)
+      let oscAppearance = outputLayout.oscBarAppearance(targetWindowAppearance: targetWindowAppearance)
       let newGeo = outputLayout.controlBarGeo
       log.verbose("Setting up OSC: pos=\(outputLayout.oscPosition) musicMode=\(outputLayout.isMusicMode.yn) playIconSize=\(newGeo.playIconSize) playIconSpacing=\(newGeo.playIconSpacing)")
 
@@ -629,7 +630,6 @@ extension PlayerWindowController {
       switch outputLayout.oscPosition {
       case .top:
         currentControlBar = topBar.controlBarTop
-
 
         let oscContentView: NSView
         if newGeo.isTwoRowBarOSC {
@@ -641,6 +641,7 @@ extension PlayerWindowController {
           log.verbose("Adding subviews to oscOneRowView for top bar")
           oscOneRowView.updateSubviews(from: self, newGeo)
         }
+        oscContentView.appearance = oscAppearance
 
         if !topBar.controlBarTop.subviews.contains(oscContentView) {
           log.verbose("Adding \(oscContentView.idString) to topBarView")
@@ -664,6 +665,7 @@ extension PlayerWindowController {
           log.verbose("Adding subviews to oscOneRowView for bottom bar")
           oscOneRowView.updateSubviews(from: self, newGeo)
         }
+        oscContentView.appearance = oscAppearance
 
         if !bottomBar.contentView.subviews.contains(oscContentView) {
           log.verbose("Adding \(oscContentView.idString) to bottomBar.view")

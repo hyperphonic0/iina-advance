@@ -333,7 +333,7 @@ extension PlayerWindowController {
     switch tabGroup {
     case .playlist:
       showSidebar(tab: playlistView.currentTab, force: force, hideIfAlreadyShown: hideIfAlreadyShown)
-      playlistView.updateTableColors(effectiveAppearance: window!.contentView!.effectiveAppearance)  // this will also load data for tables
+      playlistView.updateTableColors(effectiveAppearance: AppDelegate.shared.targetWindowAppearance)  // this will also load data for tables
     case .settings:
       if let tab = Sidebar.Tab(name: quickSettingView.currentTab.name) {
         showSidebar(tab: tab, force: force, hideIfAlreadyShown: hideIfAlreadyShown)
@@ -604,7 +604,7 @@ extension PlayerWindowController {
 
     if shouldAddTabGroup {
       log.verbose("Adding tabGroup \(tabGroupToShow.rawValue.quoted) to \(leadingSidebar.locationID), placement=\(leadingSidebar.placement)")
-      addTabGroupView(for: tabGroupToShow, to: tabContainerView, effectiveAppearance: window!.contentView!.effectiveAppearance)
+      addTabGroupView(for: tabGroupToShow, to: tabContainerView, effectiveAppearance: AppDelegate.shared.targetWindowAppearance)
     }
   }
 
@@ -736,7 +736,7 @@ extension PlayerWindowController {
 
     if shouldAddTabGroup {
       log.verbose("Adding tabGroup \(tabGroupToShow.rawValue.quoted) to \(trailingSidebar.locationID), placement=\(trailingSidebar.placement)")
-      addTabGroupView(for: tabGroupToShow, to: tabContainerView, effectiveAppearance: window!.contentView!.effectiveAppearance)
+      addTabGroupView(for: tabGroupToShow, to: tabContainerView, effectiveAppearance: AppDelegate.shared.targetWindowAppearance)
     }
   }
 

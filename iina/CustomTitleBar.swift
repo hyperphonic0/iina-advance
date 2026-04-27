@@ -247,7 +247,7 @@ class CustomTitleBarViewController: NSViewController {
 
     view.configureSubtreeForCoreAnimation()
 
-    pwc.log.verbose("CustomTitleBar viewDidLoad done: isDark=\(view.effectiveAppearance.isDark.yesno)")
+    pwc.log.verbose("CustomTitleBar viewDidLoad done: appearance=\(view.effectiveAppearance.isDark ? "DARK" : "LIGHT")")
     pwc.updateTitle()
   }
 
