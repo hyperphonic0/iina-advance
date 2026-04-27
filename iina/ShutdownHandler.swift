@@ -25,6 +25,8 @@ class ShutdownHandler {
       return false
     }
 
+    MemoryUsage.shared.logUsage("before terminating")
+
     // Save window list before fiddling with any windows, so that we preserve the current order & visible state:
     UIState.shared.saveCurrentOpenWindowList()
 

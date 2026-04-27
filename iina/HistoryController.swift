@@ -217,6 +217,8 @@ final class HistoryController {
       return false
     }
 
+    MemoryUsage.shared.logUsage("before reading history")
+
     do {
       log.verbose("Reading playback history file \(plistURL.path.pii.quoted)")
       let data = try Data(contentsOf: plistURL)
@@ -227,6 +229,7 @@ final class HistoryController {
       }
       history = historyItemList
       log.verbose("Loaded playback history (entryCount=\(historyItemList.count))")
+      MemoryUsage.shared.logUsage("after reading history")
       return true
     } catch {
       log.error("Failed to load playback history file \(plistURL.path.pii.quoted): \(error)")

@@ -177,6 +177,8 @@ class VideoView: NSView {
     glLayer?.initGLRendering()
     displayActive()
 #endif
+    
+    MemoryUsage.shared.logUsage("after rendering initialized")
   }
 
   /// Lock the OpenGL context associated with the mpv renderer and set it to be the current context for this thread.

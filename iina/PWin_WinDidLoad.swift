@@ -116,6 +116,8 @@ extension PlayerWindowController {
       // Must wait until *after* loaded==true to load plugins!
       player.loadPlugins()
 
+      MemoryUsage.shared.logUsage("after window loaded")
+
       log.verbose("[Load] PWin_WinDidLoad done")
       player.events.emit(.windowLoaded)
     }

@@ -903,6 +903,8 @@ final class StartupHandler {
 
     // Hide Window > "Enter Full Screen" menu item, because this is already present in the Video menu
     UserDefaults.standard.set(false, forKey: "NSFullScreenMenuItemEverywhere")
+
+    MemoryUsage.shared.logUsage("after launching finished")
   }
 
   // MARK: - Volume Remounts

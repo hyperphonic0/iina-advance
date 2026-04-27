@@ -164,6 +164,7 @@
 		512B8FDD2BC2376E00AF41BF /* OutlineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 512B8FDC2BC2376E00AF41BF /* OutlineView.swift */; };
 		513A4FFA29B53F8100A8EA7D /* Atomic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 513A4FF929B53F8100A8EA7D /* Atomic.swift */; };
 		515B5E5A2A579903001FCD49 /* iina-plugin in Copy Executables */ = {isa = PBXBuildFile; fileRef = E38558872A484A2D0083772D /* iina-plugin */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		516B264D2EDA579700E3CB69 /* MemoryUsage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 516B264C2EDA579600E3CB69 /* MemoryUsage.swift */; };
 		51854CDA2A1C489300C40B78 /* FFmpegLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51854CD92A1C489300C40B78 /* FFmpegLogger.swift */; };
 		5196819A29EC963F00B05D55 /* CoreDisplay.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5196819929EC963F00B05D55 /* CoreDisplay.framework */; };
 		519872FF26879B9B00F84BCC /* AccessibilityPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 519872FE26879B9B00F84BCC /* AccessibilityPreferences.swift */; };
@@ -1322,6 +1323,7 @@
 		513A4FF929B53F8100A8EA7D /* Atomic.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Atomic.swift; sourceTree = "<group>"; };
 		51537C7229FA26DD00F9A472 /* Nightly.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Nightly.xcconfig; sourceTree = "<group>"; };
 		515B5E592A579782001FCD49 /* iina-plugin.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = "iina-plugin.xcconfig"; sourceTree = "<group>"; };
+		516B264C2EDA579600E3CB69 /* MemoryUsage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryUsage.swift; sourceTree = "<group>"; };
 		51854CD92A1C489300C40B78 /* FFmpegLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FFmpegLogger.swift; sourceTree = "<group>"; };
 		5196819929EC963F00B05D55 /* CoreDisplay.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreDisplay.framework; path = /System/Library/Frameworks/CoreDisplay.framework; sourceTree = "<group>"; };
 		519872FE26879B9B00F84BCC /* AccessibilityPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityPreferences.swift; sourceTree = "<group>"; };
@@ -2711,6 +2713,7 @@
 				519CCABC2BFFAEF10079DCAF /* HardwareDecodeCapabilities.swift */,
 				D1724A682BF80C9A00BCE335 /* FolderMonitor.swift */,
 				D1A4C2DB2BF97BB200CE32A9 /* FileMonitor.swift */,
+				516B264C2EDA579600E3CB69 /* MemoryUsage.swift */,
 			);
 			name = Utils;
 			sourceTree = "<group>";
@@ -3695,6 +3698,7 @@
 				5111B18B2C8BCEAC00DEC0AC /* TouchBarSettings.swift in Sources */,
 				E3785B072A83039600787CB7 /* JavascriptAPIWebSocket.swift in Sources */,
 				E342832F20B7149800139865 /* Logger.swift in Sources */,
+				516B264D2EDA579700E3CB69 /* MemoryUsage.swift in Sources */,
 				84F725561D4783EE000DEF1B /* VolumeSliderCell.swift in Sources */,
 				D1108E5B2DBC7B1900344C7C /* MPVEncoding.swift in Sources */,
 				845040401E0ACADD0079C194 /* MPVNode.swift in Sources */,

@@ -2065,6 +2065,8 @@ final class PlayerCore: NSObject {
     log.verbose("FileStarted: playbackPath=\(path.pii.quoted), PL#=\(String(playbackFromPath.playlistPos))")
     info.currentPlayback = playbackFromPath
 
+    MemoryUsage.shared.logUsage("after file started")
+
     // Stop watchers from prev media (if any)
     stopWatchingSubFile()
 
@@ -2265,6 +2267,7 @@ final class PlayerCore: NSObject {
         postNotification(.iinaPlayerStopped)
       }
     }
+    MemoryUsage.shared.logUsage("after file ended")
   }
 
   func chapterChanged() {

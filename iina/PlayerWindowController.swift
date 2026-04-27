@@ -864,7 +864,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
 
     resetCollectionBehavior()
 
-    /// Enqueue this in case `windowDidLoad` is not yet done
+    /// Enqueue this in case `finishLoading` is not yet done
     animationPipeline.submitInstantTask{ [self] in
       if player.info.isNetworkResource {
         log.verbose("Showing bufferIndicatorView for network stream")
