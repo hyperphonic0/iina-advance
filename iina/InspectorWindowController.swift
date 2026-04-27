@@ -156,6 +156,24 @@ final class InspectorWindowController: WindowController, NSWindowDelegate, NSTab
     tabView.selectTabViewItem(at: selectTabIndex)
     // Do not select tab by default
     window?.initialFirstResponder = nil
+
+    updateInfo()
+    watchTableView.scrollRowToVisible(0)
+
+    if let info = PlayerManager.shared.lastActivePlayer?.info {
+      Logger.Sub.inspector.verbose("""
+      Video tracks:
+      \(info.videoTracks.compactMap { $0.longDescription }.joined(separator: "\n"))
+      """)
+      Logger.Sub.inspector.verbose("""
+      Audio tracks:
+      \(info.audioTracks.compactMap { $0.longDescription }.joined(separator: "\n"))
+      """)
+      Logger.Sub.inspector.verbose("""
+      Subtitle tracks:
+      \(info.subTracks.compactMap { $0.longDescription }.joined(separator: "\n"))
+      """)
+    }
   }
 
   override func showWindow(_ sender: Any?) {
@@ -603,7 +621,7 @@ final class InspectorWindowController: WindowController, NSWindowDelegate, NSTab
   }
 
 
-  // MARK: Utils
+  // MARK: - Utils
 
   private func setLabelColor(_ label: NSTextField, by state: Bool) {
     label.textColor = state ? NSColor.labelColor : NSColor.disabledControlTextColor
@@ -680,4 +698,8 @@ fileprivate func readWatchListFromPasteboard(_ pasteboard: NSPasteboard) -> [Str
     }
   }
   return sanitizedItems
+}
+
+fileprivate extension Logger.Sub {
+  static let inspector = Logger.makeSubsystem("inspector")
 }
