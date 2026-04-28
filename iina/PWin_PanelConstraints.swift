@@ -124,12 +124,12 @@ extension PlayerWindowController {
       let insideTopBarHeight = stageGeo.topBarBtmOffsetFromVPTop
       log.verbose("TopBar: vpTopOffsetFromTopBarTop=\(outsideTopBarHeight) topBarBtmOffsetFromVPTop=\(insideTopBarHeight)")
 
-      p.vpTopOffsetFromTopBarTop.createOrUpdate(to: outsideTopBarHeight, log) { [self] c in
+      p.vpTopOffsetFromTopBarTop.createOrUpdate(to: outsideTopBarHeight, priorityInt: 1000, log) { [self] c in
         viewportView.topAnchor.constraint(equalTo: topBar.view.topAnchor, constant: c)
       }
 
       // Don't use required priority, as sometimes this causes constraint violations
-      p.topBarBtmOffsetFromVPTop.createOrUpdate(to: insideTopBarHeight, log) { [self] c in
+      p.topBarBtmOffsetFromVPTop.createOrUpdate(to: insideTopBarHeight, priorityInt: 1000, log) { [self] c in
         topBar.view.bottomAnchor.constraint(equalTo: viewportView.topAnchor, constant: c)
       }
 
@@ -151,7 +151,7 @@ extension PlayerWindowController {
       topBar.titleBarHeightConstraint.animateToConstant(titleHeight)
 
       // Not sure why when we make this `.required`, we get a bogus constraint violation
-      topBar.titleBarHeightConstraint.priority = .defaultHigh
+      topBar.titleBarHeightConstraint.priorityInt = 999
     }
 
     let isAnimatingViewportOpen = transition.isOpeningViewport && !stage.isFinalStage  // Music Mode: opening video

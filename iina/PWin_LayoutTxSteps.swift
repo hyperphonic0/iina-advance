@@ -488,9 +488,7 @@ extension PlayerWindowController {
     log.verbose("TopBarAppearance: target=\(topBarAppearance.isDark ? "DARK" : "LIGHT") "
                 + "actual=\(topBar.view.effectiveAppearance.isDark ? "DARK" : "LIGHT")")
 
-    if !transition.isWindowInitialLayout {
-      rebuildPanelConstraints(transition, stage: .midTransitionHiddenUpdates)
-    }
+    rebuildPanelConstraints(transition, stage: .midTransitionHiddenUpdates)
 
     // - - Title bar views
 

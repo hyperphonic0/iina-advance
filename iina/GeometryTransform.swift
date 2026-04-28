@@ -965,8 +965,7 @@ extension PlayerWindowController {
       mode = .windowedNormal  // default
     }
 
-    // Set to default layout, but use existing aspect ratio & video size for now, because we don't have that info yet for the new video
-    ctx.outputLayout = LayoutState.fromPrefs(andMode: mode, fillingInFrom: lastWindowedLayoutState)
+    ctx.outputLayout = LayoutState.fromPrefs(andMode: mode)
 
     let outputGeoSet = buildGeoSetForNewWindow(ctx)
     return buildTransitionTasksToInitialLayout(ctx, outputGeoSet: outputGeoSet)

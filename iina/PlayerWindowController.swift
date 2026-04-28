@@ -302,7 +302,11 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
     } else if let savedGeo = PWinGeometry.fromCSV(csv, Logger.log) {
       if savedGeo.mode.isWindowed && !savedGeo.screenFit.isFullScreen {
         Logger.log.verbose("Loaded pref \(Preference.Key.uiLastClosedWindowedModeGeometry.quoted)): \(savedGeo)")
-        return savedGeo
+
+        let validLayout = LayoutState.fromPrefs(andMode: savedGeo.mode)
+        let correctedGeo = validLayout.buildGeometry(windowFrame: savedGeo.windowFrame, screenID: savedGeo.screenID, savedGeo.video)
+        Logger.log.verbose("Corrected windowedModeGeoLastClosed: \(correctedGeo)")
+        return correctedGeo
       } else {
         Logger.log.error("Saved pref \(Preference.Key.uiLastClosedWindowedModeGeometry.quoted)) is invalid."
                          + " Falling back to default geometry (found: \(savedGeo))")
@@ -1001,12 +1005,11 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
       /// Setting these vars is especially important for copying to windowedModeGeoLastClosed, etc, below.
       geo = buildGeoSet(forceWinFrameUpdate: true)
 
-      // Reset layout & its state (or at least the big stuff) for reopen: close sidebars, disable OSC
+      // Reset layout & its state (or at least the big stuff) for reopen: close sidebars
       let currentLayout = currentLayout
       let newLayoutState = currentLayout.clone(leadingSidebar: currentLayout.leadingSidebar.clone(visibility: .closed),
                                                trailingSidebar: currentLayout.trailingSidebar.clone(visibility: .closed),
-                                               isInPiP: false,
-                                               enableOSC: false)
+                                               isInPiP: false)
       let resetTransition = buildLayoutTransition(named: "ResetWindowOnClose", from: currentLayout, to: newLayoutState)
       let tasks = buildTasks(for: resetTransition, totalStartingDuration: 0, totalEndingDuration: 0)
 
