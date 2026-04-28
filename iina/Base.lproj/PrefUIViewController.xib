@@ -2079,7 +2079,7 @@ For smoothest results, also enable custom full screen.</string>
                                                 <menuItem title="Flat Blended Gray" state="on" tag="1" id="IBM-NK-uiO"/>
                                                 <menuItem title="Clear-Black Gradient" tag="2" id="C1F-Y0-yvA"/>
                                                 <menuItem title="Clear Glass" tag="3" id="JH9-zE-wWA"/>
-                                                <menuItem title="Glass (Default Tint)" tag="4" id="XGg-Dr-hBX"/>
+                                                <menuItem title="Tinted Glass" tag="4" id="XGg-Dr-hBX"/>
                                             </items>
                                         </menu>
                                     </popUpButtonCell>

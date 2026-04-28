@@ -450,7 +450,7 @@ extension PlayerWindowController {
       seekPreview.hideTimer.restart()
       return
     }
-    refreshSeekPreviewAsync(forPointInWindow: pointInWindow, animateHide: true)
+    refreshSeekPreviewAsync(forPointInWindow: pointInWindow)
   }
 
   /// With animation. For non-animated version, see: `hideSeekPreviewImmediately()`.
@@ -458,9 +458,16 @@ extension PlayerWindowController {
     var tasks: [IINAAnimation.Task] = []
 
     tasks.append(.init(duration: Constants.AnimationDuration.hideSeekPreview) { [self] in
+      guard seekPreview.animationState == .shown else {
+        // Try not to pile up duplicate animations. But call the next task.
+        return
+      }
       seekPreview.animationState = .willHide
       seekPreview.thumbnailPeekView.animator().alphaValue = 0
       seekPreview.timeLabel.animator().alphaValue = 0
+      seekPreview.thumbnailPeekView.isHidden = true
+      seekPreview.timeLabel.isHidden = true
+      playSliderCell.hoverIndicator?.isHidden = true
       if fadeableViews.isShowingFadeableViewsForSeek {
         fadeableViews.isShowingFadeableViewsForSeek = false
         fadeableViews.hideTimer.restart()
@@ -469,7 +476,7 @@ extension PlayerWindowController {
       playSliderCell.hoverIndicator?.alphaValue = 0
     })
 
-    tasks.append(.init(duration: 0) { [self] in
+    tasks.append(.instantTask { [self] in
       // if no interrupt then hide animation
       hideSeekPreviewImmediately()
     })
@@ -493,27 +500,26 @@ extension PlayerWindowController {
     }
   }
 
-  /// Makes fake point in window to position seek time & thumbnail
-  func refreshSeekPreviewAsync(forWindowCoordX windowCoordX: CGFloat, animateHide: Bool = false) {
-    let playSliderFrameInWindowCoords = playSlider.frameInWindowCoords
-    let pointInWindow = CGPoint(x: windowCoordX, y: playSliderFrameInWindowCoords.midY)
-    refreshSeekPreviewAsync(forPointInWindow: pointInWindow, animateHide: animateHide)
+  /// Makes fake point in window to position seek time & thumbnail as though hovering over play slider.
+  /// See: `refreshSeekPreviewAsync(forPointInWindow:)`
+  func refreshSeekPreviewAsync(forWindowCoordX windowCoordX: CGFloat) {
+    let sliderMidY = playSlider.frameInWindowCoords.midY
+    let pointInWindow = CGPoint(x: windowCoordX, y: sliderMidY)
+    refreshSeekPreviewAsync(forPointInWindow: pointInWindow)
   }
 
-  /// Display time label & thumbnail when mouse over slider
-  func refreshSeekPreviewAsync(forPointInWindow pointInWindow: NSPoint, animateHide: Bool = false) {
+  /// Display time label & thumbnail when mouse over slider.
+  func refreshSeekPreviewAsync(forPointInWindow pointInWindow: NSPoint) {
     thumbDisplayDebouncer.run { [self] in
       log.trace("RefreshSeekPreviewAsync @ \(pointInWindow)")
-      if shouldSeekPreviewBeVisible(forPointInWindow: pointInWindow), let duration = player.info.playbackTime.durationSec {
-        if showSeekPreview(forPointInWindow: pointInWindow, mediaDuration: duration) {
-          return
-        }
+      if shouldSeekPreviewBeVisible(forPointInWindow: pointInWindow),
+         let duration = player.info.playbackTime.durationSec,
+         showSeekPreview(forPointInWindow: pointInWindow, mediaDuration: duration) {
+        return
       }
 
-      if animateHide {
+      if seekPreview.animationState == .shown {
         hideSeekPreviewWithAnimation()
-      } else {
-        hideSeekPreviewImmediately()
       }
     }
   }
