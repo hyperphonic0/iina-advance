@@ -496,7 +496,72 @@ final class PlayerCore: NSObject {
     mpv.mpvSetOptions(from: userOptions)
   }
 
+  /// Update cached values in bulk (for use when opening player window.
+  ///
+  /// Some of the controls in Quick Settings, et al, may try to submit these values when their values are initially set.
+  /// Pull all of these from mpv to ensure proper source of data sync.
+  private func syncPlaybackInfoCacheFromMpv() {
+    // Playback
+
+    info.vid = mpv.getInt(MPVOption.TrackSelection.vid)
+    info.aid = mpv.getInt(MPVOption.TrackSelection.aid)
+    if info.vid == 0 && info.aid == 0 {
+      log.warn("Looks like neither video nor audio track selected: media may fail to play!")
+    }
+    info.sid = mpv.getInt(MPVOption.TrackSelection.sid)
+    info.secondSid = mpv.getInt(MPVOption.Subtitles.secondarySid)
+
+    if let loopFile = mpv.getString(MPVOption.PlaybackControl.loopFile) {
+      info.loopFile = loopFile
+    }
+    if let loopPlaylist = mpv.getString(MPVOption.PlaybackControl.loopPlaylist) {
+      info.loopPlaylist = loopPlaylist
+    }
+
+    syncAbLoop()
+
+
+    info.playSpeed = mpv.getDouble(MPVOption.PlaybackControl.speed)
+
+    // Subtitles
+
+    info.subScale = mpv.getDouble(MPVOption.Subtitles.subScale)
+    info.subPos = mpv.getDouble(MPVOption.Subtitles.subPos)
+    info.sub2Pos = mpv.getDouble(MPVOption.Subtitles.secondarySubPos)
+    info.subDelay = mpv.getDouble(MPVOption.Subtitles.subDelay)
+    info.sub2Delay = mpv.getDouble(MPVOption.Subtitles.secondarySubDelay)
+    info.subFontSize = mpv.getInt(MPVOption.Subtitles.subFontSize)
+    info.isSubVisible = mpv.getFlag(MPVOption.Subtitles.subVisibility)
+    info.isSecondSubVisible = mpv.getFlag(MPVOption.Subtitles.secondarySubVisibility)
+
+    // Video
+
+    info.brightness = mpv.getInt(MPVOption.Equalizer.brightness)
+    info.contrast = mpv.getInt(MPVOption.Equalizer.contrast)
+    info.saturation = mpv.getInt(MPVOption.Equalizer.saturation)
+    info.gamma = mpv.getInt(MPVOption.Equalizer.gamma)
+    info.hue = mpv.getInt(MPVOption.Equalizer.hue)
+
+    if let hwdec = mpv.getString(MPVOption.Video.hwdec) {
+      info.hwdec = hwdec
+    }
+    info.deinterlace = mpv.getFlag(MPVOption.Video.deinterlace)
+
+    // Audio
+
+    info.volume = mpv.getDouble(MPVOption.Audio.volume)
+    info.volumeMax = mpv.getInt(MPVOption.Audio.volumeMax)
+    // `info.maxVolume` will be reset in `mpvSetInitialOptions`
+    info.isMuted = mpv.getFlag(MPVOption.Audio.mute)
+    info.audioDelay = mpv.getDouble(MPVOption.Audio.audioDelay)
+  }
   // MARK: - Opening Media
+
+  @MainActor
+  @discardableResult
+  func openURL(_ url: URL) -> Int? {
+    return openURLs([url])
+  }
 
   /**
    Open a list of urls. If there are more than one urls, add the remaining ones to
@@ -516,6 +581,16 @@ final class PlayerCore: NSObject {
     let urls = Utility.resolveURLs(urls)
     let ids = urls.map{ MediaMetaCache.shared.getBestPlaybackID(forURL: $0) }
     return openPlaybackIDs(ids)
+  }
+
+  /// Returns number of playable URLs opened. If `0`, no player window was opened.
+  @MainActor
+  @discardableResult
+  func openURLString(_ str: String) -> Int {
+    if let id = PlaybackID(path: str) {
+      return openPlaybackIDs([id])
+    }
+    return 0
   }
 
   @MainActor
@@ -546,27 +621,12 @@ final class PlayerCore: NSObject {
     }
 
     // If pwc is nil, it is not restoring
-    info.shouldAutoLoadFiles = AppDelegate.shared.isInteractiveLaunch && (pwc == nil || !pwc.sessionState.isRestoring) && playableFiles.count == 1
+    info.shouldAutoLoadFiles = AppDelegate.shared.isInteractiveLaunch && playableFiles.count == 1
+    &&  (pwc == nil || !pwc.sessionState.isRestoring)
 
     // open the first file
     openPlayerWindow(ids)
     return playableFiles.count
-  }
-
-  @MainActor
-  @discardableResult
-  func openURL(_ url: URL) -> Int? {
-    return openURLs([url])
-  }
-
-  /// Returns number of playable URLs opened. If `0`, no player window was opened.
-  @MainActor
-  @discardableResult
-  func openURLString(_ str: String) -> Int {
-    if let id = PlaybackID(path: str) {
-      return openPlaybackIDs([id])
-    }
-    return 0
   }
 
   /// Loads the first URL into the player, and adds any remaining URLs to playlist.
@@ -655,6 +715,9 @@ final class PlayerCore: NSObject {
           // Send load file command
           mpv.command(.loadfile, args: [path])
 
+          let playlistPlaybackIDs: [PlaybackID]
+          let playlistPos: Int?
+
           if case .restoring(let priorState) = sessionState {
             priorState.restoreMpvProperties(to: self)
 
@@ -668,92 +731,44 @@ final class PlayerCore: NSObject {
               log.warn("Could not determine pause state to restore; falling back using prefs: willResume=\(pendingResumeWhenShowingWindow.yn)")
             }
 
-            let playlistPlaybackIDs = priorState.restorePlaylistIDs(volRemounts: volRemountURLs)
-            if !playlistPlaybackIDs.isEmpty {
-              let playlistPos: Int? = priorState.int(for: .playlistPos)
-              log.debug("Restoring \(playlistPlaybackIDs.count) items into playlist, indexOfCurrentItem=\(playlistPos?.description ?? "nil")")
-              addAllToPlaylist(playbackIDsIncludingCurrent: playlistPlaybackIDs, indexOfCurrentItem: playlistPos)
+            playlistPlaybackIDs = priorState.restorePlaylistIDs(volRemounts: volRemountURLs)
+            playlistPos = priorState.int(for: .playlistPos)
+
+          } else {  // Not restoring
+
+            playlistPlaybackIDs = ids
+            playlistPos = 0
+
+            if isInteractivePlayer {
+              // Pause until window opens, to avoid blips or other loading unpleasantness.
+              mpv.setFlag(MPVOption.PlaybackControl.pause, true)
+
+              let shouldStayPaused = shouldPauseOnFileOpen()
+              pendingResumeWhenShowingWindow = !shouldStayPaused
+              log.debug("Paused playback until window is done opening; will resume when shown=\(pendingResumeWhenShowingWindow.yn)")
+            } else {
+              log.verbose("Player is non-interactive; skipping playback pause prior to window open")
+              pendingResumeWhenShowingWindow = false
             }
 
-            return
+            if Preference.bool(for: .autoRepeat) {
+              let loopMode = Preference.DefaultRepeatMode(rawValue: Preference.integer(for: .defaultRepeatMode))
+              setLoopMode(loopMode == .file ? .file : .playlist)
+            }
 
-          } else if isInteractivePlayer {
-            // Pause until window opens, to avoid blips or other loading unpleasantness.
-            mpv.setFlag(MPVOption.PlaybackControl.pause, true)
-
-            let shouldStayPaused = shouldPauseOnFileOpen()
-            pendingResumeWhenShowingWindow = !shouldStayPaused
-            log.debug("Paused playback until window is done opening; will resume when shown=\(pendingResumeWhenShowingWindow.yn)")
-
-          } else {
-            log.verbose("Player is non-interactive; skipping playback pause prior to window open")
-            pendingResumeWhenShowingWindow = false
           }
 
-          // Not restoring
-
-          if ids.count > 1 {
-            log.verbose("Adding \(ids.count - 1) files to playlist. Autoload=\(info.shouldAutoLoadFiles.yn)")
-            addAllToPlaylist(playbackIDsIncludingCurrent: ids, indexOfCurrentItem: 0)
+          if playlistPlaybackIDs.count > 1 {
+            log.verbose("Adding \(playlistPlaybackIDs.count - 1) files to playlist. PlaylistPos="
+                        + String(describing: playlistPos) + " Autoload=\(info.shouldAutoLoadFiles.yn)")
+            addAllToPlaylist(playbackIDsIncludingCurrent: playlistPlaybackIDs, indexOfCurrentItem: playlistPos)
           } else {
             // Only one entry in playlist, but still need to pull it from mpv
             log.verbose("Only 1 entry in playlist & not restoring; doing initial reload of playlist")
             _reloadPlaylist()
           }
 
-          if Preference.bool(for: .autoRepeat) {
-            let loopMode = Preference.DefaultRepeatMode(rawValue: Preference.integer(for: .defaultRepeatMode))
-            setLoopMode(loopMode == .file ? .file : .playlist)
-          }
-
-          // Update cached values. Some of the controls in Quick Settings, et al, may try to submit these values
-          // when their values are initially set. Pull all of these from mpv to ensure proper source of data sync.
-          // TODO: move this stuff into mpv init
-
-          // Playback
-
-          if let loopFile = mpv.getString(MPVOption.PlaybackControl.loopFile) {
-            info.loopFile = loopFile
-          }
-          if let loopPlaylist = mpv.getString(MPVOption.PlaybackControl.loopPlaylist) {
-            info.loopPlaylist = loopPlaylist
-          }
-
-          syncAbLoop()
-
-          info.playSpeed = mpv.getDouble(MPVOption.PlaybackControl.speed)
-
-          // Subtitles
-
-          info.subScale = mpv.getDouble(MPVOption.Subtitles.subScale)
-          info.subPos = mpv.getDouble(MPVOption.Subtitles.subPos)
-          info.sub2Pos = mpv.getDouble(MPVOption.Subtitles.secondarySubPos)
-          info.subDelay = mpv.getDouble(MPVOption.Subtitles.subDelay)
-          info.sub2Delay = mpv.getDouble(MPVOption.Subtitles.secondarySubDelay)
-          info.subFontSize = mpv.getInt(MPVOption.Subtitles.subFontSize)
-          info.isSubVisible = mpv.getFlag(MPVOption.Subtitles.subVisibility)
-          info.isSecondSubVisible = mpv.getFlag(MPVOption.Subtitles.secondarySubVisibility)
-
-          // Video
-
-          info.brightness = mpv.getInt(MPVOption.Equalizer.brightness)
-          info.contrast = mpv.getInt(MPVOption.Equalizer.contrast)
-          info.saturation = mpv.getInt(MPVOption.Equalizer.saturation)
-          info.gamma = mpv.getInt(MPVOption.Equalizer.gamma)
-          info.hue = mpv.getInt(MPVOption.Equalizer.hue)
-
-          if let hwdec = mpv.getString(MPVOption.Video.hwdec) {
-            info.hwdec = hwdec
-          }
-          info.deinterlace = mpv.getFlag(MPVOption.Video.deinterlace)
-
-          // Audio
-
-          info.volume = mpv.getDouble(MPVOption.Audio.volume)
-          info.volumeMax = mpv.getInt(MPVOption.Audio.volumeMax)
-          // `info.maxVolume` will be reset in `mpvSetInitialOptions`
-          info.isMuted = mpv.getFlag(MPVOption.Audio.mute)
-          info.audioDelay = mpv.getDouble(MPVOption.Audio.audioDelay)
+          syncPlaybackInfoCacheFromMpv()
         }
       }
     }
@@ -787,9 +802,6 @@ final class PlayerCore: NSObject {
     startMPV()
 #else
     startMPV()
-    if isInteractivePlayer {
-      videoView.initVideoLayer()
-    }
 #endif
   }
 
@@ -2104,6 +2116,7 @@ final class PlayerCore: NSObject {
 
     sendOSD(.fileStart(playbackFromPath.displayName, ""))
 
+    log.verbose("FileStarted: done")
     events.emit(.fileStarted)
   }
 

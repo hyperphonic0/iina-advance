@@ -284,7 +284,7 @@ struct Constants {
   ///
   /// If set to `false`, `vid` can change to `0` while loading, and possibly the media's tracklist can be briefly
   /// inaccurate or missing. Note that the IINA default album art will be shown while `vid=0`.
-  static let requireFileLoadedForTrackReload: Bool = false
+  static let requireFileLoadedForTrackReload: Bool = true
 
   // Stopgap for https://github.com/mpv-player/mpv/issues/4000
   static let availableSpeedValues: [Double] = [0.03125, 0.0625, 0.125, 0.25, 0.5, 1, 2, 4, 8, 16, 32]

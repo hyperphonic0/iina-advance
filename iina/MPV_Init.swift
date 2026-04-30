@@ -37,6 +37,10 @@ extension MPVController {
       mpvSetOptions(from: player.userOptions)
     }
 
+    if player.isInteractivePlayer {
+      player.videoView.initVideoLayer()
+    }
+
     setPlayerStateToStarted()
 
     if player.isDemoPlayer {
