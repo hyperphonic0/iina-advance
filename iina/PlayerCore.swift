@@ -701,21 +701,17 @@ final class PlayerCore: NSObject {
             _reloadPlaylist()
           }
 
-          // TODO: move this stuff into mpv init
-
-          if Preference.bool(for: .enablePlaylistLoop) {
-            mpv.setString(MPVOption.PlaybackControl.loopPlaylist, "inf")
-          }
-          if Preference.bool(for: .enableFileLoop) {
-            mpv.setString(MPVOption.PlaybackControl.loopFile, "inf")
-          }
-
           if Preference.bool(for: .autoRepeat) {
             let loopMode = Preference.DefaultRepeatMode(rawValue: Preference.integer(for: .defaultRepeatMode))
             setLoopMode(loopMode == .file ? .file : .playlist)
           }
 
-          // Update cached values. Some of the controls in Quick Settings may try to submit these values when init'd
+          // Update cached values. Some of the controls in Quick Settings, et al, may try to submit these values
+          // when their values are initially set. Pull all of these from mpv to ensure proper source of data sync.
+          // TODO: move this stuff into mpv init
+
+          // Playback
+
           if let loopFile = mpv.getString(MPVOption.PlaybackControl.loopFile) {
             info.loopFile = loopFile
           }
@@ -723,31 +719,41 @@ final class PlayerCore: NSObject {
             info.loopPlaylist = loopPlaylist
           }
 
+          syncAbLoop()
+
+          info.playSpeed = mpv.getDouble(MPVOption.PlaybackControl.speed)
+
+          // Subtitles
+
           info.subScale = mpv.getDouble(MPVOption.Subtitles.subScale)
           info.subPos = mpv.getDouble(MPVOption.Subtitles.subPos)
           info.sub2Pos = mpv.getDouble(MPVOption.Subtitles.secondarySubPos)
           info.subDelay = mpv.getDouble(MPVOption.Subtitles.subDelay)
           info.sub2Delay = mpv.getDouble(MPVOption.Subtitles.secondarySubDelay)
           info.subFontSize = mpv.getInt(MPVOption.Subtitles.subFontSize)
-          info.audioDelay = mpv.getDouble(MPVOption.Audio.audioDelay)
-          info.playSpeed = mpv.getDouble(MPVOption.PlaybackControl.speed)
-
           info.isSubVisible = mpv.getFlag(MPVOption.Subtitles.subVisibility)
           info.isSecondSubVisible = mpv.getFlag(MPVOption.Subtitles.secondarySubVisibility)
 
-          info.deinterlace = mpv.getFlag(MPVOption.Video.deinterlace)
+          // Video
+
           info.brightness = mpv.getInt(MPVOption.Equalizer.brightness)
           info.contrast = mpv.getInt(MPVOption.Equalizer.contrast)
           info.saturation = mpv.getInt(MPVOption.Equalizer.saturation)
           info.gamma = mpv.getInt(MPVOption.Equalizer.gamma)
           info.hue = mpv.getInt(MPVOption.Equalizer.hue)
 
+          if let hwdec = mpv.getString(MPVOption.Video.hwdec) {
+            info.hwdec = hwdec
+          }
+          info.deinterlace = mpv.getFlag(MPVOption.Video.deinterlace)
+
+          // Audio
+
           info.volume = mpv.getDouble(MPVOption.Audio.volume)
+          info.volumeMax = mpv.getInt(MPVOption.Audio.volumeMax)
           // `info.maxVolume` will be reset in `mpvSetInitialOptions`
           info.isMuted = mpv.getFlag(MPVOption.Audio.mute)
           info.audioDelay = mpv.getDouble(MPVOption.Audio.audioDelay)
-          info.abLoopA = mpv.getDouble(MPVOption.PlaybackControl.abLoopA)
-          info.abLoopB = mpv.getDouble(MPVOption.PlaybackControl.abLoopB)
         }
       }
     }

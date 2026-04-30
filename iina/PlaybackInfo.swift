@@ -158,7 +158,6 @@ class PlaybackInfo {
   var playSpeed: Double = 1.0
 
   var playlist: [PlaybackID] = []
-  var playlistPlayingPos: Int = -1  /// `MPVProperty.playlistPlayingPos`
 
   /** Selected track IDs. Use these (instead of `isSelected` of a track) to check if selected */
   var vid: Int? {

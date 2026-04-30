@@ -463,9 +463,6 @@ struct Preference {
 
     static let followGlobalSeekTypeWhenAdjustSlider = Key("followGlobalSeekTypeWhenAdjustSlider")
 
-    static let enablePlaylistLoop = Key("enablePlaylistLoop")
-    static let enableFileLoop = Key("enableFileLoop")
-
     /// If true, scan playlist filenames with identical starting strings.  replace them with `…` button
     static let shortenFileGroupsInPlaylist = Key("shortenFileGroupsInPlaylist")
 
@@ -1788,8 +1785,6 @@ struct Preference {
     .audioDeviceDesc: "Autoselect device",
     .enableInitialVolume: false,
     .initialVolume: 100,
-    .enablePlaylistLoop: false,
-    .enableFileLoop: false,
     .shortenFileGroupsInPlaylist: true,
     .replayGain: ReplayGainOption.no.rawValue,
     .replayGainPreamp: 0,
