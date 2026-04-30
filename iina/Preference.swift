@@ -1013,7 +1013,7 @@ struct Preference {
   }
 
   enum SeekOption: Int, InitializingFromKey {
-    case keyframes = 0
+    case relative = 0
     case exact
     case auto
 
@@ -1025,7 +1025,7 @@ struct Preference {
 
     var description: String {
       switch self {
-      case .keyframes: "keyframes"
+      case .relative: "relative"
       case .exact: "exact"
       case .auto: "auto"
       }

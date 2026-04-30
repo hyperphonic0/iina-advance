@@ -1202,7 +1202,7 @@ final class PlayerCore: NSObject {
     let kind = absolute ? "absolute" : "relative"
 
     switch option {
-    case .keyframes:
+    case .relative:
       mpv.command(.seek, args: ["\(time)", "\(kind)+keyframes"], checkError: false)
 
     case .exact:

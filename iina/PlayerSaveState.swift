@@ -832,6 +832,8 @@ struct PlayerSaveState: CustomStringConvertible {
     let mpv: MPVController = player.mpv
     let log = player.log
 
+    log.verbose("Restoring mpv options & props…")
+
     if let playbackPositionSec = string(for: .playPosition) {
       log.verbose("Restoring playback position: \(playbackPositionSec)")
       mpv.setString(MPVOption.PlaybackControl.start, playbackPositionSec)
@@ -969,6 +971,11 @@ struct PlayerSaveState: CustomStringConvertible {
     mpv.setInt(MPVOption.TrackSelection.vid, vid)
     let aid = int(for: .aid) ?? 0
     mpv.setInt(MPVOption.TrackSelection.aid, aid)
+    // FIXME: need to add support for external subtitles
+    let sid = int(for: .sid) ?? 0
+    mpv.setInt(MPVOption.TrackSelection.sid, sid)
+    let s2id = int(for: .s2id) ?? 0
+    mpv.setInt(MPVOption.Subtitles.secondarySid, s2id)
 
     if let audioFilters = string(for: .audioFilters) {
       mpv.setString(MPVProperty.af, audioFilters)
@@ -977,6 +984,8 @@ struct PlayerSaveState: CustomStringConvertible {
       // This includes crop
       mpv.setString(MPVProperty.vf, videoFilters)
     }
+
+    log.verbose("Restoring mpv options & props: done")
   }
 
 }  /// end `struct PlayerSaveState`
