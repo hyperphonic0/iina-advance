@@ -41,7 +41,7 @@ class PreferenceViewController: NSViewController {
       stackView.addAllConstraintsToFillSuperview()
     }
 
-
+    view.configureSubtreeControlSizesForMacVersion()
   }
 
 }

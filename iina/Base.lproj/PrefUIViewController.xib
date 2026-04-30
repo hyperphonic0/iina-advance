@@ -3645,11 +3645,11 @@ For smoothest results, also enable custom full screen.</string>
             </constraints>
             <point key="canvasLocation" x="-2" y="773"/>
         </customView>
-        <customView misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="iZa-Jl-fXs" userLabel="Prefs &gt; UI &gt; Sidebars">
-            <rect key="frame" x="0.0" y="0.0" width="619" height="400"/>
+        <customView translatesAutoresizingMaskIntoConstraints="NO" id="iZa-Jl-fXs" userLabel="Prefs &gt; UI &gt; Sidebars">
+            <rect key="frame" x="0.0" y="0.0" width="619" height="420"/>
             <subviews>
                 <textField identifier="SectionTitleSidebars" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="E6K-jW-Lzn">
-                    <rect key="frame" x="-2" y="376" width="66" height="16"/>
+                    <rect key="frame" x="-2" y="396" width="66" height="16"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="16" id="VMK-jQ-Ujf"/>
                     </constraints>
@@ -3660,10 +3660,10 @@ For smoothest results, also enable custom full screen.</string>
                     </textFieldCell>
                 </textField>
                 <stackView distribution="fill" orientation="vertical" alignment="leading" spacing="4" horizontalStackHuggingPriority="500" verticalStackHuggingPriority="500" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="kog-j2-kGH" userLabel="RightColumn VStack View">
-                    <rect key="frame" x="120" y="8" width="450" height="390"/>
+                    <rect key="frame" x="120" y="8" width="450" height="410"/>
                     <subviews>
                         <stackView clipsToBounds="YES" autoresizesSubviews="NO" distribution="fill" orientation="horizontal" alignment="firstBaseline" horizontalStackHuggingPriority="500" verticalStackHuggingPriority="500" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="MPe-w8-VKH" userLabel="Sidebars-Color-Scheme HStack View">
-                            <rect key="frame" x="0.0" y="362" width="450" height="28"/>
+                            <rect key="frame" x="0.0" y="382" width="450" height="28"/>
                             <subviews>
                                 <customView horizontalHuggingPriority="200" verticalHuggingPriority="1000" horizontalCompressionResistancePriority="1" verticalCompressionResistancePriority="1" translatesAutoresizingMaskIntoConstraints="NO" id="EpZ-XX-fpV" userLabel="Horizontal Spacer View">
                                     <rect key="frame" x="0.0" y="5" width="180" height="1"/>
@@ -3709,13 +3709,13 @@ For smoothest results, also enable custom full screen.</string>
                             </customSpacing>
                         </stackView>
                         <customView horizontalHuggingPriority="1" verticalHuggingPriority="1000" horizontalCompressionResistancePriority="1" verticalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="jwX-da-Lm3" userLabel="12pt Spacer">
-                            <rect key="frame" x="0.0" y="354" width="450" height="4"/>
+                            <rect key="frame" x="0.0" y="374" width="450" height="4"/>
                             <constraints>
                                 <constraint firstAttribute="height" constant="4" id="RFf-aM-i4d"/>
                             </constraints>
                         </customView>
                         <stackView clipsToBounds="YES" distribution="fill" orientation="horizontal" alignment="top" spacing="0.0" horizontalStackHuggingPriority="500" verticalStackHuggingPriority="1000" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="zxv-zZ-q8V" userLabel="HStack View">
-                            <rect key="frame" x="0.0" y="158" width="450" height="192"/>
+                            <rect key="frame" x="0.0" y="178" width="450" height="192"/>
                             <subviews>
                                 <gridView horizontalCompressionResistancePriority="500" xPlacement="center" yPlacement="bottom" rowAlignment="firstBaseline" rowSpacing="4" columnSpacing="2" translatesAutoresizingMaskIntoConstraints="NO" id="gHl-nV-4jw" userLabel="SidebarConfigs Grid View">
                                     <rect key="frame" x="0.0" y="0.0" width="443" height="192"/>
@@ -4001,13 +4001,13 @@ For smoothest results, also enable custom full screen.</string>
                             </customSpacing>
                         </stackView>
                         <customView horizontalHuggingPriority="1" verticalHuggingPriority="1000" horizontalCompressionResistancePriority="1" verticalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="ZwL-8x-3OV" userLabel="12pt Spacer">
-                            <rect key="frame" x="0.0" y="142" width="450" height="12"/>
+                            <rect key="frame" x="0.0" y="162" width="450" height="12"/>
                             <constraints>
                                 <constraint firstAttribute="height" constant="12" id="lTw-9z-dz8"/>
                             </constraints>
                         </customView>
                         <textField focusRingType="none" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="HJz-q0-z9s">
-                            <rect key="frame" x="-2" y="122" width="454" height="16"/>
+                            <rect key="frame" x="-2" y="142" width="454" height="16"/>
                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Video settings presets:" id="Dd6-YT-Bhp">
                                 <font key="font" metaFont="system"/>
                                 <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -4015,19 +4015,19 @@ For smoothest results, also enable custom full screen.</string>
                             </textFieldCell>
                         </textField>
                         <stackView clipsToBounds="YES" distribution="fill" orientation="horizontal" alignment="firstBaseline" horizontalStackHuggingPriority="250" verticalStackHuggingPriority="749" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xuk-tu-yGo" userLabel="Video-Settings-Sidebar HStack View">
-                            <rect key="frame" x="0.0" y="0.0" width="450" height="118"/>
+                            <rect key="frame" x="0.0" y="0.0" width="450" height="138"/>
                             <subviews>
-                                <box identifier="VideoSettingsSidebar-Box" horizontalHuggingPriority="750" verticalHuggingPriority="750" title="Box" titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="gkn-iF-oiJ" userLabel="Video-Settings-Sidebar Box">
-                                    <rect key="frame" x="0.0" y="0.0" width="382" height="118"/>
+                                <box identifier="VideoSettingsSidebar-Box" horizontalHuggingPriority="750" verticalCompressionResistancePriority="250" title="Box" titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="gkn-iF-oiJ" userLabel="Video-Settings-Sidebar Box">
+                                    <rect key="frame" x="0.0" y="0.0" width="382" height="138"/>
                                     <view key="contentView" id="Or9-ec-vBZ" userLabel="Video-Settings-Sidebar-Box Content View">
-                                        <rect key="frame" x="0.0" y="0.0" width="382" height="118"/>
+                                        <rect key="frame" x="0.0" y="0.0" width="382" height="138"/>
                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                         <subviews>
                                             <stackView distribution="equalCentering" orientation="vertical" alignment="leading" horizontalStackHuggingPriority="250" verticalStackHuggingPriority="1000" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="6dd-Pj-ocr" userLabel="Video-Settings-Sidebar-Box Vertical Stack View">
-                                                <rect key="frame" x="16" y="12" width="350" height="96"/>
+                                                <rect key="frame" x="16" y="12" width="350" height="116"/>
                                                 <subviews>
                                                     <customView translatesAutoresizingMaskIntoConstraints="NO" id="ruR-OU-I1I" userLabel="AspectRatioPresets-Container View">
-                                                        <rect key="frame" x="0.0" y="80" width="350" height="16"/>
+                                                        <rect key="frame" x="0.0" y="100" width="350" height="16"/>
                                                         <subviews>
                                                             <textField focusRingType="none" horizontalHuggingPriority="249" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="juv-F4-U4n">
                                                                 <rect key="frame" x="-2" y="0.0" width="331" height="16"/>
@@ -4057,7 +4057,7 @@ For smoothest results, also enable custom full screen.</string>
                                                         </constraints>
                                                     </customView>
                                                     <tokenField focusRingType="none" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="ujy-m2-hkj" customClass="AspectTokenField" customModule="IINA_Advance" customModuleProvider="target">
-                                                        <rect key="frame" x="0.0" y="52" width="350" height="20"/>
+                                                        <rect key="frame" x="0.0" y="68" width="350" height="24"/>
                                                         <constraints>
                                                             <constraint firstAttribute="width" constant="350" id="SGF-yh-K2z"/>
                                                         </constraints>
@@ -4071,13 +4071,13 @@ For smoothest results, also enable custom full screen.</string>
                                                         </connections>
                                                     </tokenField>
                                                     <customView horizontalHuggingPriority="1" verticalHuggingPriority="1000" horizontalCompressionResistancePriority="1" verticalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="319-Ws-NfM" userLabel="4pt Spacer">
-                                                        <rect key="frame" x="0.0" y="40" width="350" height="4"/>
+                                                        <rect key="frame" x="0.0" y="56" width="350" height="4"/>
                                                         <constraints>
                                                             <constraint firstAttribute="height" constant="4" id="BYA-1z-bg4"/>
                                                         </constraints>
                                                     </customView>
                                                     <customView translatesAutoresizingMaskIntoConstraints="NO" id="bNG-9Y-1ws" userLabel="CropPresets-Container View">
-                                                        <rect key="frame" x="0.0" y="16" width="350" height="16"/>
+                                                        <rect key="frame" x="0.0" y="32" width="350" height="16"/>
                                                         <subviews>
                                                             <textField focusRingType="none" horizontalHuggingPriority="249" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="1NQ-lx-OBs">
                                                                 <rect key="frame" x="-2" y="0.0" width="331" height="16"/>
@@ -4107,7 +4107,7 @@ For smoothest results, also enable custom full screen.</string>
                                                         </constraints>
                                                     </customView>
                                                     <tokenField focusRingType="none" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="hg9-M3-Cff" userLabel="Crop Token Field" customClass="AspectTokenField" customModule="IINA_Advance" customModuleProvider="target">
-                                                        <rect key="frame" x="0.0" y="0.0" width="350" height="8"/>
+                                                        <rect key="frame" x="0.0" y="0.0" width="350" height="24"/>
                                                         <constraints>
                                                             <constraint firstAttribute="width" constant="350" id="trI-Ii-ZG7"/>
                                                         </constraints>
@@ -4151,7 +4151,7 @@ For smoothest results, also enable custom full screen.</string>
                                     <font key="titleFont" metaFont="system"/>
                                 </box>
                                 <customView horizontalHuggingPriority="249" verticalHuggingPriority="500" horizontalCompressionResistancePriority="1" verticalCompressionResistancePriority="1" translatesAutoresizingMaskIntoConstraints="NO" id="lX5-rN-e6d" userLabel="Spacer">
-                                    <rect key="frame" x="390" y="0.0" width="60" height="118"/>
+                                    <rect key="frame" x="390" y="0.0" width="60" height="138"/>
                                 </customView>
                             </subviews>
                             <visibilityPriorities>
@@ -4186,10 +4186,10 @@ For smoothest results, also enable custom full screen.</string>
                 </stackView>
             </subviews>
             <constraints>
+                <constraint firstAttribute="bottom" secondItem="gkn-iF-oiJ" secondAttribute="bottom" constant="8" id="0Uf-As-h7O"/>
                 <constraint firstItem="iHT-e9-f3r" firstAttribute="firstBaseline" secondItem="E6K-jW-Lzn" secondAttribute="firstBaseline" id="2eu-Qq-I8k"/>
                 <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="kog-j2-kGH" secondAttribute="trailing" id="Dl0-GF-pDe"/>
                 <constraint firstItem="E6K-jW-Lzn" firstAttribute="trailing" relation="lessThanOrEqual" secondItem="iZa-Jl-fXs" secondAttribute="leading" constant="120" id="Imb-YN-akQ"/>
-                <constraint firstAttribute="bottom" secondItem="kog-j2-kGH" secondAttribute="bottom" constant="8" id="T5x-i2-gUA"/>
                 <constraint firstItem="E6K-jW-Lzn" firstAttribute="leading" secondItem="iZa-Jl-fXs" secondAttribute="leading" id="Tj4-o9-IqL"/>
                 <constraint firstItem="WaT-zt-ObT" firstAttribute="firstBaseline" secondItem="E6K-jW-Lzn" secondAttribute="firstBaseline" id="Wcy-CQ-tvY"/>
                 <constraint firstItem="E6K-jW-Lzn" firstAttribute="top" secondItem="iZa-Jl-fXs" secondAttribute="top" constant="8" id="gKH-FL-rHR"/>

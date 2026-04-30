@@ -2471,6 +2471,25 @@ extension NSView {
     }
   }
 
+  /// Tahoe+ prefers super big buttons & text fields, which we use by default in XIB.
+  /// For pre-Tahoe Macs, reduce back to preious size. Call this on the root of the view hierarchy,
+  /// and all necessary controls will be adjusted.
+  func configureSubtreeControlSizesForMacVersion() {
+    guard #unavailable(macOS 26.0) else { return }
+    if let control = self as? NSControl {
+      if (self as? NSButton != nil)
+          || (self as? NSSegmentedControl != nil)
+          || (self as? NSTextField != nil)  {
+        if control.controlSize == .large {
+          control.controlSize = .regular
+        }
+      }
+    }
+    for subview in self.subviews {
+      subview.configureSubtreeControlSizesForMacVersion()
+    }
+  }
+
 #if DEBUG
   func configureSubtreeForClipping() {
     self.clipsToBounds = true
