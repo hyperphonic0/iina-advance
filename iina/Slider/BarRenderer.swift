@@ -515,8 +515,9 @@ final class BarRenderer {
     let hasClearBG = colorScheme.hasClearBG
     let barAppearance = hasClearBG ? NSAppearance(iinaTheme: .dark)! : windowAppearance
 
-    return barAppearance.performAsCurrentDrawingAppearance {
-      let leftBaseColor: NSColor
+    var leftBaseColor: NSColor = .controlAccentColor
+    var rightBaseColor: NSColor = .mainSliderBarRight
+    barAppearance.performAsCurrentDrawingAppearance {
       let userSetting: Preference.SliderBarLeftColor = Preference.enum(for: .sliderBarDoneColor)
       switch userSetting {
       case .gray:
@@ -525,7 +526,6 @@ final class BarRenderer {
         leftBaseColor = .controlAccentColor
       }
 
-      let rightBaseColor: NSColor
       switch colorScheme {
       case .clearGradient:
         rightBaseColor = .mainSliderBarRightClearBG
@@ -534,8 +534,8 @@ final class BarRenderer {
       case .visualEffectView, .tintedGlass, .none:
         rightBaseColor = .mainSliderBarRight
       }
-      return (leftBaseColor.cgColor, rightBaseColor.cgColor)
     }
+    return (leftBaseColor.cgColor, rightBaseColor.cgColor)
   }
 
   /// Measured in points, not pixels!

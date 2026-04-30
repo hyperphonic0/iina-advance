@@ -1823,15 +1823,6 @@ extension NSAppearance {
   var isDark: Bool {
     return name == .darkAqua || name == .vibrantDark || name == .accessibilityHighContrastDarkAqua || name == .accessibilityHighContrastVibrantDark
   }
-
-  // Performs the given closure with this appearance by temporarily making this the current appearance.
-  func performAsCurrentDrawingAppearance<T>(_ closure: ()  -> T) -> T {
-    var result: T?
-    self.performAsCurrentDrawingAppearance {
-      result = closure()
-    }
-    return result!
-  }
 }
 
   extension NSScreen {

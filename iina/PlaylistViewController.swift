@@ -298,13 +298,15 @@ class PlaylistViewController: NSViewController, NSMenuDelegate, SidebarTabGroupV
       isPlayingTextColor = NSColor.controlAccentColor.blended(withFraction: isPlayingTextBlendFraction, of: .textColor)!
       isPlayingPrefixTextColor = NSColor.controlAccentColor.blended(withFraction: isPlayingPrefixTextBlendFraction, of: .textColor)!
 
-      // Need a dedicated view behind each table to use for background color.
-      // NSTableView & its component views don't support translucent background color.
-      // Also note: CGColor does not support dark mode, so the view layer needs to be updated
-      // explicitly whenever the appearance changes.
-      let tableBackgroundColor = NSColor.sidebarTableBackground.cgColor
-      playlistTableBackgroundView.wantsLayer = true
-      playlistTableBackgroundView.layer?.backgroundColor = tableBackgroundColor
+      if let playlistTableBackgroundView {
+        // Need a dedicated view behind each table to use for background color.
+        // NSTableView & its component views don't support translucent background color.
+        // Also note: CGColor does not support dark mode, so the view layer needs to be updated
+        // explicitly whenever the appearance changes.
+        let tableBackgroundColor = NSColor.sidebarTableBackground.cgColor
+        playlistTableBackgroundView.wantsLayer = true
+        playlistTableBackgroundView.layer?.backgroundColor = tableBackgroundColor
+      }
     }
     reloadData(playlist: true, chapters: true, animate: false)
   }
