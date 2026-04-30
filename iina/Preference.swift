@@ -1321,23 +1321,15 @@ struct Preference {
       self.init(rawValue: Preference.integer(for: key))
     }
 
-    var mpvString: String {
-      switch self {
-      case .disabled: return "no"
-      case .auto: return "auto"
-      case .autoCopy: return "auto-copy"
-      }
-    }
-
     var localizedDescription: String {
-      return NSLocalizedString("hwdec." + mpvString, comment: mpvString)
+      return NSLocalizedString("hwdec." + description, comment: description)
     }
 
     var description: String {
       switch self {
-      case .disabled: return "disabled"
+      case .disabled: return "no"
       case .auto: return "auto"
-      case .autoCopy: return "autoCopy"
+      case .autoCopy: return "auto-copy"
       }
     }
   }

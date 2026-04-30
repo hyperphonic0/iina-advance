@@ -713,17 +713,7 @@ extension PlayerCore {
 
     if refreshNowPlayingIndex, let currentPlayback = info.currentPlayback {
       let playlist = info.playlist
-      // Make sure `currentPlayback.playlistPos` still points to the playlist index of that item
-      // Try to find new index of playlist, becuase we can't reliabily pull it from mpv (so far...)
-      // Find matching URLs in playlist. There may be duplicates, so try to grab the closest one to the last known playlistPos ...
-      let candidateIndexes = playlist.enumerated().filter { $0.element == currentPlayback.id }.map(\.offset)
-      var bestCandidateIndex = Int.max
-      for candidateIndex in candidateIndexes {
-        if candidateIndex.distance(to: currentPlayback.playlistPos) < bestCandidateIndex {
-          bestCandidateIndex = candidateIndex
-        }
-      }
-      if playlistPos < playlist.count {
+      if currentPlayback.playlistPos != playlistPos, playlistPos < playlist.count {
         log.debug("[Playlist] After reload, currentPlayback.playlistPos (\(currentPlayback.playlistPos)) "
                   + "no longer matches that item in playlist. Updating it to \(playlistPos)")
         info.currentPlayback = currentPlayback.clone(playlistPos: playlistPos)
