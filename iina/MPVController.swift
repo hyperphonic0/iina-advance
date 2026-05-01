@@ -101,15 +101,18 @@ final class MPVController: NSObject {
   /// about) vs. the changes we already made which are getting echoed back at us (which we don't care about).
   var windowScalesExpected = LinkedList<CGFloat>([1.0])
 
-  var log: any Logger.Subsystem { mpvLogScanner.mpvLogSubsystem }
+  let log: any Logger.Subsystem
 
   /// Creates a `MPVController` object.
   /// - Parameters:
   ///   - playerCore: The player this `MPVController` will be associated with.
   init(playerCore: PlayerCore) {
     self.player = playerCore
+    let log = Logger.makeSubsystem(playerCore, fmt: StringConstants.iinaMpvCategoryFmt,
+                                   symbolName: ["building.columns"])
+    self.log = log
     self.queue = DispatchQueue.newDQ(label: "com.iina-advance.mpv.\(playerCore.label)", qos: .userInitiated)
-    self.mpvLogScanner = MPVLogScanner(player: playerCore)
+    self.mpvLogScanner = MPVLogScanner(player: playerCore, log)
     super.init()
   }
 

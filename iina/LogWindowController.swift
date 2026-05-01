@@ -8,56 +8,66 @@
 
 import Foundation
 
-fileprivate let colorMap: [Int: NSColor] = [0: .lightGray, 1: .green, 2: .yellow, 3: .red]
-@MainActor fileprivate var circleDict: [NSColor: NSImage] = [:]
-fileprivate let kIconSize = 17.0
-fileprivate let kBorderWidth = 1.25
+extension NSToolbarItem.Identifier {
+  static let followButton = NSToolbarItem.Identifier("iina.logWindow.toolbar.followButton")
+  static let logLevelButton = NSToolbarItem.Identifier("iina.logWindow.toolbar.logLevelButton")
+  static let subsystemButton = NSToolbarItem.Identifier("iina.logWindow.toolbar.subsystemButton")
+  static let saveButton = NSToolbarItem.Identifier("iina.logWindow.toolbar.saveButton")
+  static let searchField = NSToolbarItem.Identifier("iina.logWindow.toolbar.searchField")
+}
 
-class LogWindowController: WindowController, NSMenuDelegate {
-  override var windowNibName: NSNib.Name {
-    return NSNib.Name("LogWindowController")
+final class LogCellView: NSTableCellView {
+  override func viewWillDraw() {
+    super.viewWillDraw()
+    textField?.font = .monospacedSystemFont(ofSize: NSFont.smallSystemFontSize, weight: .regular)
   }
+}
 
-  @IBOutlet weak var logTableView: NSTableView!
-  @IBOutlet var logArrayController: NSArrayController!
-  @IBOutlet weak var subsystemPopUpButton: NSPopUpButton!
-  @IBOutlet weak var levelPopUpButton: NSPopUpButton!
+class LogWindowController: WindowController, NSMenuDelegate, NSToolbarDelegate, NSSearchFieldDelegate {
+  private var observers: [NSObjectProtocol] = []
+  let logTableView = NSTableView()
+  let scrollView = NSScrollView()
+  let arrayController = NSArrayController()
 
   @objc dynamic var logs: [Logger.Log] = []
+
+  let logLevelMenu = NSMenu()
+  let subsystemMenu = NSMenu()
+
+  var following: Bool = false {
+    didSet {
+      guard let button = toolbarItem(withID: .followButton) else { return }
+      let symbolName = following ? "arrow.up.left.circle.fill" : "arrow.up.left.circle"
+      button.image = .findSFSymbol([symbolName])
+    }
+  }
+  var filteredLogLevel = Logger.Level.preferred
+  var filteredSubsystems: [String] = []
+  let searchField = NSSearchField()
+  var filterString = ""
+
+  private var scrollEndObserver: NSObjectProtocol?
+  private var liveScrollObserver: NSObjectProtocol?
+  private var boundsChangeObserver: NSObjectProtocol?
+
   @objc dynamic var predicate = NSPredicate(value: true)
 
   fileprivate var refreshTimer: Timer?
 
-  init() {
-    super.init(window: nil)
+  convenience init() {
+    let window = NSWindow(
+      contentRect: NSRect(x: 0, y: 0, width: 800, height: 500),
+      styleMask: [.titled, .closable, .miniaturizable, .resizable],
+      backing: .buffered,
+      defer: false
+    )
+    window.title = "Log Viewer"
+    self.init(window: window)
     self.windowFrameAutosaveName = WindowAutosaveName.logViewer.string
-  }
-
-  required init?(coder: NSCoder) {
-    fatalError("init(coder:) has not been implemented")
-  }
-  
-  override func windowDidLoad() {
-    super.windowDidLoad()
-
-    logTableView.userInterfaceLayoutDirection = .leftToRight
-    logTableView.sizeLastColumnToFit()
-    let tableViewMenu = NSMenu()
-    tableViewMenu.addItem(withTitle: "Copy", action: #selector(menuCopy), keyEquivalent: "")
-    logTableView.menu = tableViewMenu
-
-    levelPopUpButton.menu?.items.forEach {
-      $0.image = LogWindowController.indicatorIcon(withColor: colorMap[$0.tag]!)
-    }
-    levelPopUpButton.selectItem(withTag: Logger.Level.preferred.rawValue)
-    subsystemPopUpButton.menu!.delegate = self
-    
-    window?.initialFirstResponder = logTableView
   }
 
   override func showWindow(_ sender: Any?) {
     Logger.log.verbose("Log window will show")
-    super.showWindow(sender)
 
     refreshTimer?.invalidate()
     refreshTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { timer in
@@ -65,68 +75,343 @@ class LogWindowController: WindowController, NSMenuDelegate {
         syncLogs()
       }
     }
+
+    setupTableView()
+    setupArrayController()
+    setupToolbar()
+
+    arrayController.addObserver(self, forKeyPath: "arrangedObjects.@count", options: [.new, .prior], context: nil)
+
+    logTableView.userInterfaceLayoutDirection = .leftToRight
+    logTableView.sizeLastColumnToFit()
+    let tableViewMenu = NSMenu()
+    tableViewMenu.addItem(withTitle: "Copy", action: #selector(menuCopy), keyEquivalent: "")
+    logTableView.menu = tableViewMenu
+
+    logLevelMenu.addItem(withTitle: "Dummy", action: nil, keyEquivalent: "")
+    subsystemMenu.addItem(withTitle: "Dummy", action: nil, keyEquivalent: "")
+
+    for level in Logger.Level.allCases {
+      let item = NSMenuItem(title: level.description, action: #selector(logLevelChanged), keyEquivalent: "")
+      item.tag = level.rawValue
+      item.image = LogWindowController.indicatorIcon(withColor: level.color)
+      logLevelMenu.addItem(item)
+    }
+
+    subsystemMenu.delegate = self
+    updateSubtitle()
+
+    window?.initialFirstResponder = logTableView
+    super.showWindow(sender)
   }
 
   func windowWillClose(_ notification: Notification) {
     Logger.log.verbose("Log window will close")
     refreshTimer?.invalidate()
+    for observer in observers {
+      ObjcUtils.silenced {
+        NotificationCenter.default.removeObserver(observer)
+      }
+    }
+    observers = []
+  }
+
+  private func setupTableView() {
+    guard let contentView = window?.contentView else { return }
+
+    // Table view inside a scroll view
+    logTableView.style = .inset           // or .plain, .sourceList, .fullWidth
+    logTableView.usesAlternatingRowBackgroundColors = true
+    logTableView.allowsMultipleSelection = true
+    logTableView.columnAutoresizingStyle = .lastColumnOnlyAutoresizingStyle
+    logTableView.delegate = self
+    logTableView.usesAutomaticRowHeights = true
+    logTableView.rowSizeStyle = .default
+    // Columns
+    let levelColumn = NSTableColumn(identifier: .init("level"))
+    levelColumn.title = ""
+    levelColumn.minWidth = 10
+    levelColumn.maxWidth = 10
+    logTableView.addTableColumn(levelColumn)
+
+    let timestampColumn = NSTableColumn(identifier: .init("timestamp"))
+    timestampColumn.title = "Time"
+    timestampColumn.minWidth = 90
+    timestampColumn.maxWidth = 90
+    logTableView.addTableColumn(timestampColumn)
+
+    let subsystemColumn = NSTableColumn(identifier: .init("subsystem"))
+    subsystemColumn.title = "Subsystem"
+    subsystemColumn.minWidth = 150
+    subsystemColumn.maxWidth = 150
+    logTableView.addTableColumn(subsystemColumn)
+
+    let messageColumn = NSTableColumn(identifier: .init("message"))
+    messageColumn.title = "Message"
+    messageColumn.resizingMask = .autoresizingMask
+    logTableView.addTableColumn(messageColumn)
+
+    // Scroll view wrapper (NSTableView must live inside one)
+    scrollView.documentView = logTableView
+    scrollView.hasVerticalScroller = true
+    scrollView.hasHorizontalScroller = false
+    scrollView.autohidesScrollers = true
+    scrollView.translatesAutoresizingMaskIntoConstraints = false
+
+    contentView.addSubview(scrollView)
+
+    // Pin to all four edges of contentView
+    NSLayoutConstraint.activate([
+      scrollView.topAnchor.constraint(equalTo: contentView.topAnchor),
+      scrollView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
+      scrollView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+      scrollView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor)
+    ])
+
+    observers.append(NotificationCenter.default.addObserver(forName: NSScrollView.didLiveScrollNotification,
+                                                            object: scrollView, queue: .main, using: { [self] noti in
+      checkIfAtBottom()
+    }))
+  }
+
+  private func setupArrayController() {
+    // Bind controller to our entries array
+    arrayController.bind(.contentArray, to: self, withKeyPath: "logs", options: nil)
+    arrayController.bind(.filterPredicate, to: self, withKeyPath: "predicate", options: nil)
+
+    // Bind table view's content to array controller's arrangedObjects
+    logTableView.bind(.content, to: arrayController, withKeyPath: "arrangedObjects", options: nil)
+    logTableView.bind(.selectionIndexes, to: arrayController, withKeyPath: "selectionIndexes", options: nil)
+  }
+
+  private func setupToolbar() {
+    let toolbar = NSToolbar(identifier: "iina.logWindow.toolbar")
+    toolbar.delegate = self
+    toolbar.autosavesConfiguration = true
+    toolbar.displayMode = .iconOnly
+    window?.toolbar = toolbar
   }
 
   fileprivate static func indicatorIcon(withColor color: NSColor) -> NSImage {
-    if let cached = circleDict[color] {
-      return cached
+    return NSImage(systemSymbolName: "circle.fill", accessibilityDescription: nil)!.withSymbolConfiguration(.init(scale: .small))!.tinted(color)
+  }
+
+  // MARK: - NSToolbarDelegate
+
+  func toolbarAllowedItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
+    return [.followButton, .logLevelButton, .subsystemButton, .saveButton, .searchField]
+  }
+
+  func toolbarDefaultItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
+    return [.followButton, .logLevelButton, .subsystemButton, .saveButton, .searchField]
+  }
+
+  func toolbar(_ toolbar: NSToolbar, itemForItemIdentifier itemIdentifier: NSToolbarItem.Identifier, willBeInsertedIntoToolbar flag: Bool) -> NSToolbarItem? {
+    switch itemIdentifier {
+    case .followButton:
+      return makeFollowButton()
+    case .logLevelButton:
+      return makeLogLevelButton()
+    case .subsystemButton:
+      return makeSubsystemButton()
+    case .saveButton:
+      return makeSaveButton()
+    case .searchField:
+      return makeSearchField()
+    default:
+      return nil
     }
-    let image = NSImage(size: NSMakeSize(kIconSize, kIconSize), flipped: false) { rect in
-      let inset = NSInsetRect(rect, kBorderWidth / 2 + rect.size.width * 0.25, kBorderWidth / 2 + rect.size.height * 0.25)
-      let path = NSBezierPath.init(ovalIn: inset)
-      path.lineWidth = kBorderWidth
+  }
 
-      let fractionOfBlendedColor = (NSApp.appearance?.isDark ?? false) ? 0.15 : 0.3
-      let borderColor = color.blended(withFraction: fractionOfBlendedColor, of: .controlTextColor)
+  private func toolbarItem(withID id: NSToolbarItem.Identifier) -> NSToolbarItem? {
+    return window?.toolbar?.items.first(where: { $0.itemIdentifier == id })
+  }
 
-      borderColor?.setStroke()
-      path.stroke()
+  // MARK: - Item Factory
 
-      color.setFill()
-      path.fill()
+  private func makeFollowButton() -> NSToolbarItem {
+    let item = NSToolbarItem(itemIdentifier: .followButton)
+    item.label = "Follow"
+    item.paletteLabel = "Follow latest logs"
+    item.toolTip = "Follow latest logs"
+    item.image = .findSFSymbol(["arrow.up.left.circle"])
+    item.action = #selector(followAction)
+    return item
+  }
 
-      return true
+  private func updateLogLevelButtonImage(toolBarItem: NSToolbarItem? = nil) {
+    let item = toolBarItem ?? toolbarItem(withID: .logLevelButton)
+    if let item {
+      item.image = LogWindowController.indicatorIcon(withColor: filteredLogLevel.color).withSymbolConfiguration(.init(scale: .medium))
     }
-    circleDict[color] = image
-    return image
+  }
+
+  private func makeLogLevelButton() -> NSMenuToolbarItem {
+    let item = NSMenuToolbarItem(itemIdentifier: .logLevelButton)
+    item.label = "Log Level"
+    item.paletteLabel = "Log Level"
+    item.toolTip = "Log Level"
+    item.showsIndicator = true
+    item.title = "Log Level"
+    item.menu = logLevelMenu
+    updateLogLevelButtonImage(toolBarItem: item)
+    return item
+  }
+
+  private func makeSubsystemButton() -> NSMenuToolbarItem {
+    let item = NSMenuToolbarItem(itemIdentifier: .subsystemButton)
+    item.label = "Subsystem"
+    item.paletteLabel = "Subsystem"
+    item.toolTip = "Subsystem"
+    item.image = NSImage(systemSymbolName: "square.stack.3d.up", accessibilityDescription: "Subsystem")!
+    item.showsIndicator = true
+    item.title = "Subsystem"
+    item.menu = subsystemMenu
+    return item
+  }
+
+  private func makeSaveButton() -> NSToolbarItem {
+    let item = NSMenuToolbarItem(itemIdentifier: .saveButton)
+    item.label = "Save"
+    item.paletteLabel = "Save"
+    item.toolTip = "Save"
+    item.image = NSImage(systemSymbolName: "square.and.arrow.down", accessibilityDescription: "Save")!
+    item.action = #selector(save)
+    item.menu = NSMenu()
+    item.menu.addItem(withTitle: "Save filtered logs...", action: #selector(save), keyEquivalent: "")
+    return item
+  }
+
+  private func makeSearchField() -> NSSearchToolbarItem {
+    let item = NSSearchToolbarItem(itemIdentifier: .searchField)
+    item.label = "Filter"
+    item.paletteLabel = "Filter"
+    item.toolTip = "Filter"
+    searchField.placeholderString = "Filter"
+    searchField.delegate = self
+    item.searchField = searchField
+    return item
   }
 
   // MARK: - NSMenuDelegate
 
   func menuNeedsUpdate(_ menu: NSMenu) {
-    let subSystemNames = Logger.getSubsystems().map{ $0.rawValue }
+    let subsystems = Logger.getSubsystems()
 
     // The first menu item is "All"
     guard let menuItemAll = menu.item(at: 0) else { fatalError("Missing menu item for 'All' in Log window!") }
     menu.removeAllItems()
     menu.addItem(menuItemAll)
 
-    for subSystemName in subSystemNames {
-      menu.addItem(withTitle: subSystemName, action: nil, keyEquivalent: "")
+    for subsystem in subsystems {
+      let item = NSMenuItem.init(title: subsystem.rawValue, action: #selector(subsystemChanged), keyEquivalent: "")
+      item.image = subsystem.image
+      menu.addItem(item)
     }
   }
 
   private func updatePredicate() {
-    var subsystemPredicate = NSPredicate(value: true)
-    if subsystemPopUpButton.indexOfSelectedItem != 0 {
-      subsystemPredicate = NSPredicate(format: "subsystem = %@", subsystemPopUpButton.titleOfSelectedItem!)
+    var predicates: [NSPredicate] = []
+    if !filteredSubsystems.isEmpty {
+      let subsystemPredicate = NSCompoundPredicate(orPredicateWithSubpredicates: filteredSubsystems.map {
+          NSPredicate(format: "subsystem == %@", $0)
+      })
+      predicates.append(subsystemPredicate)
     }
-    let levelPredicate = NSPredicate(format: "level >= %d", levelPopUpButton.selectedTag())
-    predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [subsystemPredicate, levelPredicate])
+    predicates.append(NSPredicate(format: "level >= %d", filteredLogLevel.rawValue))
+    if !filterString.isEmpty {
+      predicates.append(NSPredicate(format: "message CONTAINS[c] %@", filterString))
+    }
+    predicate = NSCompoundPredicate(andPredicateWithSubpredicates: predicates)
+    updateSubtitle()
   }
 
-  @IBAction func subsystemUpdated(_ sender: Any) {
+  func updateSubtitle() {
+    if let window {
+      var subtitleString = ""
+      if filteredSubsystems.isEmpty {
+        subtitleString = "All subsystems"
+      } else {
+        subtitleString = String(describing: filteredSubsystems)
+      }
+      subtitleString += " - "
+      subtitleString += filteredLogLevel.description
+      window.subtitle = subtitleString
+    }
+  }
+
+
+  private func scrollToBottom() {
+    /// macOS couldn't calculate the frame size correctly when the row height is variable and
+    /// is not rendered. After the first scroll, all rows should be rendered, which makes the
+    /// second frame size correct. Scroll the second time to correctly scroll to the last row.
+    logTableView.scroll(NSPoint(x: 0, y: logTableView.frame.size.height))
+    logTableView.scroll(NSPoint(x: 0, y: logTableView.frame.size.height))
+  }
+
+  @objc
+  private func checkIfAtBottom() {
+    let visibleRect = logTableView.visibleRect
+    let totalHeight = logTableView.bounds.height
+
+    guard totalHeight > visibleRect.height else {
+      following = true
+      return
+    }
+
+    let tolerance: CGFloat = 2.0
+    following = visibleRect.maxY >= totalHeight - tolerance
+  }
+
+  override func observeValue(
+      forKeyPath keyPath: String?,
+      of object: Any?,
+      change: [NSKeyValueChangeKey: Any]?,
+      context: UnsafeMutableRawPointer?
+  ) {
+    guard keyPath == "arrangedObjects.@count" else { return }
+
+    if change?[.notificationIsPriorKey] as? Bool == true {
+      checkIfAtBottom()
+    } else if following {
+      scrollToBottom()
+    }
+  }
+
+  @objc func followAction(_ sender: NSToolbarItem) {
+    following = true
+    scrollToBottom()
+  }
+
+  @objc func logLevelChanged(_ sender: NSMenuItem) {
+    guard let newLevel = Logger.Level(rawValue: sender.tag) else { return }
+    filteredLogLevel = newLevel
+    updateLogLevelButtonImage()
     updatePredicate()
   }
 
-  @IBAction func save(_ sender: Any) {
-    Utility.quickSavePanel(title: "Log", filename: "iina.log", sheetWindow: window) { url in
-      let logs = (self.logArrayController.content as! [Logger.Log]).map { $0.logString }.joined()
+  @objc func subsystemChanged(_ sender: NSMenuItem) {
+    if let index = filteredSubsystems.firstIndex(of: sender.title) {
+      sender.state = .off
+      filteredSubsystems.remove(at: index)
+    } else {
+      sender.state = .on
+      filteredSubsystems.append(sender.title)
+    }
+    updatePredicate()
+  }
+
+  func controlTextDidChange(_ notification: Notification) {
+    filterString = searchField.stringValue
+    updatePredicate()
+  }
+
+  @objc func save(_ sender: Any) {
+    let saveAll = sender is NSToolbarItem
+    let filename = saveAll ? "iina.log" : (window?.subtitle ?? "filtered") + " iina.log"
+    Utility.quickSavePanel(title: "Log", filename: filename, sheetWindow: window) { url in
+      let content: Any? = saveAll ? self.arrayController.content : self.arrayController.arrangedObjects
+      let logs = (content as! [Logger.Log]).map { $0.logString }.joined()
       try? logs.write(to: url, atomically: true, encoding: .utf8)
     }
   }
@@ -138,13 +423,11 @@ class LogWindowController: WindowController, NSMenuDelegate {
   }
 
   @objc private func menuCopy() {
-    let string = (logArrayController.selectedObjects as! [Logger.Log]).map { $0.logString }.joined()
+    let string = (arrayController.selectedObjects as! [Logger.Log]).map { $0.logString }.joined()
     let pasteboard = NSPasteboard.general
     pasteboard.clearContents()
     pasteboard.setString(string, forType: .string)
   }
-
-  // MARK: - Logs
 
   @MainActor
   @objc func syncLogs() {
@@ -166,6 +449,84 @@ class LogWindowController: WindowController, NSMenuDelegate {
       logTableView.scroll(NSPoint(x: 0, y: logTableView.frame.size.height))
     }
   }
+}
+
+extension LogWindowController: NSTableViewDelegate {
+  func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
+    guard let column = tableColumn,
+          let logs = arrayController.arrangedObjects as? [Logger.Log],
+          row < logs.count else { return nil }
+    let log = logs[row]
+
+    let columnID = column.identifier.rawValue
+    let identifier = NSUserInterfaceItemIdentifier("\(columnID)Cell")
+
+    let cell = tableView.makeView(withIdentifier: identifier, owner: self) as? NSTableCellView
+      ?? makeCell(identifier: identifier, columnID: columnID)
+    switch columnID {
+    case "level":
+      if let level = Logger.Level(rawValue: log.level) {
+        cell.imageView?.image = LogWindowController.indicatorIcon(withColor: level.color)
+      } else {
+        cell.imageView?.image = nil
+      }
+    case "timestamp":
+      cell.textField?.stringValue = log.date
+    case "subsystem":
+      cell.textField?.stringValue = log.subsystem
+    case "message":
+      cell.textField?.stringValue = log.message
+    default:
+      break
+    }
+    return cell
+  }
+
+  private func makeCell(identifier: NSUserInterfaceItemIdentifier, columnID: String) -> NSTableCellView {
+    let cell = LogCellView()
+    cell.identifier = identifier
+
+    if columnID == "level" {
+      let imageView = NSImageView()
+      imageView.translatesAutoresizingMaskIntoConstraints = false
+      imageView.imageScaling = .scaleProportionallyDown
+      cell.addSubview(imageView)
+      cell.imageView = imageView
+      NSLayoutConstraint.activate([
+        imageView.centerXAnchor.constraint(equalTo: cell.centerXAnchor),
+        imageView.topAnchor.constraint(equalTo: cell.topAnchor, constant: 4),
+        imageView.widthAnchor.constraint(equalToConstant: 12),
+        imageView.heightAnchor.constraint(equalToConstant: 12),
+      ])
+    } else {
+      let textField = NSTextField(wrappingLabelWithString: "")
+      textField.translatesAutoresizingMaskIntoConstraints = false
+
+      if columnID == "message" {
+        textField.lineBreakMode = .byWordWrapping
+        textField.maximumNumberOfLines = 0
+        textField.cell?.wraps = true
+        textField.cell?.isScrollable = false
+        // Resist being compressed vertically; allow horizontal compression so width tracks column
+        textField.setContentCompressionResistancePriority(.required, for: .vertical)
+        textField.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+      } else {
+        textField.lineBreakMode = .byTruncatingTail
+        textField.maximumNumberOfLines = 1
+      }
+
+      cell.addSubview(textField)
+      cell.textField = textField
+
+      NSLayoutConstraint.activate([
+        textField.leadingAnchor.constraint(equalTo: cell.leadingAnchor, constant: 4),
+        textField.trailingAnchor.constraint(equalTo: cell.trailingAnchor, constant: -4),
+        textField.topAnchor.constraint(equalTo: cell.topAnchor, constant: 2),
+        textField.bottomAnchor.constraint(equalTo: cell.bottomAnchor, constant: -2),
+      ])
+    }
+    return cell
+  }
 
   @IBAction func showLogFileInFinder(_ sender: AnyObject) {
     NSWorkspace.shared.activateFileViewerSelecting([Logger.logFile])
@@ -183,8 +544,8 @@ class LogWindowController: WindowController, NSMenuDelegate {
   }
 
   override func transformedValue(_ value: Any?) -> Any? {
-    guard let value = value as? Int else { return nil }
-    return LogWindowController.indicatorIcon(withColor: colorMap[value]!)
+    guard let intValue = value as? Int, let level = Logger.Level(rawValue: intValue) else { return nil }
+    return LogWindowController.indicatorIcon(withColor: level.color)
   }
 }
 

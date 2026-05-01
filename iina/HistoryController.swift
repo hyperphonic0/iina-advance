@@ -740,4 +740,3 @@ final class HistoryController {
     return historyList.first(where: { $0.url == url })
   }
 }
-

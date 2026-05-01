@@ -53,11 +53,30 @@ struct Logger {
       case .error: return "E"
       }
     }
+
+    var shortForm: String {
+      switch self {
+      case .trace: return "t"
+      case .verbose: return "v"
+      case .debug: return "d"
+      case .warning: return "w"
+      case .error: return "e"
+      }
+    }
+
+    var color: NSColor {
+      switch self {
+      case .trace: return .systemGray
+      case .verbose: return .systemGray
+      case .debug: return .systemGreen
+      case .warning: return .systemYellow
+      case .error: return .systemRed
+      }
+    }
   }
 
   // MARK: Vars & More!
-
-  static let general = Logger.makeSubsystem("iina")
+  static let general = Logger.makeSubsystem("iina", symbolName: ["star.fill"])
   static let input = Logger.makeSubsystem("input")
   static let restore = Logger.makeSubsystem("restore")
   private static let loggerSubsystem = Logger.makeSubsystem("logger")
@@ -99,7 +118,8 @@ struct Logger {
       if let subsystem = playerLogs[playerID] {
         return subsystem
       }
-      let subsystem = SimpleSubsystem(rawValue: String(format: StringConstants.iinaPlayerCategoryFmt, playerID))
+      let subsystem = SimpleSubsystem(rawValue: String(format: StringConstants.iinaPlayerCategoryFmt, playerID),
+                                      symbolName: ["play.circle"])
 
       playerLogs[playerID] = subsystem
       return subsystem
@@ -198,9 +218,9 @@ struct Logger {
     @objc dynamic let date: String
     let logString: String
 
-    init(subsystem: String, level: Int, message: String, date: String, logString: String) {
+    init(subsystem: String, level: Level, message: String, date: String, logString: String) {
       self.subsystem = subsystem
-      self.level = level
+      self.level = level.rawValue
       self.message = message
       self.date = date
       self.logString = logString
@@ -215,6 +235,7 @@ struct Logger {
   struct DecoratedSubsystem: Subsystem {
     typealias RawValue = String
     var rawValue: String { originalSS.rawValue }
+    var image: NSImage?
 
     let preamble: String
     let originalSS: any Subsystem
@@ -232,6 +253,7 @@ struct Logger {
     init(original: any Subsystem, preamble: String) {
       self.preamble = preamble
       originalSS = original
+      image = original.image
     }
 
     // Unfortunately we need to execute the closure so that we can prepend the preamble...
@@ -281,6 +303,7 @@ struct Logger {
     var isVerboseEnabled: Bool { get }
     var isDebugEnabled: Bool { get }
     var isErrorEnabled: Bool { get }
+    var image: NSImage? { get }
 
     func trace(_ rawMessage: @autoclosure () -> String)
     func verbose(_ rawMessage: @autoclosure () -> String)
@@ -295,14 +318,22 @@ struct Logger {
 
   struct SimpleSubsystem: Subsystem {
     let rawValue: String
+    var image: NSImage?
 
     var isTraceEnabled: Bool { Logger.isTraceEnabled }
     var isVerboseEnabled: Bool { Logger.isVerboseEnabled }
     var isDebugEnabled: Bool { Logger.isDebugEnabled}
     var isErrorEnabled: Bool { Logger.isErrorEnabled }
 
+    var added = false
+
     init(rawValue: String) {
       self.rawValue = rawValue
+    }
+
+    init(rawValue: String, symbolName: [String] = []) {
+      self.init(rawValue: rawValue)
+      self.image = .findSFSymbol(symbolName)
     }
 
     func trace(_ rawMessage: @autoclosure () -> String) {
@@ -348,24 +379,24 @@ struct Logger {
 
   }  // end class Subsystem
 
-  static func makeSubsystem(_ player: PlayerCore, fmt: String) -> any Subsystem {
-    return makeSubsystem(String(format: fmt, player.label))
+  static func makeSubsystem(_ player: PlayerCore, fmt: String, symbolName: [String] = []) -> any Subsystem {
+    return makeSubsystem(String(format: fmt, player.label), symbolName: symbolName)
   }
 
-  static func makeSubsystem(_ rawValue: String) -> any Subsystem {
-    structuresLock.withLock {
+  static func makeSubsystem(_ rawValue: String, symbolName: [String] = []) -> any Subsystem {
+    structuresLock.withLock() {
       for (index, subsystem) in subsystems.enumerated() {
         // The first subsystem will always be "iina"
         if index == 0 { continue }
         if rawValue < subsystem.rawValue {
-          let newSubsystem = SimpleSubsystem(rawValue: rawValue)
+          let newSubsystem = SimpleSubsystem(rawValue: rawValue, symbolName: symbolName)
           subsystems.insert(newSubsystem, at: index)
           return newSubsystem
         } else if rawValue == subsystem.rawValue {
           return subsystem
         }
       }
-      let newSubsystem = SimpleSubsystem(rawValue: rawValue)
+      let newSubsystem = SimpleSubsystem(rawValue: rawValue, symbolName: symbolName)
       subsystems.append(newSubsystem)
       return newSubsystem
     }
@@ -636,7 +667,7 @@ struct Logger {
     guard needsElsewhere else { return }
 
     // Record the log line for use in the Logs window...
-    let log = Log(subsystem: subsystem.rawValue, level: level.rawValue, message: message, date: dateFormatter.string(from: date), logString: string)
+    let log = Log(subsystem: subsystem.rawValue, level: level, message: message, date: dateFormatter.string(from: date), logString: string)
     structuresLock.withLock {
       logsForLogWindow.append(log)
     }

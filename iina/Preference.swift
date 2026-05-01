@@ -2025,4 +2025,6 @@ struct Preference {
     let extra = (ticks %% 2) == 1 ? 5 : 1
     return pow(10.0, Double(pow10)) * Double(extra)
   }
+
+  private static let subsystem = Logger.makeSubsystem("settings", symbolName: ["pencil.and.list.clipboard"])
 }

@@ -9,7 +9,7 @@
 import Cocoa
 import CustomExecutorsKit
 
-fileprivate let thumbCacheSubsystem = Logger.makeSubsystem("thumbcache")
+fileprivate let thumbCacheSubsystem = Logger.makeSubsystem("thumbcache", symbolName: ["photo.stack"])
 
 @globalActor
 actor ThumbnailCache {

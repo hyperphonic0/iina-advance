@@ -8,7 +8,7 @@
 
 import Foundation
 
-fileprivate let log = Logger.makeSubsystem("fgroup")
+fileprivate let log = Logger.makeSubsystem("fgroup", symbolName: ["rectangle.3.group"])
 
 class FileInfo: Hashable {
   // - Stored properties

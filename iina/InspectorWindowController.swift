@@ -701,5 +701,5 @@ fileprivate func readWatchListFromPasteboard(_ pasteboard: NSPasteboard) -> [Str
 }
 
 fileprivate extension Logger.Sub {
-  static let inspector = Logger.makeSubsystem("inspector")
+  static let inspector = Logger.makeSubsystem("inspector", symbolName: ["tablecells"])
 }
