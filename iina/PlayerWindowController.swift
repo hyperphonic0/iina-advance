@@ -701,7 +701,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
     window.appearance = topBarAppearance
     /// But setting `window.appearance` will also change `contentView.appearance`, which we don't want.
     /// Revert it:
-    window.contentView?.appearance = nil
+    window.contentView?.appearance = targetWindowAppearance
 
     if playlistView.isViewLoaded {
       playlistView.updateTableColors(effectiveAppearance: targetWindowAppearance)

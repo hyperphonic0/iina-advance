@@ -792,8 +792,14 @@ extension PlayerWindowController {
 
     // - Interactive mode
 
-    if transition.isEnteringInteractiveMode || (transition.isWindowInitialLayout && transition.outputLayout.isInteractiveMode) {
-      // Even if entering IM, may have a prev crop due to a bug elsewhere. Remove if found
+    if transition.outputLayout.isInteractiveMode {
+      let prevSelectedRect: NSRect?
+      if let cropController = self.cropSettingsView {
+        prevSelectedRect = cropController.cropBoxView.selectedRect
+      } else {
+        prevSelectedRect = nil
+      }
+
       removeCropControls()
 
       // Need videoView to have superview before adding shadow
@@ -817,17 +823,21 @@ extension PlayerWindowController {
 
       /// `selectedRect` should be subrect of`actualSize`
       let selectedRect: NSRect
-      switch currentLayout.interactiveMode {
-      case .crop:
-        if let prevCropFilter = player.info.videoFiltersDisabled[Constants.FilterLabel.crop] {
-          selectedRect = prevCropFilter.cropRect(origVideoSize: videoSizeRaw, flipY: true)
-          log.verbose("Setting crop box selectedRect from prevFilter: \(selectedRect)")
-        } else {
-          selectedRect = NSRect(origin: .zero, size: videoSizeRaw)
-          log.verbose("Setting crop box selectedRect to default whole videoSize: \(selectedRect)")
+      if let prevSelectedRect {
+        selectedRect = prevSelectedRect
+      } else {
+        switch currentLayout.interactiveMode {
+        case .crop:
+          if let prevCropFilter = player.info.videoFiltersDisabled[Constants.FilterLabel.crop] {
+            selectedRect = prevCropFilter.cropRect(origVideoSize: videoSizeRaw, flipY: true)
+            log.verbose("Setting crop box selectedRect from prevFilter: \(selectedRect)")
+          } else {
+            selectedRect = NSRect(origin: .zero, size: videoSizeRaw)
+            log.verbose("Setting crop box selectedRect to default whole videoSize: \(selectedRect)")
+          }
+        case .freeSelecting, .none:
+          selectedRect = .zero
         }
-      case .freeSelecting, .none:
-        selectedRect = .zero
       }
       cropController.cropBoxView.selectedRect = selectedRect
 
