@@ -332,7 +332,6 @@ extension PlayerWindowController {
         log.verbose("Adding leadingSidebarView to window contentView")
         contentView.addSubview(leadingSidebarView, positioned: .above, relativeTo: viewportView)
       }
-      leadingSidebarView.appearance = targetWindowAppearance
     } else {
       leadingSidebarConstraints = nil  // disables constraints
       if leadingSidebarView.superview != nil {
@@ -345,7 +344,6 @@ extension PlayerWindowController {
         log.verbose("Adding trailingSidebarView to window contentView")
         contentView.addSubview(trailingSidebarView, positioned: .above, relativeTo: viewportView)
       }
-      trailingSidebarView.appearance = targetWindowAppearance
     } else {
       trailingSidebarConstraints = nil  // disables constraints
       if trailingSidebarView.superview != nil {
@@ -383,7 +381,9 @@ extension PlayerWindowController {
           }
         }
         // ContentHolderView
-        bottomBar.contentView.superview?.appearance = bottomBarAppearance
+        if bottomBar.contentView != bottomBar.view {
+          bottomBar.contentView.superview?.appearance = bottomBarAppearance
+        }
       }
     } else {
       if bottomBar.view.superview != nil {
@@ -418,7 +418,9 @@ extension PlayerWindowController {
             subsubview.appearance = topBarAppearance
           }
         }
-        topBar.contentView.superview?.appearance = topBarAppearance
+        if topBar.contentView != topBar.view {
+          topBar.contentView.superview?.appearance = topBarAppearance
+        }
       }
 
     } else {

@@ -695,10 +695,13 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
                 + "topBar=\(topBarAppearance.isDark ? "DARK" : "LIGHT") "
                 + "currentWindow=\(window.effectiveAppearance.isDark ? "DARK" : "LIGHT")")
 
-    /// Need to call this to set native title bar colors.
     log.verbose("Changing window appearance: \(window.effectiveAppearance.isDark ? "DARK" : "LIGHT") → "
                 + "\(topBarAppearance.isDark ? "DARK" : "LIGHT")")
+    /// Need to call this to set native title bar colors.
     window.appearance = topBarAppearance
+    /// But setting `window.appearance` will also change `contentView.appearance`, which we don't want.
+    /// Revert it:
+    window.contentView?.appearance = nil
 
     if playlistView.isViewLoaded {
       playlistView.updateTableColors(effectiveAppearance: targetWindowAppearance)
