@@ -63,9 +63,9 @@ struct LayoutState {
   let hasTopPaddingForCameraHousing: Bool
 
   /// LeadingSidebar toggle button.
-  var leadingSidebarToggleButton: VisibilityMode
+  let leadingSidebarToggleButton: VisibilityMode
   /// TrailingSidebar toggle button.
-  var trailingSidebarToggleButton: VisibilityMode
+  let trailingSidebarToggleButton: VisibilityMode
 
   // MARK: Init / Factory
 
