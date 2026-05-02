@@ -112,17 +112,14 @@ class InitialWindowController: WindowController, NSWindowDelegate {
   @IBOutlet weak var lastPositionLabel: NSTextField!
   @IBOutlet weak var recentFilesTableTopConstraint: NSLayoutConstraint!
 
-  private let observedPrefKeys: [Preference.Key] = [.themeMaterial]
+  private let observedPrefKeys: [Preference.Key] = []
+  private var appAppearanceObservation: NSKeyValueObservation?
   private var currentlyHoveredRow: GrayHighlightRowView?
 
   override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
     guard let keyPath = keyPath else { return }
 
     switch keyPath {
-
-    case Preference.Key.themeMaterial.rawValue:
-      setMaterial()
-
     default:
       return
     }
@@ -149,6 +146,14 @@ class InitialWindowController: WindowController, NSWindowDelegate {
     assert(isWindowLoaded, "Expected WelcomeWindow to be loaded!")
 
     Logger.log.verbose("Open WelcomeWindow: start, firstLoad=\(isFirstLoad.yn)")
+
+    appAppearanceObservation = NSApp.observe(\.effectiveAppearance, options: [.new, .old]) { [self] app, change in
+      let oldAppearance = change.oldValue
+      let newAppearance = change.newValue
+      guard oldAppearance != newAppearance else { return }
+      updateWindowAppearance()
+    }
+    updateWindowAppearance()
 
     if isFirstLoad {
       let sw = Utility.Stopwatch()
@@ -216,7 +221,6 @@ class InitialWindowController: WindowController, NSWindowDelegate {
     recentFilesTableView.dataSource = self
     recentFilesTableView.action = #selector(onMouseUpInTable)
     updateTrackingAreas()
-    setMaterial()
 
     observedPrefKeys.forEach { key in
       UserDefaults.standard.addObserver(self, forKeyPath: key.rawValue, options: .new, context: nil)
@@ -236,6 +240,9 @@ class InitialWindowController: WindowController, NSWindowDelegate {
 
   func windowWillClose(_ notification: Notification) {
     removeTrackingAreasIfPresent()
+
+    appAppearanceObservation?.invalidate()
+    appAppearanceObservation = nil
   }
 
   private func updateTrackingAreas() {
@@ -258,14 +265,16 @@ class InitialWindowController: WindowController, NSWindowDelegate {
     }
   }
 
-  private func setMaterial() {
-    guard let window = window else { return }
-    let theme: Preference.Theme = Preference.enum(for: .themeMaterial)
-    window.appearance = NSAppearance(iinaTheme: theme)
+  private func updateWindowAppearance() {
+    let isDark = NSApp.effectiveAppearance.isDark
+    Logger.log.verbose("WelcomeWindow: Updating colors for \(isDark ? "DARK" : "LIGHT") appearance")
     let gradientLayer = CAGradientLayer()
-    gradientLayer.colors = window.effectiveAppearance.isDark ?
-    [NSColor.black.withAlphaComponent(0.4).cgColor, NSColor.black.withAlphaComponent(0).cgColor] :
-    [NSColor.black.withAlphaComponent(0.1).cgColor, NSColor.black.withAlphaComponent(0).cgColor]
+    // Gradient: [bottom, top]
+    if isDark {
+      gradientLayer.colors = [NSColor.black.withAlphaComponent(0.5).cgColor, NSColor.black.withAlphaComponent(0).cgColor]
+    } else {
+      gradientLayer.colors = [NSColor.black.withAlphaComponent(0.1).cgColor, NSColor.black.withAlphaComponent(0).cgColor]
+    }
     leftOverlayView.layer = gradientLayer
   }
 

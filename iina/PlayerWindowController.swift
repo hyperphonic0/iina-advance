@@ -696,10 +696,9 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
                 + "currentWindow=\(window.effectiveAppearance.isDark ? "DARK" : "LIGHT")")
 
     /// Need to call this to set native title bar colors.
-    if window.effectiveAppearance != topBarAppearance {
-      log.verbose("Changing window appearance: \(window.effectiveAppearance.isDark ? "DARK" : "LIGHT") > \(topBarAppearance.isDark ? "DARK" : "LIGHT")")
-      window.appearance = topBarAppearance
-    }
+    log.verbose("Changing window appearance: \(window.effectiveAppearance.isDark ? "DARK" : "LIGHT") → "
+                + "\(topBarAppearance.isDark ? "DARK" : "LIGHT")")
+    window.appearance = topBarAppearance
 
     if playlistView.isViewLoaded {
       playlistView.updateTableColors(effectiveAppearance: targetWindowAppearance)

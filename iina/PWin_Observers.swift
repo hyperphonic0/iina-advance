@@ -175,6 +175,7 @@ extension PlayerWindowController {
     appAppearanceObservation = NSApp.observe(\.effectiveAppearance, options: [.new, .old]) { [self] app, change in
       let oldAppearance = change.oldValue
       let newAppearance = change.newValue
+      guard oldAppearance != newAppearance else { return }
       log.verbose("NSApp appearance changed: dark=\(oldAppearance?.isDark.yn ?? "nil") → dark=\(newAppearance?.isDark.yn ?? "nil")")
 
       animationPipeline.submitInstantTask({ [self] in

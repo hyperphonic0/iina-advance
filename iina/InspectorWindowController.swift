@@ -79,6 +79,7 @@ final class InspectorWindowController: WindowController, NSWindowDelegate, NSTab
   private var watchProperties: [String] = []
 
   private var observers: [NSObjectProtocol] = []
+  private var appAppearanceObservation: NSKeyValueObservation?
 
   // MARK: Init
 
@@ -178,14 +179,13 @@ final class InspectorWindowController: WindowController, NSWindowDelegate, NSTab
 
   override func showWindow(_ sender: Any?) {
     updateInfo()
+
+    updateWindowAppearance()
     deleteButton.isEnabled = !watchTableView.selectedRowIndexes.isEmpty
     watchTableView.sizeLastColumnToFit()
     watchTableView.scrollRowToVisible(0)
 
-    removeTimerAndListeners()
-    updateTimer = Timer.scheduledTimer(timeInterval: TimeInterval(1), target: self, selector: #selector(dynamicUpdate), userInfo: nil, repeats: true)
-    observers.append(NotificationCenter.default.addObserver(forName: .iinaFileLoaded, object: nil, queue: .main, using: self.needsUpdate))
-    observers.append(NotificationCenter.default.addObserver(forName: .iinaPlayerWindowChanged, object: nil, queue: .main, using: self.needsUpdate))
+    addTimerAndListeners()
 
     super.showWindow(sender)
 
@@ -199,6 +199,23 @@ final class InspectorWindowController: WindowController, NSWindowDelegate, NSTab
     removeTimerAndListeners()
   }
 
+  private func addTimerAndListeners() {
+    removeTimerAndListeners()
+
+    appAppearanceObservation = NSApp.observe(\.effectiveAppearance, options: [.new, .old]) { [self] app, change in
+      let oldAppearance = change.oldValue
+      let newAppearance = change.newValue
+      guard oldAppearance != newAppearance else { return }
+      Logger.log.verbose("NSApp appearance changed: dark=\(oldAppearance?.isDark.yn ?? "nil") "
+                         + "→ dark=\(newAppearance?.isDark.yn ?? "nil")")
+      updateWindowAppearance()
+    }
+
+    updateTimer = Timer.scheduledTimer(timeInterval: TimeInterval(1), target: self, selector: #selector(dynamicUpdate), userInfo: nil, repeats: true)
+    observers.append(NotificationCenter.default.addObserver(forName: .iinaFileLoaded, object: nil, queue: .main, using: self.needsUpdate))
+    observers.append(NotificationCenter.default.addObserver(forName: .iinaPlayerWindowChanged, object: nil, queue: .main, using: self.needsUpdate))
+  }
+
   // This is safe to run even if not needed
   private func removeTimerAndListeners() {
     updateTimer?.invalidate()
@@ -209,6 +226,14 @@ final class InspectorWindowController: WindowController, NSWindowDelegate, NSTab
       }
     }
     observers = []
+    appAppearanceObservation?.invalidate()
+    appAppearanceObservation = nil
+  }
+
+  /// Updates the window's appearance to match NSApp. Unclear why this doesn't happen automatically...
+  private func updateWindowAppearance() {
+    guard let window else { return }
+    window.appearance = AppDelegate.shared.targetWindowAppearance
   }
 
   // MARK: - Data updates

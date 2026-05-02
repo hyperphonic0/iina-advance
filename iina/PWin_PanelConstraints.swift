@@ -357,12 +357,12 @@ extension PlayerWindowController {
 
     // Add/remove bottomBar.view if needed
     if useBottomBar {
-      if !contentView.containsSubview(bottomBar.view) {
-        log.verbose("Adding bottomBar.view to window.contentView")
-        contentView.addSubview(bottomBar.view, positioned: .above, relativeTo: viewportView)
-      }
-      if stage.isAtLeast(.midTransitionHiddenUpdates) {
-        let bottomBarAppearance = stageLayout.bottomBarAppearance(targetWindowAppearance: targetWindowAppearance)
+      let bottomBarAppearance = stageLayout.bottomBarAppearance(targetWindowAppearance: targetWindowAppearance)
+      bottomBarAppearance.performAsCurrentDrawingAppearance {
+        if !contentView.containsSubview(bottomBar.view) {
+          log.verbose("Adding bottomBar.view to window.contentView")
+          contentView.addSubview(bottomBar.view, positioned: .above, relativeTo: viewportView)
+        }
         log.verbose("BottomBar appearance=\(bottomBarAppearance.isDark ? "DARK" : "LIGHT")")
         // Set this explicitly to ensure it overrides its parent style, which may not match
         bottomBar.view.appearance = bottomBarAppearance
@@ -382,6 +382,8 @@ extension PlayerWindowController {
             subsubview.appearance = bottomBarAppearance
           }
         }
+        // ContentHolderView
+        bottomBar.contentView.superview?.appearance = bottomBarAppearance
       }
     } else {
       if bottomBar.view.superview != nil {
@@ -392,12 +394,12 @@ extension PlayerWindowController {
 
     // Add/remove topBarView if needed
     if useTopBar {
-      if !contentView.containsSubview(topBar.view) {
-        log.verbose("Adding topBarView to window contentView")
-        contentView.addSubview(topBar.view, positioned: .above, relativeTo: viewportView)
-      }
-      if stage.isAtLeast(.midTransitionHiddenUpdates) {
-        let topBarAppearance = stageLayout.topBarAppearance(targetWindowAppearance: targetWindowAppearance)
+      let topBarAppearance = stageLayout.topBarAppearance(targetWindowAppearance: targetWindowAppearance)
+      topBarAppearance.performAsCurrentDrawingAppearance {
+        if !contentView.containsSubview(topBar.view) {
+          log.verbose("Adding topBarView to window contentView")
+          contentView.addSubview(topBar.view, positioned: .above, relativeTo: viewportView)
+        }
         log.verbose("TopBar appearance=\(topBarAppearance.isDark ? "DARK" : "LIGHT")")
         topBar.view.appearance = topBarAppearance
         // Workaround for race condition which could cause Tinted Glass panel in Light mode to be wrongly Dark:
@@ -416,6 +418,7 @@ extension PlayerWindowController {
             subsubview.appearance = topBarAppearance
           }
         }
+        topBar.contentView.superview?.appearance = topBarAppearance
       }
 
     } else {

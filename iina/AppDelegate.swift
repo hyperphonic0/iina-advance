@@ -114,6 +114,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
         MediaPlayerIntegration.shared.update()
       }
 
+    case .themeMaterial:
+      setAppAppearance()
+
       // TODO: #1, see above
       //    case PK.hideWindowsWhenInactive:
       //      if let newValue = newValue as? Bool {
@@ -240,6 +243,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       .enableCmdN,
       .resumeLastPosition,
       .useMediaKeys,
+      .themeMaterial,
       .screenshotUseRAMDisk,
       .screenshotRAMDiskSizeMB,
       //    .hideWindowsWhenInactive, // TODO: #1, see below
@@ -314,7 +318,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
   func applicationDidFinishLaunching(_ aNotification: Notification) {
     Logger.log.verbose("App did finish launching")
-    
+
+    setAppAppearance()
+
     // Setup screenshot storage (RAM disk if enabled)
     if isInteractiveLaunch {
       ScreenshotStorageManager.shared.setup()
@@ -1019,6 +1025,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     startupHandler.openFiles(urls, useNewWindows: useNewWindows)
   }
 
+  // MARK: - Other
+
   /// Dump contents of all player cores to a txt file. Strictly for debugging. No localization needed.
   @IBAction func dumpDebugInfo(_ sender: AnyObject) {
     struct FileStream: TextOutputStream {
@@ -1056,12 +1064,22 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     alert.runModal()
   }
 
+  private func setAppAppearance() {
+    let theme: Preference.Theme = Preference.enum(for: .themeMaterial)
+    if let explicitAppearance = NSAppearance(iinaTheme: theme) {
+      Logger.log.verbose("Changing app appearance to \(explicitAppearance.isDark ? "DARK" : "LIGHT")")
+      NSApp.appearance = explicitAppearance
+    } else {
+      Logger.log.verbose("Changing app appearance to inherit from OS")
+      NSApp.appearance = nil
+    }
+  }
+
   /// Returns the intended appearance for player windows (light or dark), based on the `themeMaterial` pref,
   /// and taking into account the currently configured system theme.
   var targetWindowAppearance: NSAppearance {
-    let theme: Preference.Theme = Preference.enum(for: .themeMaterial)
     // Can be nil, which means dynamic system appearance as set by MacOS (via NSApp)
-    return NSAppearance(iinaTheme: theme) ?? NSApp.effectiveAppearance
+    return NSApp.effectiveAppearance
   }
 
   // MARK: - Recent Documents
