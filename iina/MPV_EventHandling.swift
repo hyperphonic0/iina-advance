@@ -10,6 +10,7 @@ extension MPVController {
     MPVProperty.trackList: MPV_FORMAT_NONE,
     MPVProperty.vf: MPV_FORMAT_NONE,
     MPVProperty.af: MPV_FORMAT_NONE,
+    MPVProperty.audioDeviceList: MPV_FORMAT_NONE,
     MPVOption.Video.videoAspectOverride: MPV_FORMAT_NONE,
     MPVOption.TrackSelection.vid: MPV_FORMAT_INT64,
     MPVOption.TrackSelection.aid: MPV_FORMAT_INT64,
@@ -294,6 +295,9 @@ extension MPVController {
     let name = String(cString: property.name)
 
     switch name {
+
+    case MPVProperty.audioDeviceList:
+      player.audioDeviceListChanged()
 
     case MPVProperty.videoParams:
       player.log.verbose("Δ mpv prop: \(MPVProperty.videoParams.quoted)")
