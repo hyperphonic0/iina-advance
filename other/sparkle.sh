@@ -9,7 +9,7 @@
 
 if [ "$#" -ne 2 ]; then
   echo "Usage: ./sparkle.sh newVersion_appPath newVersionNumber"
-	echo "Example: ./sparkle.sh \"./IINA Advance.app\" \"1.4.3\""
+  echo "Example: ./sparkle.sh \"./IINA Advance.app\" \"1.4.3\""
   exit 1
 fi
 
@@ -42,7 +42,7 @@ MAX_VERSIONS=10
 # Creates Mac-friendly zip archive
 ditto -c -k --sequesterRsrc --keepParent "$NEW_VERSION_APP_PATH" "$ZIP_PATH"
 
-mv "$ZIP_NAME" "$APPCAST_DIR/"
+mv "$ZIP_PATH" "$APPCAST_DIR/"
 "$SPARKLE_HOME/bin/generate_appcast" --maximum-versions $MAX_VERSIONS \
 		--maximum-deltas $MAX_VERSIONS \
 		"$APPCAST_DIR"
