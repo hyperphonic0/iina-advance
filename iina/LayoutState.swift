@@ -306,8 +306,9 @@ struct LayoutState {
             return .visualEffectView
           }
         default:
-          return colorScheme
+          break
         }
+        return colorScheme
       } else if oscPosition == .floating {
         guard globalScheme == .none else { return globalScheme }
         let colorScheme: Preference.PanelColorScheme = Preference.enum(for: .oscFloatingColorScheme)
@@ -317,8 +318,9 @@ struct LayoutState {
             return .visualEffectView
           }
         default:
-          return colorScheme
+          break
         }
+        return colorScheme
       }
     }
     return .visualEffectView
