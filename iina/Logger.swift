@@ -23,6 +23,7 @@ struct Logger {
 
   // MARK: - Level
 
+  @objc
   enum Level: Int, Comparable, CustomStringConvertible, CaseIterable, InitializingFromKey {
 
     static var defaultValue = Level.debug
@@ -46,14 +47,14 @@ struct Logger {
 
     var description: String {
       switch self {
-      case .trace: return "T"
-      case .verbose: return "V"
-      case .debug: return "D"
-      case .warning: return "W"
-      case .error: return "E"
+      case .trace: return "trace"
+      case .verbose: return "verbose"
+      case .debug: return "debug"
+      case .warning: return "warning"
+      case .error: return "error"
       }
     }
-
+    
     var shortForm: String {
       switch self {
       case .trace: return "t"
@@ -110,7 +111,6 @@ struct Logger {
   private static let fsLock = Lock()
 
   private static let structuresLock = Lock()
-  nonisolated(unsafe) private static var logsForLogWindow: [Logger.Log] = []
   nonisolated(unsafe) private static var subsystems: [any Subsystem] = []
 
   static func subsystem(forPlayerID playerID: String) -> any Subsystem {
@@ -213,14 +213,14 @@ struct Logger {
 
   class Log: NSObject {
     @objc dynamic let subsystem: String
-    @objc dynamic let level: Int
+    @objc dynamic let level: Level
     @objc dynamic let message: String
     @objc dynamic let date: String
     let logString: String
 
     init(subsystem: String, level: Level, message: String, date: String, logString: String) {
       self.subsystem = subsystem
-      self.level = level.rawValue
+      self.level = level
       self.message = message
       self.date = date
       self.logString = logString
@@ -668,8 +668,8 @@ struct Logger {
 
     // Record the log line for use in the Logs window...
     let log = Log(subsystem: subsystem.rawValue, level: level, message: message, date: dateFormatter.string(from: date), logString: string)
-    structuresLock.withLock {
-      logsForLogWindow.append(log)
+    Task { @MainActor in
+      AppDelegate.shared.logWindow.append(log)
     }
 
     guard enableLogToFile else { return }
@@ -684,15 +684,7 @@ struct Logger {
     }
   }
 
-  static func popNewestLinesForLogWindow() -> [Log] {
-    structuresLock.withLock {
-      let latestLogs = logsForLogWindow
-      logsForLogWindow.removeAll()
-      return latestLogs
-    }
-  }
-
-
+  
   // MARK: - Failure
 
   static func ensure(_ condition: @autoclosure () -> Bool, _ errorMessage: String = "Assertion failed in \(#line):\(#file)", _ cleanup: Callback = {}) {

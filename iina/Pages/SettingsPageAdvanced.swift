@@ -54,12 +54,14 @@ class SettingsPageAdvanced: SettingsPage {
         SettingsItem.PopupButton()
           .bindTo(.logLevel, ofType: Logger.Level.self)
           .image(name: "cylinder.split.1x2")
-        SettingsItem.General(title: .text_OpenLogWindow)
-          .image(name: "macwindow")
-          .extraViews(NSButton(title: "Open", target: AppDelegate.shared, action: #selector(AppDelegate.showLogWindow)))
         SettingsItem.Switch()
           .bindTo(.enableLogging)
           .extraViews(openLogFolderBtn)
+      }
+      SettingsListView {
+        SettingsItem.General(title: .text_OpenLogWindow)
+          .image(name: "macwindow")
+          .extraViews(NSButton(image: .findSFSymbol(["arrow.right"])!, target: nil, action: #selector(AppDelegate.showLogWindow)))
       }
     }
   }
