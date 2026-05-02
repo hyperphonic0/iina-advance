@@ -137,10 +137,6 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
   @IBOutlet weak var osdColorSchemeCentralHStackView: NSStackView!
   @IBOutlet weak var sidebarsColorSchemeCentralHStackView: NSStackView!
 
-  @IBOutlet weak var tintedGlassWarningGlobal: NSTextField!
-  @IBOutlet weak var tintedGlassWarningTopBar1: NSTextField!
-  @IBOutlet weak var tintedGlassWarningTopBar2: NSTextField!
-
   @IBOutlet weak var leftSidebarLabel: NSTextField!
   @IBOutlet weak var leftSidebarPlacement: NSSegmentedControl!
   @IBOutlet weak var leftSidebarSettingsTabsRadioButton: NSButton!
@@ -575,12 +571,6 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     let showSidebarsColorScheme = hasMacOS26 && !useGlobalColorScheme
     viewHidePairs.append((sidebarsColorSchemeHStackView, !showSidebarsColorScheme))
     viewHidePairs.append((sidebarsColorSchemeCentralHStackView, !showSidebarsColorScheme))
-
-    let showTintedGlassWarningGlobal = useGlobalColorScheme && (globalColorScheme == .tintedGlass)
-    viewHidePairs.append((tintedGlassWarningGlobal, !showTintedGlassWarningGlobal))
-    let showTintedGlassWarningTopBar = !showTintedGlassWarningGlobal && showTopBarColorScheme && (LayoutState.effectiveTopBarColorSchemeFromPrefs == .tintedGlass)
-    viewHidePairs.append((tintedGlassWarningTopBar1, !showTintedGlassWarningTopBar))
-    viewHidePairs.append((tintedGlassWarningTopBar2, !showTintedGlassWarningTopBar))
 
     // Two-phase animation. First show/hide the subviews of each container view with no animation.
     for (view, shouldHide) in viewHidePairs {

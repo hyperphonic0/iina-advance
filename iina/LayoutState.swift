@@ -426,6 +426,11 @@ struct LayoutState {
     LayoutState.titleBarVisibility(for: mode, topBarPlacement: topBarPlacement, isLegacyStyle: isLegacyStyle)
   }
 
+  /// Same as `oscBarAppearance`
+  func bottomBarAppearance(targetWindowAppearance: NSAppearance) -> NSAppearance {
+    return oscBarAppearance(targetWindowAppearance: targetWindowAppearance)
+  }
+
   func topBarAppearance(targetWindowAppearance: NSAppearance) -> NSAppearance {
     if topBarColorScheme.hasClearBG {
       return NSAppearance(iinaTheme: .dark)!

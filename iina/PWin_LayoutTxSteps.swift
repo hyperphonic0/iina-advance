@@ -435,7 +435,10 @@ extension PlayerWindowController {
     let needsBottomBarRebuild = transition.isWindowInitialLayout || appearanceDidChange
     || transition.isBottomBarPlacementOrStyleChanging || transition.isBottomBarOpening
     if needsBottomBarRebuild {
-      bottomBar.rebuildBottomBarView(colorScheme: transition.outputLayout.oscColorScheme, log)
+      let bottomBarAppearance = outputLayout.bottomBarAppearance(targetWindowAppearance: targetWindowAppearance)
+      bottomBarAppearance.performAsCurrentDrawingAppearance { [self] in
+        bottomBar.rebuildBottomBarView(colorScheme: transition.outputLayout.oscColorScheme, log)
+      }
       /// It will be added to window.contentView & its Z order corrected in `rebuildPanelConstraints`.
     }
 

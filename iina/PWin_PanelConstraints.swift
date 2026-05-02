@@ -362,10 +362,26 @@ extension PlayerWindowController {
         contentView.addSubview(bottomBar.view, positioned: .above, relativeTo: viewportView)
       }
       if stage.isAtLeast(.midTransitionHiddenUpdates) {
-        let bottomBarAppearance = stageLayout.oscColorScheme.hasClearBG ? NSAppearance(iinaTheme: .dark)! : targetWindowAppearance
+        let bottomBarAppearance = stageLayout.bottomBarAppearance(targetWindowAppearance: targetWindowAppearance)
         log.verbose("BottomBar appearance=\(bottomBarAppearance.isDark ? "DARK" : "LIGHT")")
         // Set this explicitly to ensure it overrides its parent style, which may not match
         bottomBar.view.appearance = bottomBarAppearance
+        // Workaround for race condition which could cause Tinted Glass panel in Light mode to be wrongly Dark:
+        // explicitly set every single child view to the desired appearance
+        bottomBar.contentView.appearance = bottomBarAppearance
+        bottomBar.topBorder.appearance = bottomBarAppearance
+        for subview in bottomBar.view.subviews {
+          subview.appearance = bottomBarAppearance
+          for subsubview in subview.subviews {
+            subsubview.appearance = bottomBarAppearance
+          }
+        }
+        for subview in bottomBar.contentView.subviews {
+          subview.appearance = bottomBarAppearance
+          for subsubview in subview.subviews {
+            subsubview.appearance = bottomBarAppearance
+          }
+        }
       }
     } else {
       if bottomBar.view.superview != nil {
@@ -384,6 +400,8 @@ extension PlayerWindowController {
         let topBarAppearance = stageLayout.topBarAppearance(targetWindowAppearance: targetWindowAppearance)
         log.verbose("TopBar appearance=\(topBarAppearance.isDark ? "DARK" : "LIGHT")")
         topBar.view.appearance = topBarAppearance
+        // Workaround for race condition which could cause Tinted Glass panel in Light mode to be wrongly Dark:
+        // explicitly set every single child view to the desired appearance
         topBar.contentView.appearance = topBarAppearance
         topBar.titleBarView.appearance = topBarAppearance
         for subview in topBar.view.subviews {
