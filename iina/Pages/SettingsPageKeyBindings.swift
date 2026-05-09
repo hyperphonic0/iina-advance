@@ -596,6 +596,7 @@ fileprivate class KeyMappingCell: NSTableCellView {
 
     editButton.isHidden = true
     removeButton.isHidden = true
+    lockHelpButton.isHidden = true
 
     if Preference.bool(for: .displayKeyBindingRawValues) {
       keyLabel.font = .monospacedSystemFont(ofSize: NSFont.systemFontSize, weight: .regular)
