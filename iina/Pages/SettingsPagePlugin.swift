@@ -72,7 +72,7 @@ fileprivate class PluginInstallView: SettingsAccessory.Base {
     self.page = page
     super.init(l10n: l10n)
 
-    let githubBtn = ui.button(.text_InstallFromGitHub)
+    let githubBtn = ui.button(.text_InstallOnline)
     githubBtn.target = self
     githubBtn.action = #selector(installPluginFromGitHub)
     let localBtn = ui.button(.text_InstallPackage)
@@ -101,8 +101,10 @@ fileprivate class PluginInstallView: SettingsAccessory.Base {
   }
 
   @IBAction func installPluginFromGitHub(_ sender: Any) {
-//    let panel = PluginStorePanel()
-//    view.window!.beginSheet(panel)
+    let panel = PluginStorePanel(l10n: l10n)
+    view.window!.beginSheet(panel) {_ in
+      return
+    }
   }
 }
 
