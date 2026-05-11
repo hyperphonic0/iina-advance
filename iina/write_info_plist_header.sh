@@ -16,8 +16,12 @@
 # specific information can be included in the Info.plist file.
 
 # Follow Xcode guidelines on how to use the echo command to log messages from a script.
-alias error='echo [write_info_plist_header.sh]: error:'
-alias note='echo [write_info_plist_header.sh]: note:'
+error() {
+  echo "[write_info_plist_header.sh]: error: $@"
+}
+note() {
+  echo "[write_info_plist_header.sh]: note: $@"
+}
 
 # Confirm the environment variable supplied by Xcode giving the path to the header file to create
 # is present.
@@ -39,9 +43,23 @@ if [[ -z "$GIT" ]]; then
 fi
 
 # Get the information needed for the header file.
-BRANCH=$($GIT rev-parse --abbrev-ref HEAD)
-COMMIT=$($GIT rev-parse HEAD)
+BRANCH=$($GIT rev-parse --abbrev-ref HEAD 2>/dev/null || echo '???')
+COMMIT=$($GIT rev-parse HEAD 2>/dev/null || echo '???')
 DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+
+# If Xcode User Script Sandboxing is enabled then git will malfunction because Xcode will deny
+# access to the files in the .git directory. The files git needs can't be added as script inputs
+# because Xcode does not support adding directories as input. In case someone enables this Xcode
+# feature confirm git returned the required information, otherwise fail the build.
+if [[ -z "$BRANCH" ]]; then
+  error Unable to determine git branch
+  exit 1
+fi
+# If git returned the branch then it should be able to return the commit, but check anyway.
+if [[ -z "$COMMIT" ]]; then
+  error Unable to determine git commit
+  exit 1
+fi
 
 # Write the Info.plist header file.
 cat <<-EOF > "$INFOPLIST_PREFIX_HEADER"
