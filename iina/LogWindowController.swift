@@ -533,8 +533,6 @@ extension LogWindowController: NSTableViewDelegate {
       cell.textField?.preferredMaxLayoutWidth = maxWidth
       cell.textField?.invalidateIntrinsicContentSize()
     }
-
-    tableView.noteHeightOfRows(withIndexesChanged: IndexSet(integersIn: 0..<tableView.numberOfRows))
   }
 
 }
