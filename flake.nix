@@ -481,79 +481,11 @@
                 ${pkgs.rsync}/bin/rsync -a "${builtins.elemAt self.archApps 0}/Applications/${appName}.app/" "$app/"
                 chmod -R u+w "$app"
 
-                echo "🔍 Merging binaries across architectures"
-                find "$app" -type f \( -perm -111 -o -name "*.dylib" -o -name "*.so" \) | while read -r dep; do
-                  if [[ -L "$dep" ]] || [[ ! -f "$dep" ]]; then
-                    echo "✅ Skipping non-file $dep"
-                    continue
-                  fi
+                archroot0="${builtins.elemAt self.archApps 0}/Applications/${appName}.app"
+                archroot1="${builtins.elemAt self.archApps 1}/Applications/${appName}.app"
 
-                  if ! file -b "$dep" | grep -qi 'Mach-O'; then
-                    echo "✅ Skipping non-Mach-O $dep"
-                    continue
-                  fi
-
-                  relpath=$(${pkgs.coreutils}/bin/realpath --relative-to="$app" "$dep")
-
-                  # collect candidate files from each arch build
-                  inputs=""
-                  for archroot in ${
-                    builtins.concatStringsSep " " (map (a: "\"${a}/Applications/${appName}.app\"") self.archApps)
-                  }; do
-                    candidate="$archroot/$relpath"
-                    if [ -f "$candidate" ]; then
-                      inputs="$inputs $candidate"
-                    fi
-                  done
-
-                  # pick at most one file per arch to avoid duplicates
-                  arm64=""
-                  x86_64=""
-                  for f in $inputs; do
-                    info=$(lipo -info "$f" 2>/dev/null || true)
-
-                    if echo "$info" | grep -qw arm64 && [ -z "$arm64" ]; then
-                      arm64="$f"
-                    fi
-
-                    if echo "$info" | grep -qw x86_64 && [ -z "$x86_64" ]; then
-                      x86_64="$f"
-                    fi
-
-                    # if we ever see a fat that already has both, just use it as-is
-                    if echo "$info" | grep -q 'Architectures in the fat file' && \
-                       echo "$info" | grep -qw arm64 && echo "$info" | grep -qw x86_64; then
-                      arm64="$f"; x86_64="$f"; break
-                    fi
-                  done
-
-                  # if only one arch available, leave it alone
-                  if [ -z "$arm64" ] || [ -z "$x86_64" ]; then
-                    echo "✅ Skipping single-arch $dep"
-                    continue
-                  fi
-
-                  echo "🔨 Merging $relpath"
-                  tmp="$dep.universal.$$"
-
-                  # Ensure we can replace the file
-                  chmod u+w "$dep" 2>/dev/null || true
-
-                  # Guard against already universal binaries
-                  if [ "$arm64" = "$x86_64" ]; then
-                    cp -p "$arm64" "$tmp"
-                  else
-                    lipo -create -arch arm64 "$arm64" -arch x86_64 "$x86_64" -output "$tmp"
-                  fi
-
-                  # Preserve mode if possible (GNU coreutils); fall back to +x
-                  ${pkgs.coreutils}/bin/chmod --reference="$dep" "$tmp" 2>/dev/null || chmod +x "$tmp"
-
-                  mv -f "$tmp" "$dep"
-                done
-
-                echo "📦 Deep-bundling dynamic dependencies into ${appName}.app"
-                ${libTool}/bin/iina-lib-tool --canonicalize "$frameworks" "$app/Contents/MacOS"
+                ${libTool}/bin/iina-lib-tool --merge-architectures "$frameworks" "$app/Contents/MacOS" \
+                  --archroot0 "$archroot0" --archroot1 "$archroot1"
 
                 echo "🔏 Re-signing ${appName}.app..."
                 ${resign}/bin/iina-resign "$app"
