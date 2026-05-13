@@ -1469,6 +1469,10 @@ extension PlayerWindowController {
     speedLabel.font = .messageFont(ofSize: speedLabelFontSize)
   }
 
+  func highlight(_ button: OSCToolbarButton, _ buttonType: Preference.ToolBarButton, _ isHighlighted: Bool) {
+    button.image = isHighlighted ? buttonType.alternateImage() : buttonType.image()
+  }
+
   /// Recreates the toolbar with the latest icons with the latest sizes & padding from prefs
   private func rebuildOSCToolbar(_ transition: LayoutTransition, _ stage: LayoutTransition.Stage, hasColorChange: Bool) {
     let oldGeo = transition.inputLayout.controlBarGeo
@@ -1482,7 +1486,7 @@ extension PlayerWindowController {
     let zeroOut = isOpeningBarOSCFromZero && !transition.isWindowInitialLayout
     let iconSize: CGFloat = zeroOut ? 0 : newGeo.toolIconSize
     let iconSpacing: CGFloat = zeroOut ? 0 : newGeo.toolIconSpacing
-    if isOpeningBarOSCFromZero || !oldGeo.toolbarItemsAreSame(as: newGeo) {
+    if transition.outputLayout.hasControlBar {
       fragToolbarView.views.forEach { fragToolbarView.removeView($0) }
 
       if newButtonTypes.count > 0 {
@@ -1495,6 +1499,22 @@ extension PlayerWindowController {
           button.action = #selector(self.toolBarButtonAction(_:))
           fragToolbarView.addView(button, in: .trailing)
           fragToolbarView.setVisibilityPriority(.detachOnlyIfNecessary, for: button)
+
+          // Highlight buttons with modes
+          switch buttonType {
+          case .pip:
+            highlight(button, buttonType, transition.outputLayout.isInPiP)
+          case .fullScreen:
+            highlight(button, buttonType, transition.outputLayout.isFullScreen)
+          case .settings:
+            highlight(button, buttonType, transition.outputLayout.isVisible(sidebarTabGroup: .settings))
+          case .plugins:
+            highlight(button, buttonType, transition.outputLayout.isVisible(sidebarTabGroup: .plugins))
+          case .playlist:
+            highlight(button, buttonType, transition.outputLayout.isVisible(sidebarTabGroup: .playlist))
+          default:
+            break
+          }
         }
         needsButtonsUpdate = false
       }

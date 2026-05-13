@@ -590,6 +590,15 @@ struct LayoutState {
   var isLeadingSidebarVisible: Bool { leadingSidebar.isVisible }
   var isTrailingSidebarVisible: Bool { trailingSidebar.isVisible }
   var isAnySidebarVisible: Bool { leadingSidebar.isVisible || trailingSidebar.isVisible }
+  func isVisible(sidebarTabGroup: Sidebar.TabGroup) -> Bool {
+    if leadingSidebar.isVisible && leadingSidebar.visibleTabGroup == sidebarTabGroup {
+      return true
+    }
+    if trailingSidebar.isVisible && trailingSidebar.visibleTabGroup == sidebarTabGroup {
+      return true
+    }
+    return false
+  }
 
   var topBarHeight: CGFloat {
     if mode == .musicMode {
