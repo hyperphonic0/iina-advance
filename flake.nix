@@ -244,26 +244,6 @@
             )
           );
 
-          # Collect executables to expose them for plugins
-          depsExecutable = pkgs.linkFarm "iina-deps-executable" (
-            pkgs.lib.flatten (
-              map
-                (
-                  pkg:
-                  let
-                    bindir = "${pkgs.lib.getBin pkg}/bin";
-                  in
-                  builtins.map (file: {
-                    name = baseNameOf file;
-                    path = "${bindir}/${file}";
-                  }) (builtins.attrNames (builtins.readDir bindir))
-                )
-                [
-                  pkgs.yt-dlp
-                ]
-            )
-          );
-
           # Collect SwiftPM deps as separate derivation for them to be cached
           spmDeps = pkgs.stdenv.mkDerivation {
             pname = "iina-spm-deps";
@@ -344,14 +324,13 @@
 
               buildInputs = [
                 spmDeps
-                pkgs.yt-dlp
               ];
 
               buildPhase = ''
                 echo "[${system}] 🔧 Setting up build environment for ${appName}"
                 git_rev="${self.rev or self.dirtyRev}"
-                # Nix flakes cannot currently access branch info. Doing so may violate the stated goal of maximum 
-                # reproducibility, as the same git revision can be associated with an arbitrary number of branches. 
+                # Nix flakes cannot currently access branch info. Doing so may violate the stated goal of maximum
+                # reproducibility, as the same git revision can be associated with an arbitrary number of branches.
                 # Just use a placeholder for now:
                 git_branch="<nix-build>"
                 echo "Git bramch: $git_branch, revision: $git_rev"
@@ -381,7 +360,6 @@
                 mkdir -p deps/include deps/lib deps/executable
                 cp -RL ${depsInclude}/.           deps/include
                 cp -RL ${depsLib}/.               deps/lib
-                cp -RL ${depsExecutable}/.        deps/executable/
 
                 echo "[${system}] 📦 Copying SPM deps"
                 rsync -a ${spmDeps}/ ./
@@ -434,9 +412,6 @@
                 plist="$app/Contents/Info.plist"
 
                 mkdir -p "$frameworks"
-
-                echo "[${system}] 📦 Bundling ${depsExecutable} into ${appName}.app"
-                cp -RL "${depsExecutable}/." "$macos/"
 
                 echo "[${system}] 📦 Deep-bundling dynamic dependencies into ${appName}.app"
                 ${libTool}/bin/iina-lib-tool --canonicalize --purge "$frameworks" "$macos"
@@ -538,7 +513,6 @@
 
                 link_tree ${depsInclude} "$deps_root/include"
                 link_tree ${depsLib} "$deps_root/lib"
-                link_tree ${depsExecutable} "$deps_root/executable"
 
                 echo "📦 Syncing SwiftPM deps"
                 rsync -a --chmod=Du+rwx,Fu+rw ${spmDeps}/ ./

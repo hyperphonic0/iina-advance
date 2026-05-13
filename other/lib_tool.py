@@ -47,7 +47,7 @@ For all entries in name_variants_multimap:
    different formatting, use the most specific version available (i.e., favor trailing '.0' versions).
    Example: given the 3 variants: {'libfoo.2.dylib', 'libfoo.2.1.dylib', 'libfoo.2.1.0.dylib'}, the canonical name
    will be 'libfoo.2.1.0.dylib'.
-   - Special workaound for 'libiconv':
+   - Special workaround for 'libiconv':
      If a base_id has more than one compatibility_version, rename the canonical name for each to include its
      compatibility_version, to ensure both can be included without conflict.
 2. Store best variant name in canonical_name_multimap.
@@ -162,15 +162,16 @@ def ls_files_in_dir(dir_path: str) -> list[tuple[str, str]]:
   all_children: map[tuple[str, str]] = map(lambda name: (name, os.path.join(dir_path, name)), os.listdir(dir_path))
   return [child for child in all_children if os.path.isfile(child[1])]
 
+# Filters the contents of `lib_dir` for files found which end in known lib suffix, calling `handler` for each.
 def for_all_libs_in_lib_dir(lib_dir: str, handler: Callable[[str, str], None]):
   for base_name, file_path in ls_files_in_dir(lib_dir):
     if base_name.endswith('.dylib') or base_name.endswith('.so'):
       handler(base_name, file_path)
 
-def for_all_executables_in_executable_dir(lib_dir: str, handler: Callable[[str, str], None]):
-  for base_name, file_path in ls_files_in_dir(lib_dir):
-      if base_name != "yt-dlp":
-        handler(base_name, file_path)
+# Calls `handler` for each file found in `exec_dir` (does not currently do any filtering).
+def for_all_executables_in_executable_dir(exec_dir: str, handler: Callable[[str, str], None]):
+  for base_name, file_path in ls_files_in_dir(exec_dir):
+    handler(base_name, file_path)
 
 # --- Lib metadata extraction & manipulation ---
 
@@ -179,7 +180,7 @@ def ensure_lc_rpath_present(lib_path: str):
   result = subprocess.run(['otool', '-l', lib_path], capture_output=True, text=True)
   for line in result.stdout.splitlines():
     if LC_RPATH in line:
-      print(f'✅ LC_RPATH present → {lib_path}')
+      print(f'✅ LC_RPATH correctly set → {lib_path}')
       return
 
   print(f'➕ LC_RPATH {LC_RPATH} → {lib_path}')
@@ -193,17 +194,21 @@ def rewrite_lib_entry(current_entry: str, to: str, bin_path: str):
 # - nix_store_handler: will be called for all entries beginning with '/nix/store/'.
 # - rpath_handler: optional callback which, if provided, will be called for all entries beginning with '@rpath/'.
 def otool_find_lib_refs(bin_path: str, nix_store_handler: Callable[[str, str, str, str], None], \
-  rpath_handler: Optional[Callable[[str, str, str, str], None]] = None):
+  rpath_handler: Optional[Callable[[str, str, str, str], None]] = None, print_all=False):
 
   ref_entry_pattern = r'(.*) \(compatibility version ([^,]+), current version ([^\)]+)\)'
   otool_result = subprocess.run(['otool', '-L', bin_path], capture_output=True, text=True)
   for line in  otool_result.stdout.splitlines():
+    if print_all:
+      print(line)
+
     # Skip header lines which just repeat the source file info.
     # We are interested in the lines under them which are indented.
     if len(line) > 0 and line[0].isspace():
       match = re.match(ref_entry_pattern, line.strip())
       if not match:
         continue
+
       ref_path = match.group(1)
 
       if rpath_handler and ref_path.startswith('@rpath/'):
@@ -256,7 +261,7 @@ class LibMetaDB:
     rpaths_map[variant_compat_version] = variant_basename
     self.rpaths_map[base_id] = rpaths_map
 
-  def populate_from_disk(self, lib_dir: str, executable_dir: str):
+  def populate_from_disk(self, lib_dir: str, executable_dir: str, print_all: bool):
     print(f'Scanning for lib dependencies…')
 
     libs_searched: dict[str, bool] = {}
@@ -321,7 +326,7 @@ class LibMetaDB:
 
         if self.log_verbose:
           print(f'Scanning: {file_path}')
-        otool_find_lib_refs(file_path, nix_store_handler, rpath_handler)
+        otool_find_lib_refs(file_path, nix_store_handler, rpath_handler, print_all=print_all)
 
 
 class CanonicalNameDB:
@@ -437,7 +442,7 @@ def main():
   # Scan all libs with otool, collecting dependency metadata to populate lib_db
 
   lib_db = LibMetaDB(log_verbose=log_verbose)
-  lib_db.populate_from_disk(lib_dir, executable_dir)
+  lib_db.populate_from_disk(lib_dir, executable_dir, print_all=args.print_only)
 
   for base_id, variants in lib_db.name_variants_map.items():
     print(f'Variants of {base_id}: {variants}')
@@ -609,13 +614,6 @@ def main():
   # Now process the executable binaries in MacOS directory.
   print(f'🔧 Normalizing executables in {executable_dir}')
   def normalize_exe(exe_base_name, exe_path):
-    if exe_base_name == ".yt-dlp-wrapped":
-      # Is there a way to prevent this file from being generated in the first place?
-      print(f"Removing unneeded file: {exe_path}")
-      ensure_file_is_writable(exe_path)
-      os.remove(exe_path)
-      return
-
     print(f'Processing: {exe_base_name}')
     ensure_lc_rpath_present(exe_path)
     otool_find_lib_refs(exe_path, nix_store_handler)
