@@ -426,11 +426,11 @@ def main():
     # argparse already prints the error; exit gracefully
     sys.exit(1)
 
-  print(f'Parsed arguments: {args}')
   lib_dir = args.lib_dir
   executable_dir = args.executable_dir
   log_verbose = args.verbose
   if log_verbose:
+    print(f'Parsed arguments: {args}')
     print(f'Verbose logging enabled')
 
   # --- FIRST PASS ---
