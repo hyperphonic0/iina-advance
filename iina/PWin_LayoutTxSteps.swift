@@ -745,7 +745,6 @@ extension PlayerWindowController {
       playSliderCell.knobHeight = sliderKnobHeight
       playSliderCell.abLoopA.updateKnobImage(to: .loopKnob)
       playSliderCell.abLoopB.updateKnobImage(to: .loopKnob)
-      playSlider.needsDisplay = true
 
       let volumeSliderCell = volumeSliderCell
       volumeSliderCell.knobWidth = sliderKnobWidth
@@ -953,6 +952,9 @@ extension PlayerWindowController {
         updateSpeedLabelFont(for: transition)
       }
 
+      // Why does this fail to show up sometimes when opening new window??
+      playSliderAndTimeLabelsView.needsDisplay = true
+      playSlider.needsDisplay = true
     }
 
     log.verbose("Done")

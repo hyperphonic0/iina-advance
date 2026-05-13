@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="24412" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="24765" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="24412"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="24765"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
@@ -21,16 +21,16 @@
         <window title="Playback History" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" releasedWhenClosed="NO" visibleAtLaunch="NO" animationBehavior="default" titlebarAppearsTransparent="YES" id="F0z-JX-Cv5" userLabel="Playback History Window">
             <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES" fullSizeContentView="YES"/>
             <rect key="contentRect" x="0.0" y="240" width="600" height="400"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="1496" height="937"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="1728" height="1083"/>
             <value key="minSize" type="size" width="580" height="200"/>
             <view key="contentView" wantsLayer="YES" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="se5-gp-TjO" userLabel="PlaybackHistoryWindow Content View" customClass="NSVisualEffectView">
-                <rect key="frame" x="0.0" y="0.0" width="600" height="200"/>
+                <rect key="frame" x="0.0" y="200" width="600" height="200"/>
                 <subviews>
                     <scrollView autoresizesSubviews="NO" wantsLayer="YES" horizontalHuggingPriority="249" verticalHuggingPriority="249" horizontalCompressionResistancePriority="249" verticalCompressionResistancePriority="249" autohidesScrollers="YES" horizontalLineScroll="24" horizontalPageScroll="10" verticalLineScroll="24" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="II4-dF-AGa" userLabel="PlaybackHistoryTable Scroll View">
                         <rect key="frame" x="0.0" y="0.0" width="600" height="172"/>
                         <clipView key="contentView" autoresizesSubviews="NO" wantsLayer="YES" drawsBackground="NO" copiesOnScroll="NO" id="IB5-0J-8sn" userLabel="PlaybackHistoryTable Clip View">
                             <rect key="frame" x="1" y="1" width="598" height="170"/>
-                            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                            <autoresizingMask key="autoresizingMask"/>
                             <subviews>
                                 <outlineView autoresizesSubviews="NO" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="firstColumnOnly" tableStyle="sourceList" selectionHighlightStyle="sourceList" columnReordering="NO" autosaveName="HistoryWindowTable" rowHeight="24" rowSizeStyle="small" headerView="MiB-ow-W6T" viewBased="YES" floatsGroupRows="NO" indentationPerLevel="13" indentationMarkerFollowsCell="NO" outlineTableColumn="DIC-tR-R2F" translatesAutoresizingMaskIntoConstraints="NO" id="6jR-CS-fgx" userLabel="PlaybackHistoryTable Outline View" customClass="HistoryOutlineView" customModule="IINA_Advance" customModuleProvider="target">
                                     <rect key="frame" x="0.0" y="0.0" width="598" height="147"/>
@@ -301,7 +301,7 @@
         </menu>
         <userDefaultsController representsSharedInstance="YES" id="Pxd-7n-Ym5"/>
         <customView autoresizesSubviews="NO" wantsLayer="YES" horizontalHuggingPriority="1000" verticalHuggingPriority="1000" id="OQZ-Pk-zUa" userLabel="TitleBarAccessoryContentView">
-            <rect key="frame" x="0.0" y="0.0" width="361" height="34"/>
+            <rect key="frame" x="0.0" y="0.0" width="420" height="34"/>
             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
             <subviews>
                 <textField focusRingType="none" horizontalHuggingPriority="750" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="ob0-Up-S1q" userLabel="GroupBy Label">
@@ -312,8 +312,8 @@
                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                     </textFieldCell>
                 </textField>
-                <popUpButton horizontalHuggingPriority="750" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="dcE-VR-Vxk" userLabel="GroupBy Popup">
-                    <rect key="frame" x="64" y="7" width="73" height="20"/>
+                <popUpButton verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="dcE-VR-Vxk" userLabel="GroupBy Popup">
+                    <rect key="frame" x="64" y="7" width="132" height="20"/>
                     <popUpButtonCell key="cell" type="push" title="Date" bezelStyle="rounded" alignment="center" controlSize="small" lineBreakMode="truncatingTail" state="on" borderStyle="border" imageScaling="proportionallyDown" inset="2" selectedItem="QBO-JS-dNV" id="geF-qk-cXT">
                         <behavior key="behavior" lightByContents="YES"/>
                         <font key="font" metaFont="smallSystem"/>
@@ -329,13 +329,13 @@
                     </connections>
                 </popUpButton>
                 <customView horizontalHuggingPriority="1" horizontalCompressionResistancePriority="1" verticalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="mYx-kd-jow" userLabel="Spacer View">
-                    <rect key="frame" x="141" y="0.0" width="8" height="34"/>
+                    <rect key="frame" x="200" y="0.0" width="8" height="34"/>
                     <constraints>
                         <constraint firstAttribute="width" constant="8" id="aek-hA-Txf"/>
                     </constraints>
                 </customView>
-                <searchField wantsLayer="YES" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="751" horizontalCompressionResistancePriority="251" verticalCompressionResistancePriority="749" preferredMaxLayoutWidth="200" textCompletion="NO" translatesAutoresizingMaskIntoConstraints="NO" id="nfA-G1-DVj">
-                    <rect key="frame" x="153" y="7" width="200" height="20"/>
+                <searchField wantsLayer="YES" focusRingType="none" horizontalHuggingPriority="249" verticalHuggingPriority="751" horizontalCompressionResistancePriority="251" verticalCompressionResistancePriority="749" preferredMaxLayoutWidth="200" textCompletion="NO" translatesAutoresizingMaskIntoConstraints="NO" id="nfA-G1-DVj">
+                    <rect key="frame" x="212" y="7" width="200" height="20"/>
                     <constraints>
                         <constraint firstAttribute="width" constant="200" id="0h1-9O-Stw"/>
                     </constraints>
