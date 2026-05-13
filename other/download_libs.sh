@@ -1,12 +1,12 @@
 #!/bin/bash
 
-PROJECT_NAME='iina'
-
 # universal | arm64 | x86_64
 ARCH="universal"
 # github | iina (use iina to get the binary included in the latest release)
 YT_DLP_SOURCE="github"
 PARALLEL_DOWNLOADS=5
+SKIP_LIBS=false
+SKIP_EXECUTABLES=false
 SKIP_PLUGINS=false
 
 DYLIBS_DOWNLOAD_PATH="https://iina.io/dylibs/${ARCH}"
@@ -26,22 +26,32 @@ printUsageHelp() {
   echo -e "    ${GREEN}$0 [--arch] <ARCH>:${NC}       Architecture to download dylibs for: universal | arm64 | x86_64"
   echo -e "    ${GREEN}$0 [--yt-dlp-src] <SRC>:${NC}  Source to download youtube-dl from: github | iina"
   echo -e "    ${GREEN}$0 [--parallel] <N>:${NC}      Number of parallel downloads (default: 5)"
+  echo -e "    ${GREEN}$0 [--skip-libs]:${NC}         Skip downloading dylibs"
+  echo -e "    ${GREEN}$0 [--skip-executables]:${NC}  Skip downloading executables (youtube-dl)"
   echo -e "    ${GREEN}$0 [--skip-plugins]:${NC}      Skip downloading official plugins"
   echo
 }
 
-realpath() (
-  OURPWD=$PWD
-  cd "$(dirname "$1")" || exit
-  LINK=$(readlink "$(basename "$1")")
-  while [ "$LINK" ]; do
-    cd "$(dirname "$LINK")" || exit
-    LINK=$(readlink "$(basename "$1")")
+print_script_dir() {
+  local SOURCE_PATH="${BASH_SOURCE[0]}"
+  local SYMLINK_DIR
+  local SCRIPT_DIR
+  # Resolve symlinks recursively
+  while [ -L "$SOURCE_PATH" ]; do
+    # Get symlink directory
+    SYMLINK_DIR="$( cd -P "$( dirname "$SOURCE_PATH" )" >/dev/null 2>&1 && pwd )"
+    # Resolve symlink target (relative or absolute)
+    SOURCE_PATH="$(readlink "$SOURCE_PATH")"
+    # Check if candidate path is relative or absolute
+    if [[ $SOURCE_PATH != /* ]]; then
+      # Candidate path is relative, resolve to full path
+      SOURCE_PATH=$SYMLINK_DIR/$SOURCE_PATH
+    fi
   done
-  REALPATH="$PWD/$(basename "$1")"
-  cd "$OURPWD" || exit
-  echo "$REALPATH"
-)
+  # Get final script directory path from fully resolved source path
+  SCRIPT_DIR="$(cd -P "$( dirname "$SOURCE_PATH" )" >/dev/null 2>&1 && pwd)"
+  echo "$SCRIPT_DIR"
+}
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -103,6 +113,14 @@ while [[ $# -gt 0 ]]; do
     fi
     shift
     ;;
+  --skip-executables)
+    SKIP_EXECUTABLES=true
+    shift
+    ;;
+  --skip-libs)
+    SKIP_LIBS=true
+    shift
+    ;;
   --skip-plugins)
     SKIP_PLUGINS=true
     shift
@@ -154,61 +172,65 @@ universal | arm64 | x86_64)
   ;;
 esac
 
-SCRIPT_PATH=$(realpath "$0")
-ROOT_PATH=$(dirname "$SCRIPT_PATH")
+SCRIPT_PATH="$(print_script_dir)"
+PROJ_ROOT_PATH="$(realpath ${SCRIPT_PATH}/..)"
+echo "Project root directory seems to be: $PROJ_ROOT_PATH"
 
-if [[ $(basename "$ROOT_PATH") != "$PROJECT_NAME" ]]; then
-  while [[ "$ROOT_PATH" != "/" && $(basename "$ROOT_PATH") != "$PROJECT_NAME" ]]; do
-    ROOT_PATH=$(dirname "$ROOT_PATH")
-  done
-  if [[ "$ROOT_PATH" == "/" ]]; then
-    echo -e "${RED}Unable to find the root directory '$PROJECT_NAME' containing the script file.${NC}" >&2
-    exit 1
-  fi
-fi
-
-DEPS_PATH="$ROOT_PATH/deps"
+DEPS_PATH="$PROJ_ROOT_PATH/deps"
 LIB_PATH="$DEPS_PATH/lib"
 EXEC_PATH="$DEPS_PATH/executable"
 PLUGIN_PATH="$DEPS_PATH/plugins"
-YT_DLP_PATH="$EXEC_PATH/youtube-dl"
 
-IFS=$'\n' read -r -d '' -a files < <(curl -s "${DYLIBS_DOWNLOAD_PATH}/filelist.txt" && printf '\0')
-
-mkdir -p "$LIB_PATH"
-
-echo -e "${BLUE}Starting downloads in parallel...${NC}"
-
-# Function to download a single file
-download_file() {
-  local file="$1"
-  echo -e "${YELLOW}Downloading ${file}...${NC}"
-  curl -s "${DYLIBS_DOWNLOAD_PATH}/${file}" -o "${LIB_PATH}/${file}" && echo -e "${GREEN}Downloaded ${file}${NC}"
-}
-
-# Export the function so it can be used by xargs
-export -f download_file
 export DYLIBS_DOWNLOAD_PATH
 export LIB_PATH
 export YELLOW
 export GREEN
 export NC
 
-# Process files in smaller batches using xargs
-printf "%s\n" "${files[@]}" | xargs -n 1 -P "$PARALLEL_DOWNLOADS" bash -c 'download_file "$@"' _
+if [[ ! -d "$DEPS_PATH" ]]; then
+  echo -e "${RED}Unable to find the 'deps' directory inside '$PROJ_ROOT_PATH'${NC}" >&2
+  exit 1
+fi
 
-mkdir -p "$EXEC_PATH"
-echo -e "${YELLOW}Downloading yt-dlp...${NC}"
-curl -s -L "$YT_DLP_DOWNLOAD_PATH" -o "$YT_DLP_PATH" && echo -e "${GREEN}yt-dlp downloaded${NC}"
-chmod +x "$YT_DLP_PATH"
+IFS=$'\n' read -r -d '' -a files < <(curl -s "${DYLIBS_DOWNLOAD_PATH}/filelist.txt" && printf '\0')
 
-mkdir -p "$PLUGIN_PATH"
+if [[ "$SKIP_LIBS" == true ]]; then
+  echo -e "${YELLOW}Skipping lib downloads.${NC}"
+else
+  mkdir -p "$LIB_PATH"
+
+  echo -e "${BLUE}Starting downloads in parallel...${NC}"
+
+  # Function to download a single file
+  download_file() {
+    local file="$1"
+    echo -e "${YELLOW}Downloading ${file}...${NC}"
+    curl -s "${DYLIBS_DOWNLOAD_PATH}/${file}" -o "${LIB_PATH}/${file}" && echo -e "${GREEN}Downloaded ${file}${NC}"
+  }
+
+  # Export the function so it can be used by xargs
+  export -f download_file
+  # Process files in smaller batches using xargs
+  printf "%s\n" "${files[@]}" | xargs -n 1 -P "$PARALLEL_DOWNLOADS" bash -c 'download_file "$@"' _
+fi
+
+if [[ "$SKIP_EXECUTABLES" == true ]]; then
+  echo -e "${YELLOW}Skipping executable downloads.${NC}"
+else
+  YT_DLP_PATH="$EXEC_PATH/youtube-dl"
+  mkdir -p "$EXEC_PATH"
+  echo -e "${YELLOW}Downloading yt-dlp...${NC}"
+  curl -s -L "$YT_DLP_DOWNLOAD_PATH" -o "$YT_DLP_PATH" && echo -e "${GREEN}yt-dlp downloaded${NC}"
+  chmod +x "$YT_DLP_PATH"
+fi
 
 if [[ "$SKIP_PLUGINS" == true ]]; then
   echo -e "${YELLOW}Skipping official plugin downloads.${NC}"
   echo -e "${GREEN}All downloads completed.${NC}"
   exit 0
 fi
+
+mkdir -p "$PLUGIN_PATH"
 
 fetch_latest_plugin_asset() {
   local repo="$1"
