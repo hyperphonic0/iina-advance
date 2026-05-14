@@ -426,6 +426,7 @@
 		D14BC7342FAD324E0059E900 /* libavformat.62.dylib in Copy Dylibs */ = {isa = PBXBuildFile; fileRef = D14BC5E12FAD31990059E900 /* libavformat.62.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		D14BC7352FAD324F0059E900 /* libavfilter.11.dylib in Copy Dylibs */ = {isa = PBXBuildFile; fileRef = D14BC5E02FAD31990059E900 /* libavfilter.11.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		D14BC7362FAD32530059E900 /* libavdevice.62.dylib in Copy Dylibs */ = {isa = PBXBuildFile; fileRef = D14BC5DF2FAD31990059E900 /* libavdevice.62.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		D159F0DC2FB59C0F003ED175 /* MetalVideoLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D159F0DB2FB59C0F003ED175 /* MetalVideoLayer.swift */; };
 		D15CABE62B1EECFD004A8985 /* Player_Thumbnails.swift in Sources */ = {isa = PBXBuildFile; fileRef = D15CABE52B1EECFD004A8985 /* Player_Thumbnails.swift */; };
 		D160783B2D140DEE00105001 /* BarRendererUtil.swift in Sources */ = {isa = PBXBuildFile; fileRef = D160783A2D140DDB00105001 /* BarRendererUtil.swift */; };
 		D161A0B42EBA2226006BF42C /* FixedProgressBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = D161A0B32EBA2226006BF42C /* FixedProgressBar.swift */; };
@@ -2059,6 +2060,7 @@
 		D14BC64C2FAD31990059E900 /* libzmq.5.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libzmq.5.dylib; path = deps/lib/libzmq.5.dylib; sourceTree = "<absolute>"; };
 		D14BC64D2FAD31990059E900 /* libzstd.1.5.7.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libzstd.1.5.7.dylib; path = deps/lib/libzstd.1.5.7.dylib; sourceTree = "<absolute>"; };
 		D14BC64E2FAD31990059E900 /* libzvbi.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libzvbi.0.dylib; path = deps/lib/libzvbi.0.dylib; sourceTree = "<absolute>"; };
+		D159F0DB2FB59C0F003ED175 /* MetalVideoLayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetalVideoLayer.swift; sourceTree = "<group>"; };
 		D15CABE52B1EECFD004A8985 /* Player_Thumbnails.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Player_Thumbnails.swift; sourceTree = "<group>"; };
 		D160783A2D140DDB00105001 /* BarRendererUtil.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BarRendererUtil.swift; sourceTree = "<group>"; };
 		D161A0B32EBA2226006BF42C /* FixedProgressBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FixedProgressBar.swift; sourceTree = "<group>"; };
@@ -3339,6 +3341,7 @@
 			isa = PBXGroup;
 			children = (
 				8407D13F1E3A684C0043895D /* GLVideoLayer.swift */,
+				D159F0DB2FB59C0F003ED175 /* MetalVideoLayer.swift */,
 				84A0BAA01D2FAE7600BC8DA1 /* VideoView.swift */,
 				D13A7F0D2D3A03A300840277 /* VideoView_DisplayLink.swift */,
 				D1D4C7432B10B7D2003B09C2 /* ViewportView.swift */,
@@ -4170,6 +4173,7 @@
 				E38B3216214FF700000F6D27 /* EventController.swift in Sources */,
 				D12C074028EAEA4400FA9958 /* AppInputConfigBuilder.swift in Sources */,
 				E3CB75BD1FDACB82004DB10A /* SavedFilter.swift in Sources */,
+				D159F0DC2FB59C0F003ED175 /* MetalVideoLayer.swift in Sources */,
 				E337D5E4241C12BE00B5729A /* PrefPluginPermissionListView.swift in Sources */,
 				5111B18B2C8BCEAC00DEC0AC /* TouchBarSettings.swift in Sources */,
 				E3785B072A83039600787CB7 /* JavascriptAPIWebSocket.swift in Sources */,
@@ -5760,6 +5764,7 @@
 					"$(PROJECT_DIR)/deps/lib",
 				);
 				MARKETING_VERSION = 1.5.4;
+				OTHER_SWIFT_FLAGS = "";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.iina-advance";
 				SKIP_INSTALL = NO;
 				SWIFT_STRICT_CONCURRENCY = minimal;
@@ -5824,6 +5829,7 @@
 					"$(PROJECT_DIR)/deps/lib",
 				);
 				MARKETING_VERSION = 1.5.4;
+				OTHER_SWIFT_FLAGS = "";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.iina-advance";
 				SKIP_INSTALL = NO;
 				SWIFT_STRICT_CONCURRENCY = minimal;
@@ -5898,10 +5904,7 @@
 				CURRENT_PROJECT_VERSION = 16;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = PG2MG2559L;
-				GCC_PREPROCESSOR_DEFINITIONS = (
-					"GL_SILENCE_DEPRECATION=1",
-					"$(inherited)",
-				);
+				GCC_PREPROCESSOR_DEFINITIONS = "GL_SILENCE_DEPRECATION=1";
 				INFOPLIST_KEY_CFBundleDisplayName = "IINA Advance";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.video";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2017-2026\nMatt Svoboda, Collider LI, et al.\nReleased under GPLv3.";
@@ -5912,6 +5915,7 @@
 					"$(PROJECT_DIR)/deps/lib",
 				);
 				MARKETING_VERSION = 1.5.4;
+				OTHER_SWIFT_FLAGS = "";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.iina-advance";
 				SKIP_INSTALL = NO;
 				SWIFT_STRICT_CONCURRENCY = minimal;
@@ -5944,6 +5948,7 @@
 				);
 				MARKETING_VERSION = 1.5.4;
 				OTHER_CODE_SIGN_FLAGS = "--deep --timestamp";
+				OTHER_SWIFT_FLAGS = "";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.iina-advance";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				RUNTIME_EXCEPTION_ALLOW_DYLD_ENVIRONMENT_VARIABLES = NO;

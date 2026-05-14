@@ -547,6 +547,8 @@ extension MPVController {
         chkErr(setString(MPVOption.Window.keepaspect, no, level: .verbose))
       }
 
+      /// Targets > iina > search for "Other Swift Flags" (under "Swift Compiler: Custom Flags"):
+      /// Add `-DUSE_GPU_NEXT`
 #if USE_GPU_NEXT
       log.verbose("Using gpu-next + Vulkan rendering")
       let widPtr = UnsafeMutablePointer<Int64>.allocate(capacity: 1)
