@@ -6,13 +6,16 @@
 //  Copyright © 2025 lhc. All rights reserved.
 //
 
-@available(macOS 11.0, *)
 class SettingsPageUI: SettingsPage {
   private lazy var windowInitialSizeView: WindowInitialSizeView = WindowInitialSizeView(l10n: localizationContext)
   private lazy var windowInitialPositionView: WindowInitialPositionView = WindowInitialPositionView(l10n: localizationContext)
   private lazy var resizeWindowView: ResizeWindowView = ResizeWindowView(l10n: localizationContext)
   private lazy var oscLayoutView: OSCLayoutView = OSCLayoutView(l10n: localizationContext)
   private lazy var oscToolbarView: OSCToolbarView = OSCToolbarView(l10n: localizationContext)
+
+  override var identifier: String {
+    "ui"
+  }
 
   override var title: String {
     return NSLocalizedString("preference.ui", comment: "UI")
@@ -26,7 +29,7 @@ class SettingsPageUI: SettingsPage {
     "SettingsUILocalizable"
   }
 
-  override func content() -> NSView {
+  override func content() -> [SettingsSection] {
     return sections {
       sectionAppearance()
       sectionWindow()
@@ -38,9 +41,9 @@ class SettingsPageUI: SettingsPage {
     }
   }
 
-  private func sectionAppearance() -> [NSView] {
+  private func sectionAppearance() -> SettingsSection {
     return section {
-      SettingsListView(title: .text_Appearance) {
+      SettingsList(title: .text_Appearance) {
         SettingsItem.PopupButton()
           .image(name: "moonphase.first.quarter")
           .bindTo(.themeMaterial, ofType: Preference.Theme.self)
@@ -48,33 +51,33 @@ class SettingsPageUI: SettingsPage {
     }
   }
 
-  private func sectionWindow() -> [NSView] {
+  private func sectionWindow() -> SettingsSection {
     return section {
-      SettingsListView(title: .text_Window) {
+      SettingsList(title: .text_Window) {
         SettingsItem.Switch(title: .text_InitialWindowSize)
           .image(name: "custom.arrow.up.left.and.down.right.and.arrow.up.right.and.down.left.rectangle")
-          .withExpandingDetailView(windowInitialSizeView.container)
+          .withExpandingDetailView(windowInitialSizeView)
           .bindExpandableView()
         SettingsItem.Switch(title: .text_InitialWindowPosition)
           .image(name: "arrow.up.and.down.and.arrow.left.and.right")
-          .withExpandingDetailView(windowInitialPositionView.container)
+          .withExpandingDetailView(windowInitialPositionView)
           .bindExpandableView()
       }
 
-      SettingsListView {
+      SettingsList {
         SettingsItem.PopupButton()
           .image(name: "arrow.up.left.bottomright.rectangle")
           .bindTo(.resizeWindowOption, ofType: Preference.ResizeWindowOption.self)
-          .withDetailView(resizeWindowView.view)
+          .withDetailView(resizeWindowView)
       }
 
-      SettingsListView {
+      SettingsList {
         SettingsItem.Switch()
           .image(name: "desktopcomputer")
           .bindTo(.usePhysicalResolution)
       }
 
-      SettingsListView {
+      SettingsList {
         SettingsItem.Switch()
           .image(name: "square.2.layers.3d.top.filled")
           .bindTo(.alwaysFloatOnTop)
@@ -85,18 +88,18 @@ class SettingsPageUI: SettingsPage {
     }
   }
 
-  private func sectionOSC() -> [NSView] {
+  private func sectionOSC() -> SettingsSection {
     return section {
-      SettingsListView(title: .text_OnScreenController) {
+      SettingsList(title: .text_OnScreenController) {
         SettingsItem.General(title: .text_Layout)
           .image(name: "menubar.dock.rectangle")
-          .withDetailView(oscLayoutView.view)
+          .withDetailView(oscLayoutView)
         SettingsItem.General(title: .text_Toolbar)
           .image(name: "ellipsis.rectangle")
-          .withDetailView(oscToolbarView.view)
+          .withDetailView(oscToolbarView)
       }
 
-      SettingsListView() {
+      SettingsList() {
         SettingsItem.PopupButton()
           .image(name: "forward.fill")
           .bindTo(.arrowButtonAction, ofType: Preference.ArrowButtonAction.self)
@@ -106,7 +109,7 @@ class SettingsPageUI: SettingsPage {
           .trailingLabel(.text_s)
       }
 
-      SettingsListView {
+      SettingsList {
         SettingsItem.Switch()
           .image(name: "arrow.right.and.line.vertical.and.arrow.left")
           .bindTo(.controlBarStickToCenter)
@@ -125,9 +128,9 @@ class SettingsPageUI: SettingsPage {
     }
   }
 
-  private func sectionOSD() -> [NSView] {
+  private func sectionOSD() -> SettingsSection {
     return section {
-      SettingsListView(title: .text_OnScreenDisplay) {
+      SettingsList(title: .text_OnScreenDisplay) {
         SettingsItem.Switch()
           .image(name: ["inset.filled.topleft.rectangle", "app.badge"])
           .bindTo(.enableOSD)
@@ -144,7 +147,7 @@ class SettingsPageUI: SettingsPage {
           }
       }
 
-      SettingsListView() {
+      SettingsList() {
         SettingsItem.Input(title: .controlBarAutoHideTimeoutLabel)
           .image(name: "timer")
           .bindTo(.osdAutoHideTimeout)
@@ -160,9 +163,9 @@ class SettingsPageUI: SettingsPage {
     }
   }
 
-  private func sectionThumbnail() -> [NSView] {
+  private func sectionThumbnail() -> SettingsSection {
     return section {
-      SettingsListView(title: .text_ThumbnailPreview) {
+      SettingsList(title: .text_ThumbnailPreview) {
         SettingsItem.Switch()
           .image(name: "custom.photo.bubble.left")
           .bindTo(.enableThumbnailPreview)
@@ -181,9 +184,9 @@ class SettingsPageUI: SettingsPage {
     }
   }
 
-  private func sectionPIP() -> [NSView] {
+  private func sectionPIP() -> SettingsSection {
     return section {
-      SettingsListView(title: .text_PictureinnPicture) {
+      SettingsList(title: .text_PictureinnPicture) {
         SettingsItem.General(title: .text_WhenEnteringPIP)
           .image(name: "pip.enter")
           .withDetailView {
@@ -203,9 +206,9 @@ class SettingsPageUI: SettingsPage {
     }
   }
 
-  private func sectionAccessibility() -> [NSView] {
+  private func sectionAccessibility() -> SettingsSection {
     return section {
-      SettingsListView(title: .text_Accessibility) {
+      SettingsList(title: .text_Accessibility) {
         SettingsItem.Switch()
           .image(name: "accessibility")
           .bindTo(.disableAnimations)
@@ -217,8 +220,8 @@ class SettingsPageUI: SettingsPage {
 }
 
 
-@available(macOS 11.0, *)
-fileprivate class WindowInitialSizeView: WithSettingsLocalizationContext {
+fileprivate class WindowInitialSizeView: WithSettingsLocalizationContext, SettingsContainer {
+  lazy var itemID = SettingsContainerUUID.next()
   var l10n: SettingsLocalization.Context!
   let container: NSView
   let view: NSStackView
@@ -247,13 +250,17 @@ fileprivate class WindowInitialSizeView: WithSettingsLocalizationContext {
     view.addArrangedSubview(popupButtonUnit)
 
     container.addSubview(view)
-    view.padding(.bottom(8), .top(0), .leading(SettingsSubListView.padding), .trailing(0))
+    view.padding(.bottom(8), .top(0), .leading(SettingsSubList.indent), .trailing(0))
+  }
+
+  func makeView(context: SettingsLocalization.Context) -> NSView {
+    return container
   }
 }
 
 
-@available(macOS 11.0, *)
-fileprivate class WindowInitialPositionView: WithSettingsLocalizationContext {
+fileprivate class WindowInitialPositionView: WithSettingsLocalizationContext, SettingsContainer {
+  lazy var itemID = SettingsContainerUUID.next()
   var l10n: SettingsLocalization.Context!
   let container: NSView
   let view: NSStackView
@@ -288,26 +295,30 @@ fileprivate class WindowInitialPositionView: WithSettingsLocalizationContext {
     self.view.alignment = .leading
 
     view.addArrangedSubview(
-      ui.hStack(ui.image("arrow.left.to.line"), ui.label(.text_XOffset), textFieldX, popupButtonXUnit)
+      ui.hStack(align: .firstBaseline, ui.image("arrow.left.to.line"), ui.label(.text_XOffset), textFieldX, popupButtonXUnit)
     )
     view.addArrangedSubview(
-      ui.hStack(ui.space(width: 16), ui.label(.text_toThe), popupButtonXPos, ui.label(.text_sideOfTheScreen))
+      ui.hStack(align: .firstBaseline, ui.space(width: 16), ui.label(.text_toThe), popupButtonXPos, ui.label(.text_sideOfTheScreen))
     )
     view.addArrangedSubview(
-      ui.hStack(ui.image("arrow.up.to.line"), ui.label(.text_YOffset), textFieldY, popupButtonYUnit)
+      ui.hStack(align: .firstBaseline, ui.image("arrow.up.to.line"), ui.label(.text_YOffset), textFieldY, popupButtonYUnit)
     )
     view.addArrangedSubview(
-      ui.hStack(ui.space(width: 16), ui.label(.text_toThe), popupButtonYPos, ui.label(.text_sideOfTheScreen))
+      ui.hStack(align: .firstBaseline, ui.space(width: 16), ui.label(.text_toThe), popupButtonYPos, ui.label(.text_sideOfTheScreen))
     )
 
     container.addSubview(view)
-    view.padding(.bottom(8), .top(0), .leading(SettingsSubListView.padding), .trailing(0))
+    view.padding(.bottom(8), .top(0), .leading(SettingsSubList.indent), .trailing(0))
+  }
+
+  func makeView(context: SettingsLocalization.Context) -> NSView {
+    return container
   }
 }
 
 
-@available(macOS 11.0, *)
-fileprivate class ResizeWindowView: WithSettingsLocalizationContext {
+fileprivate class ResizeWindowView: WithSettingsLocalizationContext, SettingsContainer {
+  lazy var itemID = SettingsContainerUUID.next()
   var l10n: SettingsLocalization.Context!
   lazy var ui: SettingsUIHelper = SettingsUIHelper(l10n)
 
@@ -326,11 +337,15 @@ fileprivate class ResizeWindowView: WithSettingsLocalizationContext {
     }
     SettingsUIHelper.vEquallySpaced(buttons, 8, top: 0, bottom: 12)
   }
+
+  func makeView(context: SettingsLocalization.Context) -> NSView {
+    return view
+  }
 }
 
 
-@available(macOS 11.0, *)
-fileprivate class OSCLayoutView: WithSettingsLocalizationContext {
+fileprivate class OSCLayoutView: WithSettingsLocalizationContext, SettingsContainer {
+  lazy var itemID = SettingsContainerUUID.next()
   var l10n: SettingsLocalization.Context!
   lazy var ui: SettingsUIHelper = SettingsUIHelper(l10n)
 
@@ -359,7 +374,7 @@ fileprivate class OSCLayoutView: WithSettingsLocalizationContext {
       container.addSubview(iv)
       iv.padding(.top(4)).size(width: 480 * 0.22, height: 270 * 0.22)
     }
-    SettingsUIHelper.hEquallySpaced(imageViews, 8, leading: SettingsSubListView.padding, trailing: 8)
+    SettingsUIHelper.hEquallySpaced(imageViews, 8, leading: SettingsSubList.indent, trailing: 8)
 
     let buttons = ui.radioGroup(.oscPosition, size: .regular, [
       (.oscPositionItem0, 0), (.oscPositionItem1, 1), (.oscPositionItem2, 2)
@@ -374,13 +389,15 @@ fileprivate class OSCLayoutView: WithSettingsLocalizationContext {
     view.addSubview(container)
     container.padding(.vertical).center(x: true)
   }
+
+  func makeView(context: SettingsLocalization.Context) -> NSView {
+    return view
+  }
 }
 
 
-@available(macOS 11.0, *)
-private class OSCToolbarView: WithSettingsLocalizationContext {
-  var l10n: SettingsLocalization.Context!
-  lazy var ui: SettingsUIHelper = SettingsUIHelper(l10n)
+private class OSCToolbarView: SettingsContainer {
+  lazy var itemID = SettingsContainerUUID.next()
 
   let view: NSView
   let oscToolbarStackView: NSStackView
@@ -388,42 +405,9 @@ private class OSCToolbarView: WithSettingsLocalizationContext {
   private let toolbarSettingsSheetController = PrefOSCToolbarSettingsSheetController()
 
   init(l10n: SettingsLocalization.Context) {
-    self.l10n = l10n
     self.view = NSView()
     self.oscToolbarStackView = NSStackView()
     self.customizeButton = NSButton(title: l10n.localized(.text_Customize), target: nil, action: nil)
-    let container = NSView()
-    container.translatesAutoresizingMaskIntoConstraints = false
-
-    oscToolbarStackView.translatesAutoresizingMaskIntoConstraints = false
-    oscToolbarStackView.orientation = .horizontal
-    oscToolbarStackView.distribution = .gravityAreas
-    oscToolbarStackView.spacing = 0
-
-    let box = NSBox()
-    box.translatesAutoresizingMaskIntoConstraints = false
-    box.boxType = .primary
-    box.titlePosition = .noTitle
-    box.contentViewMargins = .zero
-    box.addSubview(oscToolbarStackView)
-    oscToolbarStackView.padding(.vertical, .leading(greaterThan: 0), .trailing(0))
-    container.addSubview(box)
-    box.padding(.top, .bottom(8))
-    box.widthAnchor
-      .constraint(equalTo: box.heightAnchor, multiplier: 5).isActive = true
-
-    customizeButton.target = self
-    customizeButton.action = #selector(customizeOSCToolbarAction(_:))
-    customizeButton.translatesAutoresizingMaskIntoConstraints = false
-    container.addSubview(customizeButton)
-    customizeButton.center(with: box, y: true)
-    SettingsUIHelper.hEquallySpaced([box, customizeButton], 8, leading: SettingsSubListView.padding, trailing: 8)
-
-    view.addSubview(container)
-    container.padding(.vertical).center(x: true)
-    Task { @MainActor in
-      updateOSCToolbarButtons()
-    }
   }
 
   @MainActor private func updateOSCToolbarButtons() {
@@ -451,5 +435,39 @@ private class OSCToolbarView: WithSettingsLocalizationContext {
         self.updateOSCToolbarButtons()
       }
     }
+  }
+
+  func makeView(context: SettingsLocalization.Context) -> NSView {
+    let container = NSView()
+    container.translatesAutoresizingMaskIntoConstraints = false
+
+    oscToolbarStackView.translatesAutoresizingMaskIntoConstraints = false
+    oscToolbarStackView.orientation = .horizontal
+    oscToolbarStackView.distribution = .gravityAreas
+    oscToolbarStackView.spacing = 0
+
+    let box = NSBox()
+    box.translatesAutoresizingMaskIntoConstraints = false
+    box.boxType = .primary
+    box.titlePosition = .noTitle
+    box.contentViewMargins = .zero
+    box.addSubview(oscToolbarStackView)
+    oscToolbarStackView.padding(.vertical, .leading(greaterThan: 0), .trailing(0))
+    container.addSubview(box)
+    box.padding(.top, .bottom(8))
+    box.widthAnchor
+      .constraint(equalTo: box.heightAnchor, multiplier: 5).isActive = true
+
+    customizeButton.target = self
+    customizeButton.action = #selector(customizeOSCToolbarAction(_:))
+    customizeButton.translatesAutoresizingMaskIntoConstraints = false
+    container.addSubview(customizeButton)
+    customizeButton.center(with: box, y: true)
+    SettingsUIHelper.hEquallySpaced([box, customizeButton], 8, leading: SettingsSubList.indent, trailing: 8)
+
+    view.addSubview(container)
+    container.padding(.vertical).center(x: true)
+    updateOSCToolbarButtons()
+    return view
   }
 }
