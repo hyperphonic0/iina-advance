@@ -19,7 +19,7 @@ struct Regex {
   /// Note: `[X[%]:Y[%]]` format is not supported here
   static let geometry = Regex(#"^(?:(?:(\d+)(%)?)?(?:x(?:(\d+)(%)?))?)?(?:(\+|\-)(?:((?:\+|\-)?\d+)(%?))?(\+|\-)(?:((?:\+|\-)?\d+)(%?))?)?$"#)
   static let numbers = Regex("^[0-9]+(\\.[0-9]+)?$")
-  static let githubURL = Regex("^https://github.com/([^/]+)/([^/]+)/?$")
+  static let githubURL = Regex("^https://github.com/[\\w-]+/[\\w-]+/?$")
   static let githubRepo = Regex("^([^/]+)/([^/]+)/?$")
 
   var regex: NSRegularExpression?
