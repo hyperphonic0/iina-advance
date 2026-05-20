@@ -35,7 +35,11 @@
         libTool = pkgs.stdenv.mkDerivation {
           pname = "iina-lib-tool";
           version = "1.0";
-          propagatedBuildInputs = [ pkgs.python3 ];
+          propagatedBuildInputs = [
+            (pkgs.python3.withPackages (pythonPackages: with pythonPackages; [
+              packaging
+            ]))
+          ];
           dontUnpack = true;
           installPhase = "install -Dm755 ${./other/lib_tool.py} $out/bin/iina-lib-tool";
         };
@@ -48,6 +52,8 @@
 
         # Override ffmpeg to use our version of libs
         ffmpeg = (pkgs.ffmpeg.override {
+          withDebug = true; # Build using debug options
+
           withSoxr = true;
           soxr = pkgs.soxr;
 
@@ -62,6 +68,7 @@
 
           withJxl = true;
           libjxl = pkgs.libjxl;
+
         }).overrideAttrs (old: {
           # Skip tests to speed up build
           doCheck = false;
@@ -95,6 +102,7 @@
           cddaSupport = false;
           dvbinSupport = false;
           sixelSupport = false;
+
         };
 
         # Collect include deps (header files) as per readme.md
@@ -137,12 +145,6 @@
           cmakeFlags = (old.cmakeFlags or [ ]) ++ [ "-DBUILD_SHARED_LIBS=ON" ];
         });
 
-        gettext = pkgs.gettext.override {
-          # GNU libiconv (libiconvReal) must be used or the gettext build will fail while
-          # compiling iconv-ostream.c, reporting "incompatible function pointer types".
-          libiconv = pkgs.libiconvReal;
-        };
-
         # Collect lib deps as per readme.md
         depsLib = pkgs.linkFarm "iina-deps-lib" (
           pkgs.lib.flatten (
@@ -157,7 +159,9 @@
             ) [
               ffmpeg
               mpv
-              libhwy
+              (pkgs.libhwy.overrideAttrs (old: {
+                cmakeFlags = (old.cmakeFlags or [ ]) ++ [ "-DBUILD_SHARED_LIBS=ON" ];
+              }))
               pkgs.brotli
               pkgs.dav1d
               pkgs.fontconfig
@@ -245,6 +249,31 @@
               pkgs.zstd.out
               pkgs.zvbi
             ]
+          )
+        );
+
+        # Collect executables to expose them for plugins
+        depsExecutable = pkgs.linkFarm "iina-deps-executable" (
+          pkgs.lib.flatten (
+            map
+              (
+                pkg:
+                let
+                  bindir = "${pkgs.lib.getBin pkg}/bin";
+                in
+                builtins.map (file: {
+                  name = baseNameOf file;
+                  path = "${bindir}/${file}";
+                }) (builtins.attrNames (builtins.readDir bindir))
+              )
+              [
+                ffmpeg
+                # Grab the real mpv binary instead of the /bin wrapper script
+                (pkgs.runCommand "iina-mpv-executable" { } ''
+                  mkdir -p $out/bin
+                  cp -p ${mpv}/Applications/mpv.app/Contents/MacOS/mpv $out/bin/mpv
+                '')
+              ]
           )
         );
 
@@ -365,6 +394,7 @@
               mkdir -p deps/include deps/lib deps/executable
               cp -RL ${depsInclude}/.           deps/include
               cp -RL ${depsLib}/.               deps/lib
+              cp -RL ${depsExecutable}/.        deps/executable/
 
               echo "[${system}] 📦 Copying SPM deps"
               rsync -a ${spmDeps}/ ./
@@ -418,8 +448,11 @@
 
               mkdir -p "$frameworks"
 
+              echo "[${system}] 📦 Bundling ${depsExecutable} into IINA.app"
+              cp -RL ${depsExecutable}/. "$macos/"
+
               echo "[${system}] 📦 Deep-bundling dynamic dependencies into ${appName}.app"
-              ${libTool}/bin/iina-lib-tool --canonicalize --purge "$frameworks" "$macos"
+              ${libTool}/bin/iina-lib-tool --canonicalize "$frameworks" "$macos"
 
               echo "[${system}] ✏️ Setting up environment variables"
 
@@ -464,7 +497,7 @@
               archroot0="${builtins.elemAt self.archApps 0}/Applications/${appName}.app"
               archroot1="${builtins.elemAt self.archApps 1}/Applications/${appName}.app"
 
-              ${libTool}/bin/iina-lib-tool --merge-architectures "$frameworks" "$app/Contents/MacOS" \
+              ${libTool}/bin/iina-lib-tool --merge-architectures --canonicalize "$frameworks" "$app/Contents/MacOS" \
                 --archroot0 "$archroot0" --archroot1 "$archroot1"
 
               echo "🔏 Re-signing ${appName}.app..."
@@ -518,6 +551,7 @@
 
               link_tree ${depsInclude} "$deps_root/include"
               link_tree ${depsLib} "$deps_root/lib"
+              link_tree ${depsExecutable} "$deps_root/executable"
 
               echo "📦 Syncing SwiftPM deps"
               rsync -a --chmod=Du+rwx,Fu+rw ${spmDeps}/ ./
