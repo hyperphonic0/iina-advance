@@ -407,7 +407,7 @@ extension PlayerWindowController {
       videoView.enterAsynchronousMode()
 
       // Show default album art if no video track selected
-      if let currentPlayback = player.info.currentPlayback, currentPlayback.state.isAtLeast(.loaded), !player.info.isVideoTrackSelected {
+      if player.info.shouldShowDefaultArt == true {
         updateDefaultArtVisibility(to: true)
       }
       pip.showOrHidePipOverlayView()

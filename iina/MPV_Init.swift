@@ -575,6 +575,13 @@ extension MPVController {
       }
     }
 
+    if player.isInteractivePlayer {
+      // `force-window=immediate` makes audio-only subtitle rendering work with `vo=libmpv`,
+      // but setting it before render initialization can race the VO thread against IINA's
+      // render context setup. Switch to `immediate` only after the render context exists.
+      setString(MPVOption.Window.forceWindow, "immediate", level: .verbose)
+    }
+
     player.updateCursorAutohideState()
   }
 

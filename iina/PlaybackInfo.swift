@@ -211,7 +211,12 @@ class PlaybackInfo {
       // Don't show art if currently loading
       log.verbose("shouldShowDefaultArt: loaded=\(currentPlayback.state.isAtLeast(.loaded).yn) vidSelected=\(isVideoTrackSelected.yn) vid=\(vid?.description ?? "nil")")
       if currentPlayback.state.isAtLeast(.loaded) {
-        return !isVideoTrackSelected
+        if vid == 0 {
+          return true
+        }
+        let audioStatus = currentMediaAudioStatus
+        let hasSubtitles = (isSubVisible && sid != 0) || (isSecondSubVisible && secondSid != 0)
+        return audioStatus.isAudio && (audioStatus != .isAudioWithArtShown) && !hasSubtitles
       }
     }
     return nil
@@ -246,8 +251,8 @@ class PlaybackInfo {
     if noVideoTrack {
       return .isAudioWithoutArt
     }
-    let allVideoTracksAreAlbumCover = !videoTracks.contains { !$0.isAlbumart }
-    if allVideoTracksAreAlbumCover {
+    let hasRealVideoTrack = videoTracks.contains { !$0.isAlbumart }
+    if !hasRealVideoTrack {
       if isVideoTrackSelected {
         return .isAudioWithArtShown
       } else {

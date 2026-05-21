@@ -3235,7 +3235,7 @@ final class PlayerCore: NSObject {
     }
 
     info.replaceTracks(audio: audioTracks, video: videoTracks, sub: subTracks)
-    log.debug("Reloaded tracklist from mpv: \(videoTracks.count) video, \(audioTracks.count) audio, \(subTracks.count) subtitle")
+    log.debug("Reloaded tracklist from mpv: \(videoTracks.count) vid, \(audioTracks.count) aud, \(subTracks.count) sub")
 
     // Need to reload these explicitly. Sometimes when mpv sends `track-list`, it omits `vid`, `aid`, etc.
     vidChanged()
@@ -3243,7 +3243,8 @@ final class PlayerCore: NSObject {
     sidChanged()
     secondarySidChanged()
 
-    log.verbose("Posting iinaTracklistChanged vid=\(String(info.vid)) aid=\(String(info.aid)) sid=\(String(info.sid)) ssid=\(String(info.secondSid))")
+    log.verbose("Posting iinaTracklistChanged vid=\(String(info.vid)) aid=\(String(info.aid)) " +
+                "sid=\(String(info.sid)) ssid=\(String(info.secondSid))")
     postNotification(.iinaTracklistChanged)
     return true
   }
@@ -3320,7 +3321,8 @@ final class PlayerCore: NSObject {
       } else {
         returnValue = nil  // abort
       }
-      log.verbose("[GTF:\(ctx.name)] Changing sessionState for vid change, vidNew=\(ctx.vidTrackID) pendingAction=\(pendingAction): \(prevSessionState) → \(returnValue?.description ?? "nil")")
+      log.verbose("[GTF:\(ctx.name)] Changing sessionState for vid change, vidNew=\(ctx.vidTrackID) " +
+                  "pendingAction=\(pendingAction): \(prevSessionState) → \(returnValue?.description ?? "nil")")
       return returnValue
     }
 
@@ -3332,15 +3334,17 @@ final class PlayerCore: NSObject {
 
       var outputVidGeo = ctx.syncVideoParamsFromMpv(startingWith: inputVidGeo)
       if outputVidGeo == nil && hasPendingAction {
-        log.verbose("[GTF:\(ctx.name)] syncVideoParams returned nil but pending miniplayer show video. Assuming no video tracks; will show default art")
+        log.verbose("[GTF:\(ctx.name)] syncVideoParams returned nil but pending miniplayer show video. " +
+                    "Assuming no video tracks; will show defaultAlbumArt")
         outputVidGeo = inputVidGeo
-        // (kludge): ideally we'd want to include this in our window transform, but need refactor to get there from here. This should work ok.
+        // (kludge): ideally we'd want to include this in window transform, but need refactor to get there from here.
+        // This should work ok.
         pwc.animationPipeline.submitInstantTask {
           pwc.updateDefaultArtVisibility(to: true)
         }
       }
 
-      // Show OSD in music mode (if configured) when actually changing tracks, but not while toggling videoView visibility
+      // Show OSD in music mode (if configured) when changing tracks, but not while toggling videoView visibility
       if !silent, (!isInMiniPlayer || (pwc.miniPlayer.isViewportShown && !hasPendingAction)) {
         sendOSD(.track(info.track(.video, id: vid) ?? .noneVideoTrack))
       }
@@ -3445,7 +3449,8 @@ final class PlayerCore: NSObject {
           miniPlayerShowVideoTimer.restart()
         }
       }
-      log.verbose("Enabling video track: changing vid from \(vidNow) → \(vidToSet) vidTrackCount=\(vidTrackCount) pnedingAction=\(action)")
+      log.verbose("Enabling video track: changing vid from \(vidNow) → \(vidToSet) " +
+                  "vidTrackCount=\(vidTrackCount) pnedingAction=\(action)")
       let hasVidTrack = vidTrackCount > 0
       guard hasVidTrack else {
         info.vidDisabled = nil  // clear saved track

@@ -166,6 +166,7 @@ class VideoView: NSView {
 #endif
   }
 
+  /// Inits the video layer & the mpv render context.
   @MainActor
   func initVideoLayer() {
 #if USE_GPU_NEXT
