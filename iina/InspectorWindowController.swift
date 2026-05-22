@@ -16,7 +16,6 @@ final class InspectorWindowController: WindowController, NSWindowDelegate, NSTab
 
   @IBOutlet weak var tabView: NSTabView!
   @IBOutlet weak var tabButtonGroup: NSSegmentedControl!
-  @IBOutlet weak var tabButtonGroupBottomLine: NSBox!
   @IBOutlet weak var trackPopup: NSPopUpButton!
 
   @IBOutlet weak var pathField: NSTextField!
