@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="24506" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="24765" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="24506"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="24765"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
@@ -501,8 +501,8 @@
                                 </textFieldCell>
                             </textField>
                             <button translatesAutoresizingMaskIntoConstraints="NO" id="705-dt-Zwl" userLabel="SpeedReset Button">
-                                <rect key="frame" x="324" y="382.5" width="16" height="21"/>
-                                <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="NSRefreshFreestandingTemplate" imagePosition="only" alignment="center" controlSize="small" refusesFirstResponder="YES" imageScaling="proportionallyUpOrDown" inset="2" id="e2B-Ie-9hS">
+                                <rect key="frame" x="324" y="382.5.5" width="16" height="21"/>
+                                <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="arrow.clockwise.circle.fill" catalog="system" imagePosition="only" alignment="center" controlSize="small" refusesFirstResponder="YES" imageScaling="proportionallyUpOrDown" inset="2" id="e2B-Ie-9hS">
                                     <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                     <font key="font" metaFont="message" size="11"/>
                                 </buttonCell>
@@ -879,7 +879,7 @@
                                 <subviews>
                                     <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="cjG-f1-Mkg" userLabel="Brightness Square Button">
                                         <rect key="frame" x="0.0" y="94" width="13" height="19"/>
-                                        <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="NSRefreshFreestandingTemplate" imagePosition="overlaps" alignment="center" refusesFirstResponder="YES" inset="2" id="63a-cd-eXa">
+                                        <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="arrow.clockwise.circle.fill" catalog="system" imagePosition="overlaps" alignment="center" refusesFirstResponder="YES" inset="2" id="63a-cd-eXa">
                                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                             <font key="font" metaFont="system"/>
                                         </buttonCell>
@@ -1622,17 +1622,17 @@
                                             <font key="font" metaFont="message"/>
                                             <menu key="menu" autoenablesItems="NO" id="7k5-w9-dRQ">
                                                 <items>
-                                                    <menuItem title="Save the current EQ as a preset…" tag="-3" id="sE0-LN-T8i">
+                                                    <menuItem title="Save the current EQ as a preset…" secondaryImage="square.and.arrow.down" catalog="system" tag="-3" id="sE0-LN-T8i">
                                                         <modifierMask key="keyEquivalentModifierMask"/>
                                                     </menuItem>
-                                                    <menuItem title="Rename the current EQ preset…" tag="-2" id="2tD-0L-UUs">
+                                                    <menuItem title="Rename the current EQ preset…" secondaryImage="pencil" catalog="system" tag="-2" id="2tD-0L-UUs">
                                                         <modifierMask key="keyEquivalentModifierMask"/>
                                                     </menuItem>
-                                                    <menuItem title="Remove the current EQ preset" tag="-1" id="dvI-Rj-7qF">
+                                                    <menuItem title="Remove the current EQ preset" secondaryImage="delete.backward" catalog="system" tag="-1" id="dvI-Rj-7qF">
                                                         <modifierMask key="keyEquivalentModifierMask"/>
                                                     </menuItem>
                                                     <menuItem isSeparatorItem="YES" tag="-1000" id="o0F-oJ-6GY"/>
-                                                    <menuItem title="Manual" tag="1000" id="LPh-nJ-GjN">
+                                                    <menuItem title="Manual" secondaryImage="waveform.and.person.filled" catalog="system" tag="1000" id="LPh-nJ-GjN">
                                                         <modifierMask key="keyEquivalentModifierMask"/>
                                                     </menuItem>
                                                     <menuItem isSeparatorItem="YES" tag="-1000" id="wBP-97-nRB"/>
@@ -2307,8 +2307,8 @@
                                         </textFieldCell>
                                     </textField>
                                     <button translatesAutoresizingMaskIntoConstraints="NO" id="8ZC-Wx-nt7">
-                                        <rect key="frame" x="326" y="329.5" width="16" height="21"/>
-                                        <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="NSRefreshFreestandingTemplate" imagePosition="only" alignment="center" controlSize="small" refusesFirstResponder="YES" imageScaling="proportionallyUpOrDown" inset="2" id="ojj-5V-n3t">
+                                        <rect key="frame" x="326" y="329.5.5" width="16" height="21"/>
+                                        <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="arrow.clockwise.circle.fill" catalog="system" imagePosition="only" alignment="center" controlSize="small" refusesFirstResponder="YES" imageScaling="proportionallyUpOrDown" inset="2" id="ojj-5V-n3t">
                                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                             <font key="font" metaFont="message" size="11"/>
                                         </buttonCell>
@@ -2690,9 +2690,14 @@
     </objects>
     <resources>
         <image name="NSRefreshFreestandingTemplate" width="20" height="20"/>
+        <image name="arrow.clockwise.circle.fill" catalog="system" width="15" height="15"/>
+        <image name="delete.backward" catalog="system" width="17" height="14"/>
+        <image name="pencil" catalog="system" width="14" height="13"/>
+        <image name="square.and.arrow.down" catalog="system" width="15" height="17"/>
         <image name="tab_audio" width="26" height="18"/>
         <image name="tab_sub" width="26" height="18"/>
         <image name="tab_video" width="26" height="18"/>
         <image name="triangle-down" width="10" height="14"/>
+        <image name="waveform.and.person.filled" catalog="system" width="19" height="17"/>
     </resources>
 </document>

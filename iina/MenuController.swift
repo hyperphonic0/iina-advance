@@ -576,21 +576,35 @@ class MenuController: NSObject, NSMenuDelegate {
     Logger.log.trace("Updating Plugin menu")
     pluginMenu.removeAllItems()
 
-    let managePluginsAction = #selector(AppDelegate.showPluginPreferences(_:))
-    pluginMenu.addItem(withTitle: StringConstants.managePlugins, action: managePluginsAction, keyEquivalent: "")
-
     let activePlayer = PlayerManager.shared.activePlayer
-    if let isDisplayingPluginsPanel = activePlayer?.pwc.isTabGroupVisible(.plugins) {
-      let itemTitle = isDisplayingPluginsPanel ? StringConstants.hidePluginsPanel : StringConstants.showPluginsPanel
-      let itemAction = #selector(PlayerWindowController.showPluginsPanel(_:))
-      pluginMenu.addItem(withTitle: itemTitle, action: itemAction, keyEquivalent: "")
+    let managePluginsItem = NSMenuItem(title: StringConstants.managePlugins,
+                                       action: #selector(AppDelegate.showPluginPreferences(_:)), keyEquivalent: "")
+    let developerToolTitle = NSLocalizedString("menu.developer_tool", comment: "Developer Tool")
+    let developerTool = NSMenuItem(title: developerToolTitle, action: nil, keyEquivalent: "")
+    let developerToolSubmenu = NSMenu()
+    developerTool.submenu = developerToolSubmenu
+    let reloadTitle = NSLocalizedString("menu.conflicting_shortcuts", comment: "Conflicting key shortcuts…")
+    let reloadPluginsItem = NSMenuItem(title: reloadTitle, action: nil, keyEquivalent: "")
 
-      pluginMenu.addItem(.separator())
+    if #available (macOS 26, *) {
+      managePluginsItem.image = .findSFSymbol(["gear"])
+      developerTool.image = .findSFSymbol(["terminal"])
+      reloadPluginsItem.image = .findSFSymbol(["arrow.counterclockwise"])
     }
 
-    let developerTool = NSMenuItem()
-    developerTool.title = NSLocalizedString("menu.developer_tool", comment: "Developer Tool")
-    developerTool.submenu = NSMenu()
+    pluginMenu.addItem(managePluginsItem)
+
+    if let pwc = activePlayer?.pwc {
+      let isDisplayingPluginsPanel = pwc.isTabGroupVisible(.plugins)
+      let title = isDisplayingPluginsPanel ? StringConstants.hidePluginsPanel : StringConstants.showPluginsPanel
+      let showPanelItem = NSMenuItem(title: title, action: #selector(pwc.showPluginsPanel(_:)), keyEquivalent: "")
+
+      if #available (macOS 26, *) {
+        showPanelItem.image = .findSFSymbol(["puzzlepiece.extension"])
+      }
+      pluginMenu.addItem(showPanelItem)
+    }
+    pluginMenu.addItem(.separator())
 
     var mappingItemPairs: [(KeyMapping, NSMenuItem)] = []
 
@@ -624,10 +638,10 @@ class MenuController: NSObject, NSMenuDelegate {
 
       let devToolItem = NSMenuItem()
       devToolItem.title = instance.plugin.name
-      developerTool.submenu?.addItem(
+      developerToolSubmenu.addItem(
         menuItem(forPluginInstance: instance, tag: JavasctiptDevTool.JSMenuItemInstance))
       if let globalInst = instance.plugin.globalInstance {
-        developerTool.submenu?.addItem(
+        developerToolSubmenu.addItem(
           menuItem(forPluginInstance: globalInst, tag: JavasctiptDevTool.JSMenuItemInstance))
       }
 

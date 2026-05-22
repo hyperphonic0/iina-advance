@@ -69,11 +69,6 @@ extension PlaylistViewController {
     }
   }
 
-  @IBAction func contextMenuDeleteFileAfterPlayback(_ sender: NSMenuItem) {
-    // WIP
-    // TODO: WIP, really?
-  }
-
   /// Gets the list of URLs for the files in the playlist (if any). Any URLs for non-files (i.e. network streams) will be omitted from the list.
   /// For each file: if bookmark data is found, tries to resolve the URL from it. Otherwise just use its static URL.
   private func getFileURLs(fromPlaylistRows rowIndexes: IndexSet) -> [URL] {
@@ -165,18 +160,28 @@ extension PlaylistViewController {
 
       menu.addItem(withTitle: title)
       menu.addItem(NSMenuItem.separator())
-      menu.addItem(forRows: rows, withTitle: NSLocalizedString("pl_menu.play_next", comment: "Play Next"), action: #selector(self.contextMenuPlayNext(_:)))
-      menu.addItem(forRows: rows, withTitle: NSLocalizedString("pl_menu.play_in_new_window", comment: "Play in New Window"), action: #selector(self.contextMenuPlayInNewWindow(_:)))
-      menu.addItem(forRows: rows, withTitle: NSLocalizedString(isSingleItem ? "pl_menu.remove" : "pl_menu.remove_multi", comment: "Remove"), action: #selector(self.contextMenuRemove(_:)))
+      menu.addItem(forRows: rows, withTitle: NSLocalizedString("pl_menu.play_next", comment: "Play Next"),
+                   image: ["text.line.first.and.arrowtriangle.forward"],
+                   action: #selector(self.contextMenuPlayNext(_:)))
+      menu.addItem(forRows: rows, withTitle: NSLocalizedString("pl_menu.play_in_new_window", comment: "Play in New Window"),
+                   image: ["macwindow.badge.plus"],
+                   action: #selector(self.contextMenuPlayInNewWindow(_:)))
+      menu.addItem(forRows: rows, withTitle: NSLocalizedString(isSingleItem ? "pl_menu.remove" : "pl_menu.remove_multi", comment: "Remove"),
+                   image: ["delete.backward"],
+                   action: #selector(self.contextMenuRemove(_:)))
 
       if !player.isInMiniPlayer {
         menu.addItem(NSMenuItem.separator())
         if isSingleItem {
           menu.addItem(forRows: rows, withTitle: String(format: NSLocalizedString("pl_menu.matched_sub", comment: "Matched %d Subtitle(s)"), matchedSubCount))
-          menu.addItem(forRows: rows, withTitle: NSLocalizedString("pl_menu.add_sub", comment: "Add Subtitle…"), action: #selector(self.contextMenuAddSubtitle(_:)))
+          menu.addItem(forRows: rows, withTitle: NSLocalizedString("pl_menu.add_sub", comment: "Add Subtitle…"),
+                       image: ["custom.captions.bubble.badge.plus"],
+                       action: #selector(self.contextMenuAddSubtitle(_:)))
         }
         if matchedSubCount != 0 {
-          menu.addItem(forRows: rows, withTitle: NSLocalizedString("pl_menu.wrong_sub", comment: "Wrong Subtitle"), action: #selector(self.contextMenuWrongSubtitle(_:)))
+          menu.addItem(forRows: rows, withTitle: NSLocalizedString("pl_menu.wrong_sub", comment: "Wrong Subtitle"),
+                       image: ["custom.captions.bubble.slash"],
+                       action: #selector(self.contextMenuWrongSubtitle(_:)))
         }
       }
 
@@ -186,17 +191,23 @@ extension PlaylistViewController {
         playlistItems[$0].isNetworkResource
       }.count
       if networkCount != 0 {
-        menu.addItem(forRows: rows, withTitle: NSLocalizedString("pl_menu.browser", comment: "Open in Browser"), action: #selector(self.contextOpenInBrowser(_:)))
-        menu.addItem(forRows: rows, withTitle: NSLocalizedString(networkCount == 1 ? "pl_menu.copy_url" : "pl_menu.copy_url_multi", comment: "Copy URL(s)"), action: #selector(self.contextCopyURL(_:)))
+        menu.addItem(forRows: rows, withTitle: NSLocalizedString("pl_menu.browser", comment: "Open in Browser"),
+                     image: ["globe"],
+                     action: #selector(self.contextOpenInBrowser(_:)))
+        menu.addItem(forRows: rows, withTitle: NSLocalizedString(networkCount == 1 ? "pl_menu.copy_url" : "pl_menu.copy_url_multi", comment: "Copy URL(s)"),
+                     image: ["link"],
+                     action: #selector(self.contextCopyURL(_:)))
         menu.addItem(NSMenuItem.separator())
       }
       // file related operations
       let localCount = rows.count - networkCount
       if localCount != 0 {
-        menu.addItem(forRows: rows, withTitle: NSLocalizedString(localCount == 1 ? "pl_menu.delete" : "pl_menu.delete_multi", comment: "Delete"), action: #selector(self.contextMenuDeleteFile(_:)))
-        // menu.addItem(forRows: rows, withTitle: NSLocalizedString(isSingleItem ? "pl_menu.delete_after_play" : "pl_menu.delete_after_play_multi", comment: "Delete After Playback"), action: #selector(self.contextMenuDeleteFileAfterPlayback(_:)))
-
-        menu.addItem(forRows: rows, withTitle: NSLocalizedString("pl_menu.show_in_finder", comment: "Show in Finder"), action: #selector(self.contextMenuShowInFinder(_:)))
+        menu.addItem(forRows: rows, withTitle: NSLocalizedString(localCount == 1 ? "pl_menu.delete" : "pl_menu.delete_multi", comment: "Delete"),
+                     image: ["trash"],
+                     action: #selector(self.contextMenuDeleteFile(_:)))
+        menu.addItem(forRows: rows, withTitle: NSLocalizedString("pl_menu.show_in_finder", comment: "Show in Finder"),
+                     image: ["finder"],
+                     action: #selector(self.contextMenuShowInFinder(_:)))
         menu.addItem(NSMenuItem.separator())
       }
     }
@@ -217,7 +228,8 @@ extension PlaylistViewController {
       return (plugin, [])
     }
     if hasPluginMenuItems {
-      menu.addItem(withTitle: NSLocalizedString("preference.plugins", comment: "Plugins"))
+      menu.addItem(withTitle: NSLocalizedString("preference.plugins", comment: "Plugins"),
+                   image: ["puzzlepiece.extension"])
       for (plugin, items) in pluginMenuItems {
         for item in items {
           add(menuItemDef: item, to: menu, for: plugin)
@@ -226,9 +238,21 @@ extension PlaylistViewController {
       menu.addItem(NSMenuItem.separator())
     }
 
-    menu.addItem(withTitle: NSLocalizedString("pl_menu.add_file", comment: "Add File"), action: #selector(self.addFileAction(_:)))
-    menu.addItem(withTitle: NSLocalizedString("pl_menu.add_url", comment: "Add URL"), action: #selector(self.addURLAction(_:)))
-    menu.addItem(withTitle: NSLocalizedString("pl_menu.clear_playlist", comment: "Clear Playlist"), action: #selector(self.clearPlaylistBtnAction(_:)))
+    menu.addItem(withTitle: NSLocalizedString("pl_menu.add_file", comment: "Add File"),
+                 image: ["document.badge.plus"],
+                 action: #selector(self.addFileAction(_:)))
+    menu.addItem(withTitle: NSLocalizedString("pl_menu.add_url", comment: "Add URL"),
+                 image: ["link.badge.plus"],
+                 action: #selector(self.addURLAction(_:)))
+    menu.addItem(withTitle: NSLocalizedString("pl_menu.clear_playlist", comment: "Clear Playlist"),
+                 image: ["delete.left.fill"],
+                 action: #selector(self.clearPlaylistBtnAction(_:)))
+
+    if #unavailable (macOS 26.0) {
+      for item in menu.items {
+        item.image = nil
+      }
+    }
   }
 
   @discardableResult

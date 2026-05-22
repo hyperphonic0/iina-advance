@@ -1554,7 +1554,7 @@ extension NSMenu {
     menuItem.isEnabled = enabled
 
     if #available(macOS 11.0, *), let image = image {
-      menuItem.image = NSImage.findSFSymbol(image)
+      menuItem.image = .findSFSymbol(image)
     }
 
     self.addItem(menuItem)
