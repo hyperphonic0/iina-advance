@@ -578,13 +578,15 @@ class MenuController: NSObject, NSMenuDelegate {
 
     let activePlayer = PlayerManager.shared.activePlayer
     let managePluginsItem = NSMenuItem(title: StringConstants.managePlugins,
-                                       action: #selector(AppDelegate.showPluginPreferences(_:)), keyEquivalent: "")
+                                       action: #selector(AppDelegate.showPluginPreferences(_:)),
+                                       keyEquivalent: "")
     let developerToolTitle = NSLocalizedString("menu.developer_tool", comment: "Developer Tool")
     let developerTool = NSMenuItem(title: developerToolTitle, action: nil, keyEquivalent: "")
     let developerToolSubmenu = NSMenu()
     developerTool.submenu = developerToolSubmenu
-    let reloadTitle = NSLocalizedString("menu.conflicting_shortcuts", comment: "Conflicting key shortcuts…")
-    let reloadPluginsItem = NSMenuItem(title: reloadTitle, action: nil, keyEquivalent: "")
+    let reloadTitle = NSLocalizedString("menu.reload_plugins", comment: "Reload All Plugins")
+    let reloadPluginsItem = NSMenuItem(title: reloadTitle, action: #selector(AppDelegate.reloadAllPlugins(_:)),
+                                       keyEquivalent: "")
 
     if #available (macOS 26, *) {
       managePluginsItem.image = .findSFSymbol(["gear"])
@@ -644,13 +646,11 @@ class MenuController: NSObject, NSMenuDelegate {
         developerToolSubmenu.addItem(
           menuItem(forPluginInstance: globalInst, tag: JavasctiptDevTool.JSMenuItemInstance))
       }
-
-      pluginMenu.addItem(.separator())
     }
 
+    pluginMenu.addItem(.separator())
     pluginMenu.addItem(developerTool)
-    pluginMenu.addItem(withTitle: NSLocalizedString("menu.reload_plugins", comment: "Reload All Plugins"),
-                       action: #selector(PlayerWindowController.reloadAllPlugins(_:)), keyEquivalent: "")
+    pluginMenu.addItem(reloadPluginsItem)
 
     sectionMappingItemPairs[MPVInputSection.Shared.PLUGINS_SECTION_NAME] = mappingItemPairs
   }

@@ -557,35 +557,4 @@ extension PlayerWindowController {
   @objc func showPluginsPanel(_ sender: NSMenuItem) {
     showSidebar(forTabGroup: .plugins)
   }
-
-  @objc func reloadAllPlugins(_ sender: NSMenuItem) {
-    // Remove the developer tool menu item that retains the plugin instance
-    AppDelegate.shared.menuController.pluginMenu.items
-      .compactMap { $0.submenu }.flatMap { $0.items }
-      .forEach { $0.representedObject = nil }
-    AppDelegate.shared.menuController.pluginMenu.removeAllItems()
-
-    for player in PlayerManager.shared.playerCores {
-      player.clearPlugins()
-    }
-
-    JavascriptPlugin.recreateAllPlugins()
-    JavascriptPlugin.loadGlobalInstances()
-
-    for player in PlayerManager.shared.playerCores {
-      for plugin in JavascriptPlugin.plugins {
-        player.reloadPlugin(plugin, forced: true)
-      }
-      // Try to emit the events that are already emitted.
-      // Of course this is not exhaustive, so users shouldn't rely on this function
-      if player.pwc.loaded {
-        player.events.emit(.windowLoaded)
-      }
-      player.events.emit(.mpvInitialized)
-      if player.info.isFileLoaded && !player.info.isPaused {
-        player.events.emit(.fileLoaded)
-        player.events.emit(.fileStarted)
-      }
-    }
-  }
 }

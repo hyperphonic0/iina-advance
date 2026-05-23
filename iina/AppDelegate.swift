@@ -1031,6 +1031,37 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
   // MARK: - Other
 
+  @MainActor @objc func reloadAllPlugins(_ sender: NSMenuItem) {
+    // Remove the developer tool menu item that retains the plugin instance
+    AppDelegate.shared.menuController.pluginMenu.items
+      .compactMap { $0.submenu }.flatMap { $0.items }
+      .forEach { $0.representedObject = nil }
+    AppDelegate.shared.menuController.pluginMenu.removeAllItems()
+
+    for player in PlayerManager.shared.playerCores {
+      player.clearPlugins()
+    }
+
+    JavascriptPlugin.recreateAllPlugins()
+    JavascriptPlugin.loadGlobalInstances()
+
+    for player in PlayerManager.shared.playerCores {
+      for plugin in JavascriptPlugin.plugins {
+        player.reloadPlugin(plugin, forced: true)
+      }
+      // Try to emit the events that are already emitted.
+      // Of course this is not exhaustive, so users shouldn't rely on this function
+      if player.pwc.loaded {
+        player.events.emit(.windowLoaded)
+      }
+      player.events.emit(.mpvInitialized)
+      if !player.info.isPaused {
+        player.events.emit(.fileLoaded)
+        player.events.emit(.fileStarted)
+      }
+    }
+  }
+
   /// Dump contents of all player cores to a txt file. Strictly for debugging. No localization needed.
   @IBAction func dumpDebugInfo(_ sender: AnyObject) {
     struct FileStream: TextOutputStream {

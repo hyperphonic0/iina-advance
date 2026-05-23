@@ -204,7 +204,6 @@ fileprivate class AudioOutputDeviceView: SettingsContainer {
   }
 
   func makeView(context: SettingsLocalization.Context) -> NSView {
-    let l10n = context
     audioDevicePopUp.translatesAutoresizingMaskIntoConstraints = false
     audioDevicePopUp.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
     audioDevicePopUp.removeAllItems()
