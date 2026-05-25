@@ -185,6 +185,7 @@ class SettingsWindow: NSWindow {
 
     DispatchQueue.main.async {
       self.updateSectionIndicator()
+      page.pageLoaded()
     }
   }
 
