@@ -19,7 +19,9 @@ extension NSTextField {
 
 }
 
-@available(macOS 11.0, *)
+// not sure from which version, need further tests
+let topConstraintOffset: CGFloat = if #available(macOS 26, *) { -4 } else { 0 }
+
 class SettingsUIHelper {
   private var l10n: SettingsLocalization.Context
 
@@ -83,9 +85,7 @@ class SettingsUIHelper {
   func colorWell(_ key: Preference.Key) -> NSColorWell {
     let colorWell = NSColorWell()
     colorWell.translatesAutoresizingMaskIntoConstraints = false
-    if #available(macOS 13.0, *) {
-      colorWell.colorWellStyle = .expanded
-    }
+    colorWell.colorWellStyle = .expanded
     colorWell.size(height: 24)
     colorWell.bind(.value, to: UserDefaults.standard,
                    withKeyPath: key.rawValue,

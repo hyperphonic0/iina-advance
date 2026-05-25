@@ -267,7 +267,7 @@ fileprivate class GeometryBindings: NSObject {
     UserDefaults.standard.removeObserver(self, forKeyPath: key)
   }
 
-  func initControl<T>(_ keyPath: ReferenceWritableKeyPath<GeometryBindings, T?>, _ value: T) {
+  @MainActor func initControl<T>(_ keyPath: ReferenceWritableKeyPath<GeometryBindings, T?>, _ value: T) {
     self[keyPath: keyPath] = value
     if let value = value as? SettingsItem.Switch {
       value.stateChangeCallback = { [weak self] _ in
@@ -279,7 +279,7 @@ fileprivate class GeometryBindings: NSObject {
     }
   }
 
-  @objc func updateGeometry(_ sender: AnyObject) {
+  @MainActor @objc func updateGeometry(_ sender: AnyObject) {
     var geometry = ""
     if windowSizeSwitch.nsSwitch.state == .on {
       geometry += windowSizeSide.selectedTag() == SizeWidthTag ? "" : "x"
@@ -297,9 +297,9 @@ fileprivate class GeometryBindings: NSObject {
     Preference.set(geometry, for: .initialWindowSizePosition)
   }
 
-  func updateControls() {
+  @MainActor func updateControls() {
     let geometryString = Preference.string(for: .initialWindowSizePosition) ?? ""
-    if let geometry = GeometryDef.parse(geometryString) {
+    if let geometry = MPVGeometryDef.parse(geometryString) {
       // size
       if let h = geometry.h {
         windowSizeSwitch.setIsOn(true)
@@ -339,7 +339,9 @@ fileprivate class GeometryBindings: NSObject {
   override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
     guard !(change?[NSKeyValueChangeKey.oldKey] is NSNull) else { return }
 
-    updateControls()
+    Task { @MainActor in
+      updateControls()
+    }
   }
 }
 
