@@ -297,6 +297,7 @@ struct Preference {
     static let thumbnailSizeOption = Key("thumbnailSizeOption")
     /// Only for `ThumbnailSizeOption.fixed`. Length of the longer dimension of thumbnail in screen points.
     /// May be scaled down if needed to fit inside window.
+    /// In upstream IINA, this field is called `thumbnailWidth`.
     static let thumbnailFixedLength = Key("thumbnailFixedLength")
     /// Only for `ThumbnailSizeOption.scaleWithViewport`. Quality of generated thumbnail as % of raw video size, 1 - 100.
     /// Will be scaled up/down to satisfy `thumbnailDisplayedSizePercentage`; may be scaled down if needed to fit inside window.
