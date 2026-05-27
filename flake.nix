@@ -392,16 +392,16 @@
               rm -rf deps/include deps/lib
 
               mkdir -p deps/include deps/lib deps/executable
-              cp -RL ${depsInclude}/.           deps/include
-              cp -RL ${depsLib}/.               deps/lib
-              cp -RL ${depsExecutable}/.        deps/executable/
+              cp -RL "${depsInclude}/."           deps/include
+              cp -RLv "${depsLib}/."              deps/lib
+              cp -RL "${depsExecutable}/."        deps/executable/
 
               echo "[${system}] 📦 Copying SPM deps"
-              rsync -a ${spmDeps}/ ./
+              rsync -a "${spmDeps}/" ./
               chmod -R u+rwx,g+rx,o+rx .
 
               echo "[${system}] 📦 Adding canonical links"
-              ${libTool}/bin/iina-lib-tool --add-canonical-links "./deps/lib" "./deps/executable"
+              ${libTool}/bin/iina-lib-tool --canonicalize "./deps/lib" "./deps/executable"
 
               # Rewrite SwiftPM workspace-state.json to fix absolute paths
               if [ -f .spm/workspace-state.json ]; then
@@ -410,7 +410,7 @@
                 sed -i -E "s|$old_prefix|$PWD|g" .spm/workspace-state.json
               fi
 
-              # Build IINA Advance
+              # Build IINA Advance (single-arch)
               echo "[${system}] 🔨 Building ${appName}"
               xcodebuild \
                 -workspace iina.xcodeproj/project.xcworkspace \
@@ -448,8 +448,8 @@
 
               mkdir -p "$frameworks"
 
-              echo "[${system}] 📦 Bundling ${depsExecutable} into IINA.app"
-              cp -RL ${depsExecutable}/. "$macos/"
+              echo "[${system}] 📦 Bundling ${depsExecutable} into ${appName}.app"
+              cp -RLv "${depsExecutable}/." "$macos/"
 
               echo "[${system}] 📦 Deep-bundling dynamic dependencies into ${appName}.app"
               ${libTool}/bin/iina-lib-tool --canonicalize "$frameworks" "$macos"
