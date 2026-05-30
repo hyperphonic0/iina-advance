@@ -21,7 +21,7 @@ class SettingsPageGeneral: SettingsPage {
   }
 
   override var image: NSImage {
-    return makeSymbol("gear", fallbackImage: "pref_general")
+    return .sf("gear", withConfiguration: symbolConfiguration)!
   }
 
   override var localizationTable: String {

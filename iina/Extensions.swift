@@ -564,8 +564,6 @@ extension NSRect {
 }
 
 
-// MARK: - Floating point types
-
 // Try to use Double instead of CGFloat as declared type - more compatible
 extension Double {
   func prettyFormat() -> String {
@@ -1487,18 +1485,15 @@ extension NSImage {
   /// Try to find a SF Symbol. This function will iterate through the provided list of SF Symbol name list to and return the
   /// first available SF Symbol at runtime.
   ///
-  /// Even though SF Symbol is available from macOS 11, we require at macOS 14 to use SF Symbol for the sake of consistency. On
-  /// older systems (macOS 13 and below), because SF Symbols are not complete enough for our usage, we don't use them at all.
-  /// If a better symbol is found in a later release of SF Symbol, place it at the first of the name list, so that IINA running
-  /// on the latest version of macOS can make use of it; IINA running on a older version of macOS will fallback to a symbol
-  /// in a previous release of SF Symbol. But the list of name must contain a symbol which is available in macOS 14 (SF Symbol 5).
+  /// Use this function only for stock SF Symbol. If a symbol is customized and imported from SF Symbol.app, it is available for all
+  /// systems, so we should use `NSImage(named:)`or the auto generated names by Xcode directly. Preferably, we use stock SF Symbols;
+  /// the next tier is customized and imported SF Symbols; we only use a foreign symbol if that is absolutely necessary.
   ///
   /// - Parameters:
   ///   - names: A list name of the SF Symbol. The name requires higher SF Symbol version must be at front, with fallback SF Symbol
-  ///   names at later indexes. The last one must be available in macOS 14 (SF Symbol 5), otherwise a fatal error will occur.
+  ///   names at later indexes. If no candidate is available, a `nil` will be returned.
   ///   - configuration: The symbol configuration for the SF symbol. Optional.
-  @available(macOS 14.0, *)
-  static func findSFSymbol(_ names: [String], withConfiguration configuration: NSImage.SymbolConfiguration? = nil) -> NSImage {
+  static func sf(_ names: [String], withConfiguration configuration: NSImage.SymbolConfiguration? = nil) -> NSImage? {
     for name in names {
       if let symbol = NSImage(systemSymbolName: name, accessibilityDescription: nil) {
         if let configuration, let configured = symbol.withSymbolConfiguration(configuration) {
@@ -1506,29 +1501,13 @@ extension NSImage {
         }
         return symbol
       }
-      for name in names {
-        if let symbol = NSImage(named: name) {
-          return symbol
-        }
-      }
-    }
-    fatalError("Could not find SF Symbol: \(names)")
-  }
-
-  // A failable version of `findSFSymbol`, primarily used for settings pages.
-  @available(macOS 11.0, *)
-  static func findSFSymbol(_ names: [String]) -> NSImage? {
-    for name in names {
-      if let symbol = NSImage(systemSymbolName: name, accessibilityDescription: nil) {
-        return symbol
-      }
-    }
-    for name in names {
-      if let symbol = NSImage(named: name) {
-        return symbol
-      }
     }
     return nil
+  }
+
+  /// This helper function should be used instead of the one above when possible.
+  static func sf(_ names: String..., withConfiguration configuration: NSImage.SymbolConfiguration? = nil) -> NSImage? {
+    sf(names, withConfiguration: configuration)
   }
 }
 
@@ -1553,8 +1532,8 @@ extension NSMenu {
     menuItem.state = stateOn ? .on : .off
     menuItem.isEnabled = enabled
 
-    if #available(macOS 11.0, *), let image = image {
-      menuItem.image = .findSFSymbol(image)
+    if let image = image {
+      menuItem.image = .sf(image)
     }
 
     self.addItem(menuItem)

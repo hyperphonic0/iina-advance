@@ -589,9 +589,9 @@ class MenuController: NSObject, NSMenuDelegate {
                                        keyEquivalent: "")
 
     if #available (macOS 26, *) {
-      managePluginsItem.image = .findSFSymbol(["gear"])
-      developerTool.image = .findSFSymbol(["terminal"])
-      reloadPluginsItem.image = .findSFSymbol(["arrow.counterclockwise"])
+      managePluginsItem.image = .sf("gear")
+      developerTool.image = .sf("terminal")
+      reloadPluginsItem.image = .sf("arrow.counterclockwise")
     }
 
     pluginMenu.addItem(managePluginsItem)
@@ -602,7 +602,7 @@ class MenuController: NSObject, NSMenuDelegate {
       let showPanelItem = NSMenuItem(title: title, action: #selector(pwc.showPluginsPanel(_:)), keyEquivalent: "")
 
       if #available (macOS 26, *) {
-        showPanelItem.image = .findSFSymbol(["puzzlepiece.extension"])
+        showPanelItem.image = .sf("puzzlepiece.extension")
       }
       pluginMenu.addItem(showPanelItem)
     }

@@ -17,7 +17,7 @@ class SettingsPageAdvanced: SettingsPage {
   }
 
   override var image: NSImage {
-    return makeSymbol("flask", fallbackImage: "pref_advanced")
+    return .sf("flask", "slider.horizontal.3", withConfiguration: symbolConfiguration)!
   }
 
   override var localizationTable: String {
@@ -67,7 +67,7 @@ class SettingsPageAdvanced: SettingsPage {
       SettingsList {
         SettingsItem.General(title: .text_OpenLogWindow)
           .image(name: "macwindow")
-          .extraViews(NSButton(image: .findSFSymbol(["arrow.right"])!, target: nil, action: #selector(AppDelegate.showLogWindow)))
+          .extraViews(NSButton(image: .sf("arrow.right")!, target: AppDelegate.shared, action: #selector(AppDelegate.showLogWindow)))
       }
     }
   }
@@ -143,10 +143,10 @@ fileprivate class MPVOptionsEditor: SettingsAccessory.Base, NSTableViewDelegate,
     stackView.padding(.leading(SettingsSubList.indent + 8), .trailing(0), .bottom(8), .top(0))
     stackView.size(height: 120)
 
-    addBtn.image = .findSFSymbol(["plus"])
+    addBtn.image = .sf("plus")
     addBtn.target = self
     addBtn.action = #selector(addOptionAction)
-    delBtn.image = .findSFSymbol(["minus"])
+    delBtn.image = .sf("minus")
     delBtn.isEnabled = false
     delBtn.target = self
     delBtn.action = #selector(removeOptionAction)

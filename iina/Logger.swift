@@ -333,7 +333,7 @@ struct Logger {
 
     init(rawValue: String, symbolName: [String] = []) {
       self.init(rawValue: rawValue)
-      self.image = .findSFSymbol(symbolName)
+      self.image = .sf(symbolName)
     }
 
     func trace(_ rawMessage: @autoclosure () -> String) {
