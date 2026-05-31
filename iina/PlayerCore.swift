@@ -2260,11 +2260,13 @@ final class PlayerCore: NSObject {
 
     // History thread: update history given new playback URL. If restoring a prev playback, do not add again
     if let playbackID = info.currentPlayback?.id, !isRestoring {
+      let mediaTitle = mpv.getString(MPVProperty.mediaTitle)
       // Pass nil as positionSec for now, to reflect mpv watch-later state. The watch-later info is deleted when a file is
       // opened. Later if we implement our own position tracking, we can do something more intuitive.
       HistoryController.shared.savePlaybackMetaAfterFileDidLoad(for: playbackID,
                                                                 durationSec: info.playbackTime.durationSec ?? 0.0,
-                                                                positionSec: nil)
+                                                                positionSec: nil,
+                                                                title: mediaTitle)
     }
   }
 
