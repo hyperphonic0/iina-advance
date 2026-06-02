@@ -37,7 +37,6 @@ class PlaybackInfo {
   var currentURL: URL? { currentPlayback?.url }
   var isNetworkResource: Bool { currentPlayback?.isNetworkResource ?? false }
   var isMediaOnRemoteDrive: Bool { currentPlayback?.isMediaOnRemoteDrive ?? false }
-  var mpvMd5: String? { currentPlayback?.mpvMD5 }
 
   var isFileLoaded: Bool { currentPlayback?.state.isAtLeast(.loaded) ?? false }
   var isFileLoadedAndSized: Bool {  currentPlayback?.state.isAtLeast(.loadedAndSized) ?? false }

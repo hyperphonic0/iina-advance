@@ -806,13 +806,17 @@ struct PlayerSaveState: CustomStringConvertible {
     pwc.osd.lastPlaybackPosition = playbackPositionSec
     pwc.osd.lastPlaybackDuration = playbackDurationSec
 
-    // IINA restore supercedes mpv watch-later.
-    // Need to delete the watch-later file before mpv loads it or else things get very buggy
-    let mpvMD5 = Utility.mpvWatchLaterMd5(url.path)
-    let watchLaterFileURL = Utility.watchLaterURL.appendingPathComponent(mpvMD5).path
-    if FileManager.default.fileExists(atPath: watchLaterFileURL) {
-      player.log.debug("Found mpv watch-later file. Deleting it because we are using IINA restore...")
-      try? FileManager.default.removeItem(atPath: watchLaterFileURL)
+    if player.mpv.getFlag(MPVOption.WatchLater.resumePlayback) {
+      let ignorePathForMD5 = player.mpv.getFlag(MPVOption.WatchLater.ignorePathInWatchLaterConfig)
+      // IINA restore supercedes mpv watch-later.
+      // Need to delete the watch-later file before mpv loads it or else things get very buggy
+      let mpvMD5 = Utility.mpvWatchLaterMd5(url, ignorePathForMD5)
+      let watchLaterFileURL = Utility.watchLaterURL.appendingPathComponent(mpvMD5).path
+      if FileManager.default.fileExists(atPath: watchLaterFileURL) {
+        player.log.debug("Found mpv watch-later file (ignorePathForMD5=\(ignorePathForMD5.yn)). "
+                         + "Deleting it because we are using IINA restore...")
+        try? FileManager.default.removeItem(atPath: watchLaterFileURL)
+      }
     }
 
     if let overrideAutoMusicMode = bool(for: .overrideAutoMusicMode) {

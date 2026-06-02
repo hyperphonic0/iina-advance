@@ -55,7 +55,6 @@ struct Playback: CustomStringConvertible, Sendable {
 
   // Properties from PlaybackID
   var url: URL { id.url}
-  var mpvMD5: String { id.mpvMD5 }
   var path: String { id.path }
   var isNetworkResource: Bool { id.isNetworkResource }
   var isMediaOnRemoteDrive: Bool { id.isMediaOnRemoteDrive }
@@ -104,21 +103,18 @@ struct PlaybackID: Sendable, Equatable, Hashable {
   /// Equivalent to `PlaybackID.url(fromPath: mpvFilename)`.
   /// Deprecated! Use `url` instead, which will first try to resolve bookmark data.
   let staticURL: URL
-  let mpvMD5: String
   let bookmark: Data?
 
   /// If `url` is `nil`, assumed to be `stdin`.
   init(_ url: URL?, bookmark: Data? = nil) {
     let url = url ?? Constants.stdinURL
     self.staticURL = url
-    mpvMD5 = Utility.mpvWatchLaterMd5(url.path)
     self.bookmark = bookmark
   }
 
   init?(path: String, bookmark: Data? = nil) {
     guard let url = PlaybackID.url(fromPath: path) else { return nil }
     self.staticURL = url
-    mpvMD5 = Utility.mpvWatchLaterMd5(url.path)
     self.bookmark = bookmark
   }
 
@@ -138,6 +134,11 @@ struct PlaybackID: Sendable, Equatable, Hashable {
   var pathExtension: String { url.pathExtension }
   var displayName: String { PlaybackID.displayName(from: url) }
   var needsBookmark: Bool { !isNetworkResource && bookmark == nil }
+
+  /// Utility function.
+  func mpvMD5(ignorePathForMD5: Bool) -> String {
+    Utility.mpvWatchLaterMd5(staticURL, ignorePathForMD5)
+  }
 
   /// If bookmark data is found, tries to resolve the URL from it. Otherwise just use its static URL.
   func resolveFileURL(_ log: any Logger.Subsystem) -> URL? {

@@ -961,11 +961,18 @@ extension PlaylistViewController: NSTableViewDelegate {
       guard player.isActive else { return }
       // Get updated title from mpv
       let mpvTitle = player.mpv.getString(MPVProperty.playlistNTitle(rowIndex))
+      let watchLaterMD5: String?
+      if Preference.bool(for: .resumeLastPosition) {
+        let ignorePathForMD5 = player.mpv.getFlag(MPVOption.WatchLater.ignorePathInWatchLaterConfig)
+        watchLaterMD5 = playlistItem.mpvMD5(ignorePathForMD5: ignorePathForMD5)
+      } else {
+        watchLaterMD5 = nil
+      }
 
       PlayerCore.playlistMetaLoadDQ.async { [self] in
         // Get watch-later form file system; get other meta from ffmpeg:
         let cachedMeta = MediaMetaCache.shared.updateCachedMeta(playlistItem, mpvTitle: mpvTitle,
-                                                                pullFromWatchLater: true, pullFromFfmpeg: true)
+                                                                watchLaterMD5: watchLaterMD5, pullFromFfmpeg: true)
         // Now update the total length if needed (but only if it's already done calculating):
         if cachedMeta.duration != nil {
           // if FFmpeg got the duration successfully
@@ -996,6 +1003,7 @@ extension PlaylistViewController: NSTableViewDelegate {
         let mpvTitle = player.mpv.getString(MPVProperty.playlistNTitle(rowIndex))
         titles.append(mpvTitle) // may be nil
       }
+      let ignorePathForMD5 = player.mpv.getFlag(MPVOption.WatchLater.ignorePathInWatchLaterConfig)
 
       PlayerCore.playlistMetaLoadDQ.async { [self] in
         // Clear previous items & replace with new list
@@ -1007,7 +1015,7 @@ extension PlaylistViewController: NSTableViewDelegate {
 
         if !isReloadingMeta {
           isReloadingMeta = true
-          continueReloadingCachedItems()
+          continueReloadingCachedItems(ignorePathForMD5: ignorePathForMD5)
         }
       }
     }
@@ -1020,7 +1028,7 @@ extension PlaylistViewController: NSTableViewDelegate {
   /// - By Waiting until processing is complete for the current item until enqueuing work for the next
   ///   item, we avoid tying up `PlayerCore.playlistMetaLoadDQ` for use with other work, notably for
   ///   `loadCachedItem`, which needs priority to ensure that the "Now Playing" item is correctly drawn.
-  fileprivate func continueReloadingCachedItems() {
+  fileprivate func continueReloadingCachedItems(ignorePathForMD5: Bool) {
     PlayerCore.playlistMetaLoadDQ.async { [self] in
       guard let workItem = playlistItemCacheLoadQueue.removeHead() else {
         // Finally, append a task to recalculate the total length. Do not show it until it is done!
@@ -1033,9 +1041,15 @@ extension PlaylistViewController: NSTableViewDelegate {
 
       let existingCachedMeta = MediaMetaCache.shared.getOrAddCachedMeta(for: workItem.itemID)
       if workItem.hasUpdate(for: existingCachedMeta) {
+        let watchLaterMD5: String?
+        if Preference.bool(for: .resumeLastPosition) {
+          watchLaterMD5 = workItem.itemID.mpvMD5(ignorePathForMD5: ignorePathForMD5)
+        } else {
+          watchLaterMD5 = nil
+        }
         // Get watch-later form file system; get other meta from ffmpeg:
         MediaMetaCache.shared.updateCachedMeta(workItem.itemID, mpvTitle: workItem.mpvTitle,
-                                               pullFromWatchLater: true, pullFromFfmpeg: true)
+                                               watchLaterMD5: watchLaterMD5, pullFromFfmpeg: true)
         // Refresh each row as it gets updated. May take a while to refresh all
         pwc.animationPipeline.submitInstantTask{ [self] in
           /// This should trigger a call to `updateCellForPlaylistTrackNameColumn` to rebuild the row
@@ -1043,7 +1057,7 @@ extension PlaylistViewController: NSTableViewDelegate {
         }
       }
 
-      continueReloadingCachedItems()
+      continueReloadingCachedItems(ignorePathForMD5: ignorePathForMD5)
     }
   }
 

@@ -305,6 +305,23 @@ final class PlayerCore: NSObject {
     }
   }
 
+  /// Whether to only use the URL's filename when calculating the mpv
+  /// [Watch Later](https://mpv.io/manual/stable/#watch-later) MD5 sum.
+  ///
+  /// This supports the mpv
+  /// [ignore-path-in-watch-later-config](https://mpv.io/manual/stable/#options-ignore-path-in-watch-later-config)
+  /// option. As this option is only used by advanced users there is intentionally no support in IINA's UI for this option. This is also an
+  /// option that you would set and not change as changing it means existing watch later files will no longer be found. For this reason
+  /// IINA does not support dynamic changes to this option. The value of this option is obtained and cached. Setting this option
+  /// requires IINA to be restarted.
+  lazy var ignorePathInWatchLaterConfig: Bool = {
+    let ignorePath = mpv.getFlag(MPVOption.WatchLater.ignorePathInWatchLaterConfig)
+    if ignorePath {
+      log.debug("Will use filename instead of path when calculating watch later MD5 sum")
+    }
+    return ignorePath
+  }()
+
   // MARK: - Init
 
   /// Base constructor (private).
@@ -719,6 +736,9 @@ final class PlayerCore: NSObject {
           let playlistPos: Int?
 
           if case .restoring(let priorState) = sessionState {
+
+
+            
             priorState.restoreMpvProperties(to: self)
 
             /// Player was already paused in `PlayerSaveState.restoreTo()`.
@@ -799,14 +819,8 @@ final class PlayerCore: NSObject {
     if isInteractivePlayer {
       videoView.initVideoLayer()
     }
-    startMPV()
-#else
-    startMPV()
 #endif
-  }
 
-  @MainActor
-  private func startMPV() {
     // set path for youtube-dl
     let oldPath = String(cString: getenv("PATH")!)
     var path = Utility.exeDirURL.path + ":" + oldPath
@@ -822,6 +836,7 @@ final class PlayerCore: NSObject {
       log.debug("Set env http_proxy to \(proxy.pii)")
     }
 
+    // Start mpv
     mpv.mpvInit()
     events.emit(.mpvInitialized)
 
@@ -2261,12 +2276,14 @@ final class PlayerCore: NSObject {
     // History thread: update history given new playback URL. If restoring a prev playback, do not add again
     if let playbackID = info.currentPlayback?.id, !isRestoring {
       let mediaTitle = mpv.getString(MPVProperty.mediaTitle)
+      let ignorePathForMD5 = mpv.getFlag(MPVOption.WatchLater.ignorePathInWatchLaterConfig)
       // Pass nil as positionSec for now, to reflect mpv watch-later state. The watch-later info is deleted when a file is
       // opened. Later if we implement our own position tracking, we can do something more intuitive.
       HistoryController.shared.savePlaybackMetaAfterFileDidLoad(for: playbackID,
                                                                 durationSec: info.playbackTime.durationSec ?? 0.0,
                                                                 positionSec: nil,
-                                                                title: mediaTitle)
+                                                                title: mediaTitle,
+                                                                ignorePathForMD5)
     }
   }
 
@@ -3124,7 +3141,7 @@ final class PlayerCore: NSObject {
     if let mediaTitle = mpv.getString(MPVProperty.mediaTitle) {
       if !mediaTitle.isEmpty, let path = mpv.getString(MPVProperty.path), let id = PlaybackID(path: path) {
         MediaMetaCache.shared.updateCachedMeta(id, mpvTitle: mediaTitle,
-                                               pullFromWatchLater: false, pullFromFfmpeg: false)
+                                               watchLaterMD5: nil, pullFromFfmpeg: false)
       }
       return mediaTitle
     }
@@ -3152,7 +3169,7 @@ final class PlayerCore: NSObject {
       )
       if let path = mpv.getString(MPVProperty.path), let id = PlaybackID(path: path) {
         MediaMetaCache.shared.updateCachedMeta(id, mpvTitle: meta.0, mpvAlbum: meta.1, mpvArtist: meta.2,
-                                               pullFromWatchLater: false, pullFromFfmpeg: false)
+                                               watchLaterMD5: nil, pullFromFfmpeg: false)
       }
       return meta
     }

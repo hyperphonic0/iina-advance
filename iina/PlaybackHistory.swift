@@ -37,7 +37,7 @@ class PlaybackHistory: NSObject, NSSecureCoding {
   // As of v1.3, this is derived from URL; value stored on disk is redundant & is ignored.
   var name: String { id.url.lastPathComponent }
   // As of v1.3, this is derived from URL; value stored on disk is redundant & is ignored.
-  var mpvMd5: String { id.mpvMD5 }
+  let mpvMd5: String
 
   let addedDate: Date
 
@@ -62,6 +62,7 @@ class PlaybackHistory: NSObject, NSSecureCoding {
   required init?(coder aDecoder: NSCoder) {
     guard
       let url = aDecoder.decodeObject(of: NSURL.self, forKey: KeyUrl),
+      let md5 = aDecoder.decodeObject(of: NSString.self, forKey: KeyMpvMd5),
       let date = aDecoder.decodeObject(of: NSDate.self, forKey: KeyAddedDate)
     else {
       return nil
@@ -71,14 +72,16 @@ class PlaybackHistory: NSObject, NSSecureCoding {
     let title = aDecoder.decodeObject(of: NSString.self, forKey: KeyTitle)
 
     self.id = PlaybackID(url as URL)
+    self.mpvMd5 = md5 as String
     self.addedDate = date as Date
     self.duration = duration
     self.title = title as String?
     self.mpvProgress = nil
   }
 
-  init(id: PlaybackID, duration: Double, title: String?) {
+  init(id: PlaybackID, duration: Double, title: String?, mpvMd5: String) {
     self.id = id
+    self.mpvMd5 = mpvMd5
     self.addedDate = Date()
     self.duration = duration
     self.title = title

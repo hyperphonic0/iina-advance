@@ -923,7 +923,7 @@ class HistoryProgressCellView: NSTableCellView {
 
 fileprivate class LoadingPlaceholder: PlaybackHistory {
   init() {
-    super.init(id: PlaybackID(URL(fileURLWithPath: "/dev/null")), duration: 0, title: nil)
+    super.init(id: PlaybackID(URL(fileURLWithPath: "/dev/null")), duration: 0, title: nil, mpvMd5: "")
   }
 
   required init?(coder aDecoder: NSCoder) {

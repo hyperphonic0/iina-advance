@@ -298,15 +298,19 @@ final class HistoryController {
       ///   - id: PlaybackID of the media being played.
       ///   - duration: Total duration of the media.
       ///   - title: Title of the media (if available).
+      ///   - ignorePath: When `true`, only the URL's filename will be used for the sum if the URL does not contain a scheme.
   @discardableResult
-  private func addPlayback(_ id: PlaybackID, duration: Double, title: String?) -> PlaybackHistory? {
+  private func addPlayback(_ id: PlaybackID, duration: Double, title: String?,
+                           _ ignorePath: Bool) -> PlaybackHistory? {
     assert(DispatchQueue.isExecutingIn(workDQ))
     guard Preference.bool(for: .recordPlaybackHistory) else { return nil }
 
-    if let existingItem = history.first(where: { $0.mpvMd5 == id.mpvMD5 }), let index = history.firstIndex(of: existingItem) {
+    let mpvMd5 = Utility.mpvWatchLaterMd5(id.staticURL, ignorePath)
+    if let existingItem = history.first(where: { $0.mpvMd5 == mpvMd5 }),
+       let index = history.firstIndex(of: existingItem) {
       history.remove(at: index)
     }
-    let newEntry = PlaybackHistory(id: id, duration: duration, title: title)
+    let newEntry = PlaybackHistory(id: id, duration: duration, title: title, mpvMd5: mpvMd5)
     history.insert(newEntry, at: 0)
     historyListDidUpdate()
     saveHistoryToFile()
@@ -497,7 +501,7 @@ final class HistoryController {
   // MARK: - Playback Lifecycle Events
 
   func savePlaybackMetaAfterFileDidLoad(for id: PlaybackID, durationSec: Double, positionSec: Double?,
-                                        title: String?) {
+                                        title: String?, _ ignorePathForMD5: Bool) {
     guard historyEnabled else { return }
     if !started {
       log.verbose("While trying to save playback after file load: history not started! Starting now")
@@ -510,7 +514,7 @@ final class HistoryController {
         return
       }
       // 1. Update main history list
-      let historyEntry = addPlayback(id, duration: durationSec, title: title)
+      let historyEntry = addPlayback(id, duration: durationSec, title: title, ignorePathForMD5)
 
       // 2. IINA's [ancient] "resume last playback" feature
       // Add this now, or else welcome window will fall out of sync with history list

@@ -172,11 +172,12 @@ extension PlayerCore {
         }
 
         log.verbose("Creating new thumbnails loader")
-        let newMediaThumbnailLoader = SingleMediaThumbnailsLoader(self, mediaFilePath: playback.url.path,
-                                                                  mediaFilePathMD5: playback.mpvMD5,
-                                                                  videoTrackID: videoTrackID, thumbnailWidth: thumbnailWidth)
+        // Always use path for MD5 calculation with regard to thumbnails
+        let loader = SingleMediaThumbnailsLoader(self, mediaFilePath: playback.url.path,
+                                                 mediaFilePathMD5: playback.id.mpvMD5(ignorePathForMD5: false),
+                                                 videoTrackID: videoTrackID, thumbnailWidth: thumbnailWidth)
         // This will cancel / discard any previous thumbs for this player:
-        thumbnailsLoader.currentMediaThumbnailsLoader = newMediaThumbnailLoader
+        thumbnailsLoader.currentMediaThumbnailsLoader = loader
 
         /*
         DispatchQueue.main.async { [self] in
@@ -198,7 +199,7 @@ extension PlayerCore {
         // Run the following in the background (`thumbnailQueue`) at lower priority, so the UI is not slowed down.
         ThumbnailCache.thumbnailQueue.async { [self] in
           log.trace("Thumbnails reload requested")
-          newMediaThumbnailLoader.loadThumbnails()
+          loader.loadThumbnails()
         }
       }
     }
