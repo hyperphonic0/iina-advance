@@ -120,7 +120,7 @@ def make_arg_parser() -> argparse.ArgumentParser:
   group.add_argument('--print-only', action='store_true',
                      help="Search for all /nix/store references among all dependencies, print them, then exit without doing any modifications.")
 
-  parser.add_argument('--purge', action='store_true',
+  parser.add_argument('--prune', action='store_true',
                       help="Remove all non-canonical libs from Frameworks directory so that only canonical libs remain.")
 
   parser.add_argument('-v', '--verbose', action='store_true',
@@ -178,6 +178,7 @@ def for_all_executables_in_executable_dir(exec_dir: str, handler: Callable[[str,
 
 # Calls otool and install_name_tool
 def fix_lc_rpath(lib_path: str):
+  has_rpath = False
   has_correct_rpath = False
   rpath_path_pattern = r'\s+path (/nix/store/.+) \(offset \d+\)'
   result = subprocess.run(['otool', '-l', lib_path], capture_output=True, text=True)
@@ -188,19 +189,21 @@ def fix_lc_rpath(lib_path: str):
       match = re.match(rpath_path_pattern, line)
       if not match:
         continue
+      has_rpath = True
       rpath = match.group(1)
-      print(f'❎ Removing incorrect LC_RPATH from {lib_path} ↛ "{rpath}"')
+      print(f'➖ Removing incorrect LC_RPATH from {lib_path} ↛ "{rpath}"')
       subprocess.run(['install_name_tool', '-delete_rpath', rpath, lib_path])
 
   if has_correct_rpath:
     print(f'✅ Has correct LC_RPATH: {lib_path}')
     return
 
-  print(f'➕ LC_RPATH {LC_RPATH} → {lib_path}')
-  subprocess.run(['install_name_tool', '-add_rpath', LC_RPATH, lib_path])
+  if has_rpath:
+    print(f'➕ LC_RPATH {LC_RPATH} → {lib_path}')
+    subprocess.run(['install_name_tool', '-add_rpath', LC_RPATH, lib_path])
 
-def rewrite_lib_entry(current_entry: str, to: str, bin_path: str):
-  subprocess.run(['install_name_tool', '-change', current_entry, to, bin_path])
+def rewrite_lib_reference(current_ref: str, to: str, bin_path: str):
+  subprocess.run(['install_name_tool', '-change', current_ref, to, bin_path])
 
 # Gets lib references in the given Mach-O lib or executable binary whose path starts with '/nix/store/'.
 # - bin_path: file system path to the Mach-O lib or executable binary to be examined.
@@ -553,7 +556,7 @@ class CanonicalNameDB:
 
   # --canonicalize
   # --------------------------------------------------------------------------
-  def canonicalize_libs(self, purge: bool):
+  def canonicalize_libs(self, prune: bool):
     lib_dir = self.lib_db.lib_dir_path
     executable_dir = self.lib_db.executable_dir_path
 
@@ -577,13 +580,13 @@ class CanonicalNameDB:
     self.__for_all_canonical_names(copy_to_cname)
     print(f'Copied {copied_libs_count} libs into {lib_staging_dir_path}')
 
-    # (Optional if "--purge" is specified). Removes unused lib files and links from Frameworks directory.
+    # (Optional if "--prune" is specified). Removes unused lib files and links from Frameworks directory.
     # Note: this is not recursive. Sparkle.framework and any other directories will be untouched.
     # This step should not be used when building the IINA universal binary because arch-specific libs which have
     # already been processed may not be present in our data structures, and thus not moved to libStaging,
-    # but they would still be deleted from Frameworks if --purge is used.
-    if purge:
-      print(f'Removing old lib files and links from {lib_dir}')
+    # but they would still be deleted from Frameworks if --prune is used.
+    if prune:
+      print(f'✂️ Removing old lib files and links from {lib_dir}')
       all_children: map[tuple[str, str]] = map(lambda name: (name, os.path.join(lib_dir, name)), os.listdir(lib_dir))
       old_lib_links = [child for child in all_children if os.path.islink(child[1])]
       for link_basename, link_path in old_lib_links:
@@ -610,7 +613,7 @@ class CanonicalNameDB:
         return
       replacement_path = f'@rpath/{sub_canonical_name}'
       print(f"🔗 Repointing subdep for {os.path.basename(current_file_path)}: {ref_path} → {replacement_path}")
-      rewrite_lib_entry(ref_path, replacement_path, current_file_path)
+      rewrite_lib_reference(ref_path, replacement_path, current_file_path)
 
     # Process the libs in libStaging directory.
     # After each file is processed, it is moved from libStaging to Frameworks.
@@ -683,7 +686,7 @@ def main():
       lib_db.merge_architectures(args.archroot0, args.archroot1)
 
     if args.canonicalize:
-      cname_db.canonicalize_libs(purge=args.purge)
+      cname_db.canonicalize_libs(prune=args.prune)
 
 if __name__ == '__main__':
     main()

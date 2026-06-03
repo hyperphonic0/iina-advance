@@ -102,7 +102,6 @@
           cddaSupport = false;
           dvbinSupport = false;
           sixelSupport = false;
-
         };
 
         # Collect include deps (header files) as per readme.md
@@ -239,8 +238,6 @@
               pkgs.ocl-icd
               pkgs.openal
               pkgs.openjpeg
-              pkgs.SDL2
-              pkgs.sdl3
               pkgs.srt
               pkgs.svt-av1
               pkgs.x264
@@ -249,31 +246,6 @@
               pkgs.zstd.out
               pkgs.zvbi
             ]
-          )
-        );
-
-        # Collect executables to expose them for plugins
-        depsExecutable = pkgs.linkFarm "iina-deps-executable" (
-          pkgs.lib.flatten (
-            map
-              (
-                pkg:
-                let
-                  bindir = "${pkgs.lib.getBin pkg}/bin";
-                in
-                builtins.map (file: {
-                  name = baseNameOf file;
-                  path = "${bindir}/${file}";
-                }) (builtins.attrNames (builtins.readDir bindir))
-              )
-              [
-                ffmpeg
-                # Grab the real mpv binary instead of the /bin wrapper script
-                (pkgs.runCommand "iina-mpv-executable" { } ''
-                  mkdir -p $out/bin
-                  cp -p ${mpv}/Applications/mpv.app/Contents/MacOS/mpv $out/bin/mpv
-                '')
-              ]
           )
         );
 
@@ -392,16 +364,15 @@
               rm -rf deps/include deps/lib
 
               mkdir -p deps/include deps/lib deps/executable
-              cp -RL "${depsInclude}/."           deps/include
-              cp -RLv "${depsLib}/."              deps/lib
-              cp -RL "${depsExecutable}/."        deps/executable/
+              cp -RL "${depsInclude}/." deps/include
+              cp -RLv "${depsLib}/." deps/lib
 
               echo "[${system}] 📦 Copying SPM deps"
               rsync -a "${spmDeps}/" ./
               chmod -R u+rwx,g+rx,o+rx .
 
               echo "[${system}] 📦 Adding canonical links"
-              ${libTool}/bin/iina-lib-tool --canonicalize "./deps/lib" "./deps/executable"
+              ${libTool}/bin/iina-lib-tool --canonicalize --prune "./deps/lib" "./deps/executable"
 
               # Rewrite SwiftPM workspace-state.json to fix absolute paths
               if [ -f .spm/workspace-state.json ]; then
@@ -447,9 +418,6 @@
               plist="$app/Contents/Info.plist"
 
               mkdir -p "$frameworks"
-
-              echo "[${system}] 📦 Bundling ${depsExecutable} into ${appName}.app"
-              cp -RLv "${depsExecutable}/." "$macos/"
 
               echo "[${system}] 📦 Deep-bundling dynamic dependencies into ${appName}.app"
               ${libTool}/bin/iina-lib-tool --canonicalize "$frameworks" "$macos"
@@ -551,7 +519,6 @@
 
               link_tree ${depsInclude} "$deps_root/include"
               link_tree ${depsLib} "$deps_root/lib"
-              link_tree ${depsExecutable} "$deps_root/executable"
 
               echo "📦 Syncing SwiftPM deps"
               rsync -a --chmod=Du+rwx,Fu+rw ${spmDeps}/ ./
