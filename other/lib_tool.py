@@ -85,7 +85,6 @@ import argparse
 import subprocess
 import shutil
 from typing import Callable, Optional
-from packaging.version import Version
 
 # --- Constants ---
 
@@ -228,8 +227,8 @@ def otool_find_lib_refs(bin_path: str, handle_nix_store: Callable[[str, str, str
       ref_path = match.group(1)
 
       if handle_rpath and ref_path.startswith('@rpath/'):
-        compat_version = simplify_version(match.group(2))
-        current_version = simplify_version(match.group(3))
+        compat_version: str = simplify_version(match.group(2))
+        current_version: str = simplify_version(match.group(3))
         handle_rpath(bin_path, ref_path, compat_version, current_version)
         continue
 
@@ -446,70 +445,48 @@ class CanonicalNameDB:
     for base_id, variants_map in self.lib_db.name_variants_map.items():
       lib_version_count = len(variants_map)
       multiple_versions_found: bool = lib_version_count > 1
-
-      highest_compat_version, best_variant_subversions_map = next(iter(variants_map.items()))
       if multiple_versions_found:
         print(f'Found multiple variants ({lib_version_count}) for {base_id}: {variants_map.keys()}')
-        for variant_compat_ver, variant_subversions_map in variants_map.items():
-          if Version(variant_compat_ver) > Version(highest_compat_version):
-            highest_compat_version = variant_compat_ver
-            best_variant_subversions_map = variant_subversions_map
-        print(f'Highest version: {highest_compat_version}')
+        if base_id != 'libiconv':
+          print(f'⚠️ ERROR: multiple versions found for {base_id} but it is not libiconv! Exiting!')
+          sys.exit(99)
+        variants_map.pop('7')
+      elif base_id == 'libz':  # v1
+        print(f'Is provided by macOS, skipping: "{base_id}", variants: {variants_map.keys()}')
+        continue
+      variant_compat_ver, variant_subversions_map = next(iter(variants_map.items()))
 
-      for variant_compat_ver, variant_subversions_map in variants_map.items():
-        # Determine the best canonical name (higher, most specific version)
-        best_variant_name: str = ''
-        best_variant_version_split: list[str] = []
-        for variant_name in best_variant_subversions_map.keys():
-          variant_name_split = variant_name.split('.')
-          if len(variant_name_split) < 2:
-            print(f'⚠️ ERROR: failed to parse version from name, skipping: {variant_name}')
-            continue
-          last_elem = variant_name_split[-1]
-          if last_elem != "dylib" and last_elem != "so":
-            print(f'⚠️ ERROR: failed to parse version from name, skipping: {variant_name}')
-            continue
-          variant_version_split = variant_name_split[1:-1]
+      # Determine the best canonical name (higher, most specific version)
+      best_variant_name: str = ''
+      best_variant_version_split: list[str] = []
+      for variant_name in variant_subversions_map.keys():
+        variant_name_split = variant_name.split('.')
+        if len(variant_name_split) < 2:
+          print(f'⚠️ ERROR: failed to parse version from name, skipping: {variant_name}')
+          continue
+        last_elem = variant_name_split[-1]
+        if last_elem != "dylib" and last_elem != "so":
+          print(f'⚠️ ERROR: failed to parse version from name, skipping: {variant_name}')
+          continue
+        variant_version_split = variant_name_split[1:-1]
 
-          if not best_variant_version_split:
+        if not best_variant_version_split:
+          best_variant_name = variant_name
+          best_variant_version_split = variant_version_split
+          continue
+
+        i = 0
+        while i < len(variant_version_split):
+          if (i >= len(best_variant_version_split)) or (variant_version_split[i] > best_variant_version_split[i]):
             best_variant_name = variant_name
             best_variant_version_split = variant_version_split
-            continue
+            break
+          i += 1
 
-          i = 0
-          while i < len(variant_version_split):
-            if (i >= len(best_variant_version_split)) or (variant_version_split[i] > best_variant_version_split[i]):
-              best_variant_name = variant_name
-              best_variant_version_split = variant_version_split
-              break
-            i += 1
-
-        canonical_name: str
-        if multiple_versions_found:
-          if variant_compat_ver == highest_compat_version:
-            canonical_name = best_variant_name
-            canonical_versions_map = self.canonical_name_map.get(base_id, dict())
-          else:
-            # 2026-05-06 This is a workaround for a libiconv dependency issue (ffmpeg 8.0 + mpv 0.41), where different
-            # libs require two different versions of it as a transitive dependency. These versions are internally
-            # labelled v7 or v10, respectively, but both have the same filename (`libiconv.2.lib`). We resolve the
-            # issue by renaming both files and rewriting all references to them using the new names.
-            variant_name_split = best_variant_name.split('.')
-            variant_version_split = variant_name_split[:-2]
-            canonical_name = '.'.join(variant_name_split[:-2]) + '.dylib'
-            print(f'Deriving novel canonical name for {best_variant_name}, compatVersion {variant_compat_ver} '
-                  + f'→ {canonical_name}')
-            best_variant_path: str = variant_subversions_map[best_variant_name]
-            # Store the new canonical name back into the map, so we can find its source path when copying files.
-            variant_subversions_map[canonical_name] = best_variant_path
-
-        else:
-          canonical_name = best_variant_name
-          canonical_versions_map = self.canonical_name_map.get(base_id, dict())
-
-        canonical_versions_map: dict[str, str] = self.canonical_name_map.get(base_id, dict())
-        canonical_versions_map[variant_compat_ver] = canonical_name
-        self.canonical_name_map[base_id] = canonical_versions_map
+      canonical_name: str = best_variant_name
+      canonical_versions_map: dict[str, str] = self.canonical_name_map.get(base_id, dict())
+      canonical_versions_map[variant_compat_ver] = canonical_name
+      self.canonical_name_map[base_id] = canonical_versions_map
 
   def __get_canonical_name(self, base_id: str, compat_version: str) -> Optional[str]:
     canonical_versions_map: dict[str, str] = self.canonical_name_map.get(base_id, {})
@@ -608,10 +585,17 @@ class CanonicalNameDB:
       if not base_tuple:
         return
       (_, base_id) = base_tuple
-      sub_canonical_name = self.__get_canonical_name(base_id, compat_version)
-      if not sub_canonical_name:
-        return
-      replacement_path = f'@rpath/{sub_canonical_name}'
+      replacement_path = ''
+      if base_id == 'libiconv' and compat_version == '7':
+        # Special case for built-in libiconv.
+        replacement_path = '/usr/lib/libiconv.2.dylib'
+      elif base_id == 'libz':
+        replacement_path = '/usr/lib/libz.1.dylib'
+      else:
+        sub_canonical_name = self.__get_canonical_name(base_id, compat_version)
+        if not sub_canonical_name:
+          return
+        replacement_path = f'@rpath/{sub_canonical_name}'
       print(f"🔗 Repointing subdep for {os.path.basename(current_file_path)}: {ref_path} → {replacement_path}")
       rewrite_lib_reference(ref_path, replacement_path, current_file_path)
 
