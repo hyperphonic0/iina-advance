@@ -95,6 +95,10 @@ APP_EXECUTABLES_RELPATH = "Contents/MacOS"
 # Set of lib IDs to exclude.
 # Skip 'libffi-trampoline' (apparently a typo of 'libffi-trampolines'?)
 ID_BLACKLIST: set[str] = {'libffi-trampoline'}
+USR_LIB_WHITELIST: dict[str, tuple[str, str]] = {
+  'libiconv': ('7', '/usr/lib/libiconv.2.dylib'),
+  'libz': ('1', '/usr/lib/libz.1.dylib')
+}
 
 # --- Command line options ---
 
@@ -112,8 +116,6 @@ def make_arg_parser() -> argparse.ArgumentParser:
   group = parser.add_argument_group()
   group.add_argument('--canonicalize', action='store_true',
                      help="Renames all libs in Frameworks directory to their canonical names, and also adds all their transitive dependencies to the Frameworks directory using their canonical names. Also, for all libs found in Frameworks directory & all executables found in the MacOS directory, rewrites all `/nix/store` lib references to `@rpath` references with each lib's canonical name. Also adds missing LC_RPATH entries to all libs.")
-  group.add_argument('--add-canonical-links', action='store_true',
-                     help="Add symbolic links for any missing canonically named libs to the Frameworks directory.")
   group.add_argument('--merge-architectures', action='store_true',
                      help="Merge x86_64 & Apple Silicon files to create universal binaries.")
   group.add_argument('--print-only', action='store_true',
@@ -423,7 +425,6 @@ class LibMetaDB:
     for_all_executables_in_executable_dir(self.executable_dir_path, merge_exe)
 
     print(f'🔍 Merging binaries across architectures: done')
-    # Fall through and canonicalize the merged files.
 
 
 # Class: CanonicalNameDB
@@ -443,17 +444,20 @@ class CanonicalNameDB:
     self.lib_db = lib_db
 
     for base_id, variants_map in self.lib_db.name_variants_map.items():
+      usr_lib_entry = USR_LIB_WHITELIST.get(base_id, None)
+      if usr_lib_entry:
+        popped = variants_map.pop(usr_lib_entry[0], '')
+        if popped:
+          print(f'Is provided by macOS; skipping "{base_id}", version {usr_lib_entry[0]}: {popped}')
+
       lib_version_count = len(variants_map)
-      multiple_versions_found: bool = lib_version_count > 1
-      if multiple_versions_found:
-        print(f'Found multiple variants ({lib_version_count}) for {base_id}: {variants_map.keys()}')
-        if base_id != 'libiconv':
-          print(f'⚠️ ERROR: multiple versions found for {base_id} but it is not libiconv! Exiting!')
-          sys.exit(99)
-        variants_map.pop('7')
-      elif base_id == 'libz':  # v1
-        print(f'Is provided by macOS, skipping: "{base_id}", variants: {variants_map.keys()}')
+      if lib_version_count == 0:
+        # Skip
         continue
+      if lib_version_count > 1:
+        # We can't handle this currently, but it should not happen
+        print(f'⚠️ ERROR: unexpectedly found multiple remaining versions ({lib_version_count}) for {base_id}! Exiting!')
+        sys.exit(99)
       variant_compat_ver, variant_subversions_map = next(iter(variants_map.items()))
 
       # Determine the best canonical name (higher, most specific version)
@@ -513,24 +517,6 @@ class CanonicalNameDB:
 
         handler(canonical_name, compat_version, src_path)
 
-  # --add-canonical-links
-  # --------------------------------------------------------------------------
-  def add_canonical_links(self):
-    print(f"Adding symlinks for missing canonically named libs…")
-
-    def link_to_cname(canonical_name: str, _, src_path: str):
-      dst_path = os.path.join(self.lib_db.lib_dir_path, canonical_name)
-      if os.path.isfile(dst_path):
-        if self.lib_db.log_verbose:
-          print(f"Already exists: {dst_path}")
-        return
-      print(f"Adding link: {src_path} → {dst_path}")
-      os.symlink(src_path, dst_path, target_is_directory=False)
-
-    self.__for_all_canonical_names(link_to_cname)
-    print(f"Adding symlinks: done")
-
-
   # --canonicalize
   # --------------------------------------------------------------------------
   def canonicalize_libs(self, prune: bool):
@@ -586,11 +572,11 @@ class CanonicalNameDB:
         return
       (_, base_id) = base_tuple
       replacement_path = ''
-      if base_id == 'libiconv' and compat_version == '7':
-        # Special case for built-in libiconv.
-        replacement_path = '/usr/lib/libiconv.2.dylib'
-      elif base_id == 'libz':
-        replacement_path = '/usr/lib/libz.1.dylib'
+      # First check for built-in system libraries which are also provided by Nix, but we want to point them to the
+      # system versions instead of the Nix versions to avoid packaging issues & to save space.
+      usr_lib_entry = USR_LIB_WHITELIST.get(base_id, None)
+      if usr_lib_entry and compat_version == usr_lib_entry[0]:
+        replacement_path = usr_lib_entry[1]
       else:
         sub_canonical_name = self.__get_canonical_name(base_id, compat_version)
         if not sub_canonical_name:
@@ -659,8 +645,6 @@ def main():
 
   if args.print_only:
     print(f"⚠️ Exiting script now without modifying any files, as --print-only arg was provided.")
-  elif args.add_canonical_links:
-    cname_db.add_canonical_links()
   else:
     if args.merge_architectures:
       if not args.archroot0 or not args.archroot1:
