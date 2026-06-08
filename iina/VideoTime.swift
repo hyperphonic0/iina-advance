@@ -41,7 +41,8 @@ struct VideoTime {
   /// - Returns: A string containing the time in the format "hh:mm:ss.sss", with the number of digits in the fraction controlled by the
   ///     precision parameter.
   func stringRepresentationWithPrecision(_ precision: UInt) -> String {
-    if self.second.isInfinite {
+    // Need to check for very large numbers to avoid error when converting to Int (below)
+    if second.isInfinite || second >= Double(Int.max) {
       return "End"
     }
 
