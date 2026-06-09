@@ -344,9 +344,7 @@ extension PlayerWindowController {
       if mustHideSeekPreview {
         // Hide seek preview & thumbnail
         seekPreview.hideTimer.cancel()
-        seekPreview.animationState = .willHide
-        seekPreview.thumbnailPeekView.animator().alphaValue = 0
-        seekPreview.timeLabel.animator().alphaValue = 0
+        fadeOutSeekPreview()
       }
     }
 

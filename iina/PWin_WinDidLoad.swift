@@ -162,27 +162,6 @@ extension PlayerWindowController {
 
   // MARK: - Building Components
 
-  private func initSeekPreview(in contentView: NSView) {
-    seekPreview.player = player
-    contentView.addSubview(seekPreview.thumbnailPeekView, positioned: .above, relativeTo: viewportView)
-    contentView.addSubview(seekPreview.timeLabel, positioned: .above, relativeTo: seekPreview.thumbnailPeekView)
-    // This is above the play slider and by default, will swallow clicks. Send events to play slider instead
-    seekPreview.timeLabel.nextResponder = playSlider
-
-    // Yes, left, not leading!
-    seekPreview.timeLabelHorizontalCenterConstraint = seekPreview.timeLabel.centerXAnchor.constraint(equalTo: contentView.leftAnchor, constant: 0) // dummy value for now
-    seekPreview.timeLabelHorizontalCenterConstraint.identifier =  "SeekTimeHoverLabelHSpaceConstraint"
-    seekPreview.timeLabelHorizontalCenterConstraint.isActive = true
-
-    // This is a bit confusing but the constant here can be thought of as the X value in window,
-    // not flipped (so, larger values toward the top)
-    seekPreview.timeLabelVerticalSpaceConstraint = contentView.bottomAnchor.constraint(equalTo: seekPreview.timeLabel.bottomAnchor, constant: 0)
-    seekPreview.timeLabelVerticalSpaceConstraint.identifier = "SeekTimeHoverLabelVSpaceConstraint"
-    seekPreview.timeLabelVerticalSpaceConstraint?.isActive = true
-
-    seekPreview.hideTimer.action = self.seekPreviewTimeout
-  }
-
   @MainActor
   private func initTitleBar() {
     let builder = CustomTitleBar.shared

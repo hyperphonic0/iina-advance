@@ -579,8 +579,6 @@ extension PlayerWindowController {
         muteButton.action = #selector(muteButtonAction(_:))
       }
 
-      seekPreview.timeLabel.font = NSFont.systemFont(ofSize: 9)
-
       // Update music mode UI
       updateTitle()
 
@@ -694,12 +692,14 @@ extension PlayerWindowController {
         }
       }
 
-      seekPreview.updateTimeLabelFontSize(to: newGeo.seekPreviewTimeLabelFontSize)
+      seekPreview.updateLabelFont(using: outputLayout)
 
     } else if outputLayout.isMusicMode {
 
       // Music mode always has a control bar
       currentControlBar = miniPlayer.musicModeControlBarView
+
+      seekPreview.updateLabelFont(using: outputLayout)
 
     } else {  // No OSC & not music mode
       currentControlBar = nil

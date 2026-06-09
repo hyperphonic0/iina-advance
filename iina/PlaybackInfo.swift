@@ -261,6 +261,16 @@ class PlaybackInfo {
 
   @MainActor var chapter = 0
   @MainActor var chapters: [MPVChapter] = []
+  @MainActor var currentChapter: MPVChapter? { chapters[at: chapter] }
+  @MainActor func chapter(forPlaybackTime playbackPosSec: Double) -> MPVChapter? {
+    let pos = VideoTime(playbackPosSec)
+    for (index, chapter) in chapters.enumerated() {
+      if let nextChapterStart = chapters[at: index+1]?.startTime, pos.between(chapter.startTime, nextChapterStart) {
+        return chapter
+      }
+    }
+    return nil
+  }
 
   private var _audioTracks: [MPVTrack] = []
   private var _videoTracks: [MPVTrack] = []

@@ -754,6 +754,7 @@ extension PlayerWindowController {
     possibleSubviews += [
       topBar.view,
       seekPreview.thumbnailPeekView,
+      seekPreview.chapterLabel,
       seekPreview.timeLabel,
       miniPlayerTrafficLightsBGView,
     ]

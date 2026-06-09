@@ -6,14 +6,14 @@
 //  Copyright © 2024 lhc. All rights reserved.
 //
 
+// TODO: pull out SeekPreview; do not nest
 extension PlayerWindowController {
   // TODO: PK.seekPreviewHasTimeDelta
-  // TODO: PK.seekPreviewHasChapter
 
   /// Encapsulates state & objects needed for seek preview UI.
   /// This class is not a view in itself.
   @MainActor
-  class SeekPreview {
+  final class SeekPreview {
     /// Min distance between `thumbnailPeekView` & sides of `viewportView`.
     /// For the side which includes `timeLabel`, the margin is split 1/2 above & 1/2 below the label,
     /// and does not include the offset added by the label's height itself.
@@ -24,10 +24,12 @@ extension PlayerWindowController {
 
     // Components:
     let timeLabel = NSTextField()
+    let chapterLabel = NSTextField()
     let thumbnailPeekView = ThumbnailPeekView()
 
     var timeLabelHorizontalCenterConstraint: NSLayoutConstraint!
     var timeLabelVerticalSpaceConstraint: NSLayoutConstraint!
+    var chapterLabelVerticalSpaceConstraint: NSLayoutConstraint!
 
     fileprivate var useThumbfast = Preference.bool(for: .enableAdvancedSettings) && Preference.bool(for: .integrateWithThumbfast)
 
@@ -76,15 +78,30 @@ extension PlayerWindowController {
       timeLabel.refusesFirstResponder = true
       timeLabel.alignment = .center
       timeLabel.textColor = .white  // always
-
       timeLabel.setContentHuggingPriority(.required, for: .horizontal)
       timeLabel.setContentHuggingPriority(.required, for: .vertical)
+      timeLabel.isHidden = true
+      timeLabel.alphaValue = 0.0
+
+      chapterLabel.identifier = .init("SeekChapterLabel")
+      chapterLabel.translatesAutoresizingMaskIntoConstraints = false
+      chapterLabel.isBordered = false
+      chapterLabel.drawsBackground = false
+      chapterLabel.isBezeled = false
+      chapterLabel.isEditable = false
+      chapterLabel.isSelectable = false
+      chapterLabel.isEnabled = true
+      chapterLabel.refusesFirstResponder = true
+      chapterLabel.alignment = .center
+      chapterLabel.textColor = .white  // always
+      chapterLabel.setContentHuggingPriority(.required, for: .horizontal)
+      chapterLabel.setContentHuggingPriority(.required, for: .vertical)
+      chapterLabel.isHidden = true
+      chapterLabel.alphaValue = 0.0
 
       thumbnailPeekView.identifier = .init("ThumbnailPeekView")
       thumbnailPeekView.isHidden = true
 
-      timeLabel.isHidden = true
-      timeLabel.alphaValue = 0.0
       updateStyle()
     }
 
@@ -98,14 +115,26 @@ extension PlayerWindowController {
                           xOffsetConstant: Constants.seekPreviewTimeLabel_xOffsetConstant,
                           yOffsetConstant: Constants.seekPreviewTimeLabel_yOffsetConstant,
                           color: .black)
+      chapterLabel.addShadow(blurRadiusConstant: Constants.seekPreviewTimeLabel_ShadowRadiusConstant,
+                             xOffsetConstant: Constants.seekPreviewTimeLabel_xOffsetConstant,
+                             yOffsetConstant: Constants.seekPreviewTimeLabel_yOffsetConstant,
+                             color: .black)
       thumbnailPeekView.updateColors()
     }
 
     /// This is expected to be called at first layout
-    func updateTimeLabelFontSize(to newSize: CGFloat) {
-      if timeLabel.font?.pointSize != newSize {
-        timeLabel.font = NSFont.monospacedDigitSystemFont(ofSize: newSize, weight: .bold)
+    func updateLabelFont(using layout: LayoutState) {
+      let timeFont, chapterFont: NSFont
+      if layout.isMusicMode {
+        timeFont = NSFont.systemFont(ofSize: 9)
+        chapterFont = timeFont
+      } else {
+        let oscGeo = layout.controlBarGeo
+        timeFont = NSFont.monospacedDigitSystemFont(ofSize: oscGeo.seekPreviewTimeLabelFontSize, weight: .bold)
+        chapterFont = NSFont.monospacedDigitSystemFont(ofSize: oscGeo.seekPreviewChapterLabelFontSize, weight: .regular)
       }
+      timeLabel.font = timeFont
+      chapterLabel.font = chapterFont
     }
 
     /// `posInWindowX` is where center of timeLabel, thumbnailPeekView should be
@@ -146,9 +175,17 @@ extension PlayerWindowController {
         thumbHeight = 0
       }
 
-      let stringRepresentation = VideoTime.string(from: previewTimeSec)
-      if timeLabel.stringValue != stringRepresentation {
-        timeLabel.stringValue = stringRepresentation
+      let showChapter: Bool = Preference.bool(for: .seekPreviewHasChapter) && !player.info.chapters.isEmpty
+
+      let chapterTitle = player.info.chapter(forPlaybackTime: previewTimeSec)?.title ?? ""
+      if chapterLabel.stringValue != chapterTitle {
+        chapterLabel.stringValue = chapterTitle
+        chapterLabel.sizeToFit()
+      }
+
+      let timeLabelString = VideoTime.string(from: previewTimeSec)
+      if timeLabel.stringValue != timeLabelString {
+        timeLabel.stringValue = timeLabelString
         timeLabel.sizeToFit()
       }
       currentPreviewTimeSec = previewTimeSec
@@ -256,16 +293,21 @@ extension PlayerWindowController {
       let isRightToLeft = player.videoView.userInterfaceLayoutDirection == .rightToLeft
       let minX = isRightToLeft ? margins.trailing : margins.leading
       let maxX = minX + availableWidth
+      let halfMargin: CGFloat
+      if showAbove {
+        halfMargin = (margins.bottom * 0.5).rounded()
+      } else {
+        halfMargin = (margins.top * 0.5).rounded()
+      }
+      let quarterMargin = (halfMargin * 0.5).rounded()
 
-
-      // Y offset calculation
+      // Calculate timeLabel Y position
       let timeLabelOriginY: CGFloat
       if showAbove {
         let oscTopY = oscOriginInWindowY + oscHeight
-        let halfMargin = (margins.bottom * 0.5).rounded()
         // Show thumbnail above seek time, which is above slider
         if currentLayout.oscPosition == .floating || currentLayout.isMusicMode {
-          timeLabelOriginY = (oscTopY + halfMargin).rounded()
+          timeLabelOriginY = oscTopY + quarterMargin
         } else {
           let sliderFrameInWindowCoords = pwc.playSlider.frameInWindowCoords
           let sliderCenterY = sliderFrameInWindowCoords.origin.y + (sliderFrameInWindowCoords.height * 0.5)
@@ -274,14 +316,12 @@ extension PlayerWindowController {
           // If clear background, align the label consistently close to the slider bar.
           // Else if using gray panel, try to align the label either wholly inside or outside the panel.
           if currentLayout.oscColorScheme != .clearGradient, sliderCenterY + halfKnobHeight + timeLabelSize.height >= oscTopY {
-            timeLabelOriginY = (oscTopY + quarterMargin).rounded()
+            timeLabelOriginY = oscTopY + quarterMargin
           } else {
             timeLabelOriginY = (sliderCenterY + halfKnobHeight + quarterMargin).rounded()
           }
         }
       } else {  // Show below PlaySlider
-        let quarterMargin = margins.top * 0.25
-        let halfMargin = margins.top * 0.5
         if currentLayout.oscPosition == .floating {
           timeLabelOriginY = (oscOriginInWindowY - quarterMargin - timeLabelSize.height).rounded()
         } else {
@@ -289,10 +329,10 @@ extension PlayerWindowController {
           let sliderCenterY = (sliderFrameInWindowCoords.origin.y + (sliderFrameInWindowCoords.height * 0.5)).rounded()
           // See note for the Above case (but use ½ margin instead of ¼).
           let halfKnobHeight = (pwc.playSliderCell.knobHeight * 0.5).rounded()
-          if currentLayout.oscColorScheme != .clearGradient, sliderCenterY - halfKnobHeight - halfMargin - timeLabelSize.height <= oscOriginInWindowY {
-            timeLabelOriginY = (oscOriginInWindowY - halfMargin - timeLabelSize.height).rounded()
+          if currentLayout.oscColorScheme != .clearGradient, sliderCenterY - halfKnobHeight - quarterMargin - timeLabelSize.height <= oscOriginInWindowY {
+            timeLabelOriginY = (oscOriginInWindowY - quarterMargin - timeLabelSize.height).rounded()
           } else {
-            timeLabelOriginY = (sliderCenterY - halfKnobHeight - halfMargin - timeLabelSize.height).rounded()
+            timeLabelOriginY = (sliderCenterY - halfKnobHeight - quarterMargin - timeLabelSize.height).rounded()
           }
         }
       }
@@ -307,62 +347,84 @@ extension PlayerWindowController {
       timeLabel.alphaValue = 1.0
       timeLabel.isHidden = false
 
+      var yOrigin: CGFloat = timeLabelOriginY
+      if showAbove {
+        yOrigin += timeLabelSize.height + quarterMargin
+      }
+
       // Done with timeLabel.
       log.verbose("[SeekPreview] Showing Time: centerX=\(Int(timeLabelCenterX)) originY=\(Int(timeLabelOriginY)) size=\(timeLabelSize). Thumb=\(showThumbnail.yn)"
                   + (showThumbnail ? " thumbfast=\(usingThumbfast.yn)" : ""))
 
-      // Need integers below.
+      // - Thumbnail
       if showThumbnail && !usingThumbfast {
+        // Need integers.
         thumbWidth = round(thumbWidth)
         thumbHeight = round(thumbHeight)
 
         if thumbWidth < Constants.Thumbnail.minHeight || thumbHeight < Constants.Thumbnail.minHeight {
           log.verbose("Not enough space to display thumbnail")
-          showThumbnail = false
-        }
-      }
-
-      if showThumbnail {
-        let thumbOriginY: CGFloat
-        if showAbove {
-          let halfMargin = (margins.bottom * 0.5).rounded()
-          thumbOriginY = timeLabelOriginY + timeLabelSize.height + halfMargin
         } else {
-          let halfMargin = (margins.top * 0.5).rounded()
-          thumbOriginY = timeLabelOriginY - halfMargin - thumbHeight
-        }
-
-        let thumbWidth_Halved = (thumbWidth / 2).rounded()
-
-        if usingThumbfast {
-          // Experiment with Thumbfast Lua script as an alternative (https://github.com/po5/thumbfast)
-          guard player.isActive else { return }
-          // Need DisplayLink running to draw the thumbnails over the video 
-          player.videoView.displayActive()
-          let osdWidth = player.mpv.getDouble(MPVProperty.osdWidth)
-
-          let viewportSize = currentGeo.viewportSize
-          // Thumbfast expects X,Y to represent top-left corner of thumbnail
-          let scaleRatio = osdWidth / viewportSize.width
-          let viewportFrameInWindowCoords = currentGeo.viewportFrameInWindowCoords
-          let thumbOriginInViewportX = posInWindowX - viewportFrameInWindowCoords.minX
-          let thumbOriginX = ((thumbOriginInViewportX * scaleRatio) - (thumbWidth_Halved)).clamped(to: 0...(max(0, osdWidth - thumbWidth))).rounded()
-          let thumbOriginInViewportY = thumbOriginY - viewportFrameInWindowCoords.minY
-          var yConverted = ((viewportSize.height - thumbOriginInViewportY) * scaleRatio) - thumbHeight
           if !showAbove {
-            yConverted -= thumbHeight
+            yOrigin -= thumbHeight + quarterMargin
           }
-          let thumbOriginY = yConverted.clamped(to: 0...(max(0, (viewportSize.height * scaleRatio) - thumbHeight))).rounded()
-          player.mpv.showThumbfast(hoveredSecs: previewTimeSec, x: thumbOriginX, y: thumbOriginY)
-          thumbnailPeekView.isHidden = true
-        } else {  // !usingThumbfast
-          let thumbOriginX = (posInWindowX - thumbWidth_Halved).clamped(to: minX...(maxX - thumbWidth)).rounded()
-          let thumbFrame = NSRect(x: thumbOriginX, y: thumbOriginY.rounded(), width: thumbWidth, height: thumbHeight)
-          updateThumbnailPeekView(to: ffThumbnail!, thumbFrame: thumbFrame, thumbStore!, currentGeo, previewTimeSec: previewTimeSec)
-          thumbnailPeekView.isHidden = false
-          thumbnailPeekView.alphaValue = 1
+
+          let thumbWidth_Halved = (thumbWidth / 2).rounded()
+
+          if usingThumbfast {
+            // Experiment with Thumbfast Lua script as an alternative (https://github.com/po5/thumbfast)
+            guard player.isActive else { return }
+            // Need DisplayLink running to draw the thumbnails over the video
+            player.videoView.displayActive()
+            thumbnailPeekView.isHidden = true
+
+            // TODO: move the following into mpv queue
+
+            let osdWidth = player.mpv.getDouble(MPVProperty.osdWidth)
+
+            let viewportSize = currentGeo.viewportSize
+            // Thumbfast expects X,Y to represent top-left corner of thumbnail
+            let scaleRatio = osdWidth / viewportSize.width
+            let viewportFrameInWindowCoords = currentGeo.viewportFrameInWindowCoords
+            let thumbOriginInViewportX = posInWindowX - viewportFrameInWindowCoords.minX
+            let thumbOriginX = ((thumbOriginInViewportX * scaleRatio) - (thumbWidth_Halved)).clamped(to: 0...(max(0, osdWidth - thumbWidth))).rounded()
+            let thumbOriginInViewportY = yOrigin - viewportFrameInWindowCoords.minY
+            var yConverted = ((viewportSize.height - thumbOriginInViewportY) * scaleRatio) - thumbHeight
+            if !showAbove {
+              yConverted -= thumbHeight
+            }
+            let thumbOriginY = yConverted.clamped(to: 0...(max(0, (viewportSize.height * scaleRatio) - thumbHeight))).rounded()
+            player.mpv.showThumbfast(hoveredSecs: previewTimeSec, x: thumbOriginX, y: thumbOriginY)
+          } else {  // !usingThumbfast
+            let thumbOriginX = (posInWindowX - thumbWidth_Halved).clamped(to: minX...(maxX - thumbWidth)).rounded()
+            let thumbFrame = NSRect(x: thumbOriginX, y: yOrigin, width: thumbWidth, height: thumbHeight)
+            updateThumbnailPeekView(to: ffThumbnail!, thumbFrame: thumbFrame, thumbStore!, currentGeo, previewTimeSec: previewTimeSec)
+            thumbnailPeekView.isHidden = false
+            thumbnailPeekView.alphaValue = 1
+          }
+          if showAbove {
+            yOrigin += thumbHeight + quarterMargin
+          }
         }
       }
+
+      // - Chapter
+      if showChapter {
+        let chapterLabelHeight = chapterLabel.attributedStringValue.size().height.rounded()
+        if !showAbove {
+          yOrigin -= chapterLabelHeight + quarterMargin
+        }
+
+        chapterLabelVerticalSpaceConstraint.constant = yOrigin
+
+        chapterLabel.alphaValue = 1
+
+        if showAbove {
+          yOrigin += chapterLabelHeight
+        }
+      }
+      chapterLabel.isHidden = !showChapter
+
       animationState = .shown
       // Start timer (or reset it), even if just hovering over the play slider. The Cocoa "mouseExited" event doesn't fire
       // reliably, so using a timer works well as a failsafe.
@@ -427,7 +489,39 @@ extension PlayerWindowController {
 
   } // end class SeekPreview
 
+
   // MARK: - PlayerWindowController methods
+
+
+  /// Called on `PlayerWindow` load: `contentView` is `window.contentView`.
+  func initSeekPreview(in contentView: NSView) {
+    seekPreview.player = player
+    contentView.addSubview(seekPreview.thumbnailPeekView, positioned: .above, relativeTo: viewportView)
+    contentView.addSubview(seekPreview.chapterLabel, positioned: .above, relativeTo: seekPreview.thumbnailPeekView)
+    contentView.addSubview(seekPreview.timeLabel, positioned: .above, relativeTo: seekPreview.timeLabel)
+    // This is above the play slider and by default, will swallow clicks. Send events to play slider instead
+    seekPreview.timeLabel.nextResponder = playSlider
+
+    let chapterCenterXConstraint = seekPreview.chapterLabel.centerXAnchor.constraint(equalTo: seekPreview.timeLabel.centerXAnchor)
+    chapterCenterXConstraint.isActive = true
+
+    // Yes, left, not leading!
+    seekPreview.timeLabelHorizontalCenterConstraint = seekPreview.timeLabel.centerXAnchor.constraint(equalTo: contentView.leftAnchor, constant: 0) // dummy value for now
+    seekPreview.timeLabelHorizontalCenterConstraint.identifier =  "SeekTimeHoverLabel_CenterXCon"
+    seekPreview.timeLabelHorizontalCenterConstraint.isActive = true
+
+    // This is a bit confusing but the constant here can be thought of as the X value in window,
+    // not flipped (so, larger values toward the top)
+    seekPreview.timeLabelVerticalSpaceConstraint = contentView.bottomAnchor.constraint(equalTo: seekPreview.timeLabel.bottomAnchor, constant: 0)
+    seekPreview.timeLabelVerticalSpaceConstraint.identifier = "SeekTimeHoverLabel_YOffsetCon"
+    seekPreview.timeLabelVerticalSpaceConstraint.isActive = true
+
+    seekPreview.chapterLabelVerticalSpaceConstraint = contentView.bottomAnchor.constraint(equalTo: seekPreview.chapterLabel.bottomAnchor, constant: 0)
+    seekPreview.chapterLabelVerticalSpaceConstraint.identifier = "SeekChapterHoverLabel_YOffsetCon"
+    seekPreview.chapterLabelVerticalSpaceConstraint.isActive = true
+
+    seekPreview.hideTimer.action = seekPreviewTimeout
+  }
 
   func shouldSeekPreviewBeVisible(forPointInWindow pointInWindow: NSPoint) -> Bool {
     guard !player.disableUI,
@@ -462,11 +556,7 @@ extension PlayerWindowController {
         // Try not to pile up duplicate animations. But call the next task.
         return
       }
-      seekPreview.animationState = .willHide
-      seekPreview.thumbnailPeekView.animator().alphaValue = 0
-      seekPreview.timeLabel.animator().alphaValue = 0
-      seekPreview.thumbnailPeekView.isHidden = true
-      seekPreview.timeLabel.isHidden = true
+      fadeOutSeekPreview()
       playSliderCell.hoverIndicator?.isHidden = true
       if fadeableViews.isShowingFadeableViewsForSeek {
         fadeableViews.isShowingFadeableViewsForSeek = false
@@ -484,6 +574,13 @@ extension PlayerWindowController {
     animationPipeline.submit(tasks)
   }
 
+  func fadeOutSeekPreview() {
+    seekPreview.animationState = .willHide
+    seekPreview.thumbnailPeekView.animator().alphaValue = 0
+    seekPreview.chapterLabel.animator().alphaValue = 0
+    seekPreview.timeLabel.animator().alphaValue = 0
+  }
+
   /// Without animation. For animated version, see `hideSeekPreviewWithAnimation()`, which will call this func (DRY).
   func hideSeekPreviewImmediately() {
     guard seekPreview.animationState == .shown || seekPreview.animationState == .willHide else { return }
@@ -491,6 +588,7 @@ extension PlayerWindowController {
     seekPreview.hideTimer.cancel()
     seekPreview.animationState = .hidden
     seekPreview.thumbnailPeekView.isHidden = true
+    seekPreview.chapterLabel.isHidden = true
     seekPreview.timeLabel.isHidden = true
     seekPreview.currentPreviewTimeSec = nil
     playSliderCell.hoverIndicator?.isHidden = true
