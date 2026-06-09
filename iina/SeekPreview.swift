@@ -177,11 +177,15 @@ extension PlayerWindowController {
 
       let showChapter: Bool = Preference.bool(for: .seekPreviewHasChapter) && !player.info.chapters.isEmpty
 
-      let chapterTitle = player.info.chapter(forPlaybackTime: previewTimeSec)?.title ?? ""
-      if chapterLabel.stringValue != chapterTitle {
-        chapterLabel.stringValue = chapterTitle
-        chapterLabel.sizeToFit()
+      if showChapter {
+        // Use a space even if hovered time does not belong to a named chapter, so that the height stays consistent.
+        let chapterTitle = player.info.chapter(forPlaybackTime: previewTimeSec)?.title ?? " "
+        if chapterLabel.stringValue != chapterTitle {
+          chapterLabel.stringValue = chapterTitle
+          chapterLabel.sizeToFit()
+        }
       }
+      let chapterLabelHeight = showChapter ? chapterLabel.attributedStringValue.size().height.rounded() : 0.0
 
       let timeLabelString = VideoTime.string(from: previewTimeSec)
       if timeLabel.stringValue != timeLabelString {
@@ -197,7 +201,7 @@ extension PlayerWindowController {
       let adjustedMarginTotalHeight = margins.totalHeight * 0.75
 
       /// Calculate `availableHeight`: viewport height, minus top & bottom bars, minus extra space
-      let availableHeight = viewportSize.height - currentGeo.insideBars.totalHeight - adjustedMarginTotalHeight - timeLabelSize.height
+      let availableHeight = viewportSize.height - currentGeo.insideBars.totalHeight - adjustedMarginTotalHeight - timeLabelSize.height - chapterLabelHeight
       /// `availableWidth`: entire window width, minus extra space
       let availableWidth = currentGeo.windowFrame.width - margins.totalWidth
       let oscOriginInWindowY = currentControlBar.superview!.convert(currentControlBar.frame.origin, to: nil).y
@@ -250,7 +254,7 @@ extension PlayerWindowController {
         showAbove = true  // always show above in music mode
 
         if showThumbnail && !usingThumbfast {
-          let totalExtraVerticalSpace = adjustedMarginTotalHeight + timeLabelSize.height
+          let totalExtraVerticalSpace = adjustedMarginTotalHeight + timeLabelSize.height + chapterLabelHeight
           let availableHeightAbove = max(0, viewportSize.height - totalExtraVerticalSpace)
           if thumbHeight > availableHeightAbove {
             // Scale down thumbnail so it doesn't get clipped by the side of the window
@@ -266,7 +270,7 @@ extension PlayerWindowController {
           showAbove = true
         case .floating:
           // Need to check available space in viewport above & below OSC
-          let totalExtraVerticalSpace = adjustedMarginTotalHeight + timeLabelSize.height
+          let totalExtraVerticalSpace = adjustedMarginTotalHeight + timeLabelSize.height + chapterLabelHeight
           let availableHeightBelowOSC = max(0, oscOriginInWindowY - currentGeo.insideBars.bottom - totalExtraVerticalSpace)
           if availableHeightBelowOSC > thumbHeight {
             // Show below by default, if there is space for the desired size
@@ -311,7 +315,6 @@ extension PlayerWindowController {
         } else {
           let sliderFrameInWindowCoords = pwc.playSlider.frameInWindowCoords
           let sliderCenterY = sliderFrameInWindowCoords.origin.y + (sliderFrameInWindowCoords.height * 0.5)
-          let quarterMargin = margins.bottom * 0.25
           let halfKnobHeight = pwc.playSliderCell.knobHeight * 0.5
           // If clear background, align the label consistently close to the slider bar.
           // Else if using gray panel, try to align the label either wholly inside or outside the panel.
@@ -410,7 +413,6 @@ extension PlayerWindowController {
 
       // - Chapter
       if showChapter {
-        let chapterLabelHeight = chapterLabel.attributedStringValue.size().height.rounded()
         if !showAbove {
           yOrigin -= chapterLabelHeight + quarterMargin
         }
@@ -418,10 +420,6 @@ extension PlayerWindowController {
         chapterLabelVerticalSpaceConstraint.constant = yOrigin
 
         chapterLabel.alphaValue = 1
-
-        if showAbove {
-          yOrigin += chapterLabelHeight
-        }
       }
       chapterLabel.isHidden = !showChapter
 
