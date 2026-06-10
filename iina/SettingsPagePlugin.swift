@@ -9,7 +9,6 @@
 import WebKit
 import Just
 
-@available(macOS 11.0, *)
 class SettingsPagePlugin: SettingsPage {
   override var identifier: String {
     "plugin"
@@ -63,7 +62,6 @@ class SettingsPagePlugin: SettingsPage {
 }
 
 
-@available(macOS 11.0, *)
 fileprivate class PluginInstallView: SettingsAccessory.Base {
   unowned let page: SettingsPagePlugin
   private lazy var pluginManager: PluginManager = PluginManager(window: self.view.window!)
@@ -199,7 +197,6 @@ fileprivate extension NSPasteboard.PasteboardType {
 }
 
 
-@available(macOS 11.0, *)
 fileprivate class PluginListView: SettingsAccessory.Base {
   // TODO: this is a workaround.
   // SettingsItem.Custom should also adopt the "build first, render later" design.
@@ -275,7 +272,6 @@ fileprivate class PluginListView: SettingsAccessory.Base {
   }
 }
 
-@available(macOS 11.0, *)
 extension PluginListView: NSTableViewDelegate, NSTableViewDataSource {
   private class ItemView: NSTableCellView {
     var nameLabel: NSTextField!
@@ -496,7 +492,6 @@ extension PluginListView: NSTableViewDelegate, NSTableViewDataSource {
   }
 }
 
-@available(macOS 11.0, *)
 extension PluginListView {
   @objc func uninstallAction() {
     guard let currentPlugin = PluginListView.currentPlugin else { return }
@@ -516,7 +511,6 @@ extension PluginListView {
 }
 
 
-@available(macOS 11.0, *)
 fileprivate class PluginDetailsWindow: NSWindow {
   private unowned let l10n: SettingsLocalization.Context
   private unowned let plugin: JavascriptPlugin
@@ -663,9 +657,7 @@ fileprivate class PluginDetailsWindow: NSWindow {
     config.userContentController.add(self, name: "iina")
 
     self.webView = WKWebView(frame: .zero, configuration: config)
-    if #available(macOS 13.3, *) {
-      webView.isInspectable = true
-    }
+    webView.isInspectable = true
     webView.navigationDelegate = self
     webView.translatesAutoresizingMaskIntoConstraints = false
     webView.setValue(false, forKey: "drawsBackground")
@@ -753,7 +745,6 @@ fileprivate class PluginDetailsWindow: NSWindow {
   }
 }
 
-@available(macOS 11.0, *)
 extension PluginDetailsWindow: WKScriptMessageHandler, WKNavigationDelegate {
   func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
     // don't allow remote pages in settings or about tab
