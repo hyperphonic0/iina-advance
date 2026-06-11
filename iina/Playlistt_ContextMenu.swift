@@ -160,6 +160,7 @@ extension PlaylistViewController {
 
       menu.addItem(withTitle: title)
       menu.addItem(NSMenuItem.separator())
+      menu.addItem(.sectionHeader(title: NSLocalizedString("pl_menu.playback", comment: "Playback")))
       menu.addItem(forRows: rows, withTitle: NSLocalizedString("pl_menu.play_next", comment: "Play Next"),
                    action: #selector(self.contextMenuPlayNext(_:)))
       menu.addItem(forRows: rows, withTitle: NSLocalizedString("pl_menu.play_in_new_window", comment: "Play in New Window"),
@@ -167,10 +168,10 @@ extension PlaylistViewController {
       menu.addItem(forRows: rows, withTitle: NSLocalizedString(isSingleItem ? "pl_menu.remove" : "pl_menu.remove_multi", comment: "Remove"),
                    action: #selector(self.contextMenuRemove(_:)))
 
-      if !player.isInMiniPlayer {
+      if !player.isInMiniPlayer && (isSingleItem || matchedSubCount != 0) {
         menu.addItem(NSMenuItem.separator())
+        menu.addItem(.sectionHeader(title: String(format: NSLocalizedString("pl_menu.subtitles", comment: "Subtitles (%@ loaded)"), matchedSubCount)))
         if isSingleItem {
-          menu.addItem(forRows: rows, withTitle: String(format: NSLocalizedString("pl_menu.matched_sub", comment: "Matched %d Subtitle(s)"), matchedSubCount))
           menu.addItem(forRows: rows, withTitle: NSLocalizedString("pl_menu.add_sub", comment: "Add Subtitle…"),
                        action: #selector(self.contextMenuAddSubtitle(_:)))
         }
@@ -186,16 +187,20 @@ extension PlaylistViewController {
         playlistItems[$0].isNetworkResource
       }.count
       if networkCount != 0 {
+        menu.addItem(.sectionHeader(title: NSLocalizedString("pl_menu.network_resources", comment: "Network Resources")))
         menu.addItem(forRows: rows, withTitle: NSLocalizedString("pl_menu.browser", comment: "Open in Browser"),
                      action: #selector(self.contextOpenInBrowser(_:)))
-        menu.addItem(forRows: rows, withTitle: NSLocalizedString(networkCount == 1 ? "pl_menu.copy_url" : "pl_menu.copy_url_multi", comment: "Copy URL(s)"),
+        menu.addItem(forRows: rows, withTitle: NSLocalizedString(networkCount == 1 ? "pl_menu.copy_url"
+                                                                 : "pl_menu.copy_url_multi", comment: "Copy URL(s)"),
                      action: #selector(self.contextCopyURL(_:)))
         menu.addItem(NSMenuItem.separator())
       }
       // file related operations
       let localCount = rows.count - networkCount
       if localCount != 0 {
-        menu.addItem(forRows: rows, withTitle: NSLocalizedString(localCount == 1 ? "pl_menu.delete" : "pl_menu.delete_multi", comment: "Delete"),
+        menu.addItem(.sectionHeader(title: NSLocalizedString("pl_menu.file_operations", comment: "File Operations")))
+        menu.addItem(forRows: rows, withTitle: NSLocalizedString(localCount == 1 ? "pl_menu.delete"
+                                                                 : "pl_menu.delete_multi", comment: "Delete"),
                      action: #selector(self.contextMenuDeleteFile(_:)))
         menu.addItem(forRows: rows, withTitle: NSLocalizedString("pl_menu.show_in_finder", comment: "Show in Finder"),
                      action: #selector(self.contextMenuShowInFinder(_:)))
@@ -219,7 +224,7 @@ extension PlaylistViewController {
       return (plugin, [])
     }
     if hasPluginMenuItems {
-      menu.addItem(withTitle: NSLocalizedString("preference.plugins", comment: "Plugins"))
+      menu.addItem(withTitle: NSLocalizedString("pl_menu.plugin", comment: "Plugin"))
       for (plugin, items) in pluginMenuItems {
         for item in items {
           add(menuItemDef: item, to: menu, for: plugin)
@@ -228,6 +233,7 @@ extension PlaylistViewController {
       menu.addItem(NSMenuItem.separator())
     }
 
+    menu.addItem(.sectionHeader(title: NSLocalizedString("pl_menu.playlist", comment: "Playlist")))
     menu.addItem(withTitle: NSLocalizedString("pl_menu.add_file", comment: "Add File"),
                  action: #selector(self.addFileAction(_:)))
     menu.addItem(withTitle: NSLocalizedString("pl_menu.add_url", comment: "Add URL"),
