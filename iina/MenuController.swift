@@ -588,12 +588,8 @@ class MenuController: NSObject, NSMenuDelegate {
     let reloadPluginsItem = NSMenuItem(title: reloadTitle, action: #selector(AppDelegate.reloadAllPlugins(_:)),
                                        keyEquivalent: "")
 
-    if #available (macOS 26, *) {
-      managePluginsItem.image = .sf("gear")
-      developerTool.image = .sf("terminal")
-      reloadPluginsItem.image = .sf("arrow.counterclockwise")
-    }
 
+    pluginMenu.removeAllItems()
     pluginMenu.addItem(managePluginsItem)
 
     if let pwc = activePlayer?.pwc {
