@@ -3,10 +3,11 @@
 NIX_BUILD=true
 REPLACE_LIBS=true
 REPLACE_EXECUTABLES=true
-REPLACE_INCLUDES=true
+REPLACE_INCLUDES=false
 
 MIN_NIX_VERSION="2.34.6"
 DEBUG_NIX=false
+APP_NAME="IINA Advance"
 
 # Colors for output
 RED='\033[0;31m'
@@ -78,7 +79,7 @@ else
   echo -e "${YELLOW}Skipping Nix build.${NC}"
 fi
 
-APP_CONTENTS_DIR="$PROJ_DIR/result/Applications/IINA Advance.app/Contents"
+APP_CONTENTS_DIR="$PROJ_DIR/result/Applications/$APP_NAME.app/Contents"
 
 if [[ "$REPLACE_LIBS" = true ]]; then
   SRC_DIR="$APP_CONTENTS_DIR/Frameworks"
@@ -104,7 +105,7 @@ if [[ "$REPLACE_EXECUTABLES" = true ]]; then
   mkdir -p "$DST_DIR"
   for executable in "$SRC_DIR/"*; do
     filename="${executable##*/}"
-    if [[ "$filename" != *"iina"* ]] && [[ "$filename" != 'IINA Advance' ]]; then
+    if [[ "$filename" != *"iina"* ]] && [[ "$filename" != "$APP_NAME" ]]; then
       cp -v "$executable" "$DST_DIR/"
     fi
   done
@@ -126,4 +127,5 @@ fi
 
 echo ""
 echo -e "${GREEN}✅ Done${NC}"
+afplay /System/Library/Sounds/Glass.aiff
 

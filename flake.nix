@@ -50,24 +50,71 @@
           ln -sf /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild "$out/bin/xcodebuild"
         '';
 
-        # Override ffmpeg to use our version of libs
-        ffmpeg = (pkgs.ffmpeg.override {
-          withDebug = true; # Build using debug options
+        ffmpeg = (pkgs.ffmpeg-headless.override {
+          withDebug = false;    # Build using debug options
+          withStripping = true; # Strip symbols from the resulting binaries to reduce size
+          withSmallDeps  = true;
 
           withSoxr = true;
           soxr = pkgs.soxr;
 
-          withBs2b = true;
-          libbs2b = pkgs.libbs2b;
-
           withRubberband = true;
           rubberband = pkgs.rubberband;
 
-          withPlacebo = true;
+          withPlacebo = false;
           libplacebo = pkgs.libplacebo;
 
           withJxl = true;
           libjxl = pkgs.libjxl;
+
+          withGnutls = true;
+          withOpenjpeg = true;  # JPEG 2000 de/encoder
+
+          # May want to enable some of these in the near future
+          withTheora = true;     # Theora video codec
+          withVorbis = true;     # Vorbis audio codec
+
+          withX264 = false;      # H.264 video encoder, not super useful for IINA (& adds >4 MB to app size)
+          withX265 = false;      # H.265 video encoder, not super useful for IINA (& adds >31 MB to app size)
+          withAom = false;       # AV1 video encoder, not very useful for IINA
+          withBs2b = false;      # Bass to Binaural audio filter (uncommon)
+          withCaca = false;      # ASCII art video output, not useful for IINA
+          withDvdnav = false;
+          withDvdread = false;
+          withMp3lame = false;   # MP3 LAME audio codec encoder, not super useful for IINA
+          withOpenapv = false;   # APV video encoder, not very useful for IINA
+          withOpenmpt = false;   # Tracker music files decoder (various formats), not included in IINA historically
+          withOpus = false;      # Opus audio codec, not included in IINA historically
+          withRist = true;       # RIST protocol support
+          withSrt = false;       # Secure Reliable Transport (SRT) protocol, not useful for IINA
+          withSsh = false;       # SFTP protocol support
+          withSvtav1 = false;    # SVT-AV1 encoder, adds >12 MB to app size
+          withVidStab = false;   # Video stabilization filter, requires Linux
+          withVmaf = false;      # Video quality measurement tool, not useful for IINA
+          withVulkan = false;    # IINA can't use gpu-next yet
+          withZmq = false;       # ZeroMQ messaging library for FFmpeg streaming; not used by mpv or IINA
+          withZvbi = false;      # Teletext support, not useful for IINA
+
+          # Unlikely to ever enable these
+          withOpencl = false;    # Vulkan predecessor, not supported on modern macOS
+          withVdpau = false;     # nVidia HW acceleration, not supported on modern macOS
+          withXlib = false;      # X11 support, no longer supported on modern OSes
+          withXcb = false;       # X11
+          withXcbxfixes = false; # X11
+          withXcbShape = false;  # X11
+          withXcbShm = false;    # X11
+
+          # Don't build docs; we don't use them
+          withHtmlDoc = false;
+          withManPages = false;
+          withPodDoc = false;
+          withTxtDoc = false;
+
+          # Don't build executables; we only want the libs
+          buildFfmpeg = false;
+          buildFfplay = false;
+          buildFfprobe = false;
+          buildQtFaststart = false;
 
         }).overrideAttrs (old: {
           # Skip tests to speed up build
@@ -79,15 +126,17 @@
           ffmpeg = ffmpeg;
           lua = pkgs.luajit;
 
-          # Enable features we want
-          vapoursynthSupport = false;
-          javascriptSupport = true;
-          cmsSupport = true;
-          rubberbandSupport = true;
           archiveSupport = true;
+          bs2bSupport = false;
           bluraySupport = true;
-          openalSupport = true;
-          vulkanSupport = true;
+          cacaSupport = false;
+          cmsSupport = true;
+          dvdnavSupport = false;
+          javascriptSupport = true;
+          openalSupport = false;
+          rubberbandSupport = true;
+          vapoursynthSupport = false;
+          vulkanSupport = false;
           zimgSupport = true;
 
           # Disable Linux-only bits
@@ -177,9 +226,8 @@
               pkgs.libass
               pkgs.libb2
               pkgs.libbluray
-              pkgs.libbs2b
               pkgs.libidn2
-              pkgs.libjpeg_turbo
+              pkgs.libjpeg_turbo  # Needed for libjpeg
               pkgs.libjxl
               pkgs.libplacebo
               pkgs.libpng
@@ -192,59 +240,26 @@
               pkgs.libwebp
               pkgs.luajit
               pkgs.lz4
-              pkgs.mujs
+              pkgs.mujs  # JavaScript engine, needed for mpv's JS support
               pkgs.nettle
               pkgs.p11-kit
               pkgs.pcre2
-              pkgs.python3
               pkgs.rubberband
-              pkgs.shaderc
+              pkgs.shaderc  # Referenced by libplacebo, even though it requires Vulkan which we don't use
               pkgs.snappy
               pkgs.soxr
               pkgs.speex
-              pkgs.vid-stab
-              pkgs.vulkan-loader
-              pkgs.xorg.libX11
-              pkgs.xorg.libXau
-              pkgs.xorg.libxcb
-              pkgs.xorg.libXdmcp
               pkgs.xz
-              pkgs.zeromq
               pkgs.zimg
               pkgs.zstd
 
               # Indirect libs
               pkgs.bzip2
-              pkgs.expat
-              pkgs.lame
-              pkgs.libaom
-              pkgs.libcaca
-              pkgs.libcxx
+              pkgs.expat     # Needed for fontconfig
               pkgs.libdovi
-              pkgs.libdvdcss
-              pkgs.libdvdnav
-              pkgs.libffi
-              pkgs.libogg
-              pkgs.libopenmpt
-              pkgs.libopus
-              pkgs.librist
-              pkgs.libssh
-              pkgs.libtheora
-              pkgs.libvdpau
-              pkgs.libvmaf
               pkgs.libvorbis
-              pkgs.libxml2
-              pkgs.llvmPackages.openmp
-              pkgs.ocl-icd
-              pkgs.openal
               pkgs.openjpeg
-              pkgs.srt
-              pkgs.svt-av1
-              pkgs.x264
-              pkgs.x265
-              pkgs.zlib
               pkgs.zstd.out
-              pkgs.zvbi
             ]
           )
         );
@@ -364,14 +379,14 @@
               rm -rf deps/include deps/lib
 
               mkdir -p deps/include deps/lib deps/executable
-              cp -RL "${depsInclude}/." deps/include
-              cp -RLv "${depsLib}/." deps/lib
+              cp -RL "${depsInclude}/" deps/include
+              cp -RLv "${depsLib}/" deps/lib
 
               echo "[${system}] 📦 Copying SPM deps"
               rsync -a "${spmDeps}/" ./
               chmod -R u+rwx,g+rx,o+rx .
 
-              echo "[${system}] 📦 Adding canonical links"
+              echo "[${system}] 📦 Canonicalizing libs"
               ${libTool}/bin/iina-lib-tool --canonicalize --prune "./deps/lib" "./deps/executable"
 
               # Rewrite SwiftPM workspace-state.json to fix absolute paths

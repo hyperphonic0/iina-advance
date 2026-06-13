@@ -67,14 +67,6 @@ For all files in libStaging directory:
 For all executables in MacOS directory:
 1. Add missing LC_RPATH entries pointing to @executable_path/../Frameworks.
 2. Replace /opt/nix references with @rpath references using the canonical names from canonical_name_multimap.
-
-Mode --add-canonical-links:
----------------------------
-Same as (I) & (II) above, but instead of copying canonical libs to libStaging, just add symbolic links to them to the
-lib directory (if file is already present, skip it). No modifications are made to the lib or executable files in this
-mode.
-
-This option is needed to prevent `xcodebuild` from failing when executed via the Nix build process.
 """
 
 import os
@@ -93,11 +85,24 @@ APP_FRAMEWORKS_RELPATH = "Contents/Frameworks"
 APP_EXECUTABLES_RELPATH = "Contents/MacOS"
 
 # Set of lib IDs to exclude.
-# Skip 'libffi-trampoline' (apparently a typo of 'libffi-trampolines'?)
-ID_BLACKLIST: set[str] = {'libffi-trampoline'}
-USR_LIB_WHITELIST: dict[str, tuple[str, str]] = {
+IDS_TO_IGNORE: set[str] = {
+  'libswift_Concurrency', # This needs to be included for pre-MacOS 12 builds
+  'libffi-trampoline',    # Skip 'libffi-trampoline' (apparently a typo of 'libffi-trampolines'?)
+}
+
+# Map of libs which are already provided by macOS and should not be packaged in the bundle.
+# For a list of system-provided libs, see:
+# `ls /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib`
+USR_LIB_ITEMS: dict[str, tuple[str, str]] = {
+  'libbz2': ('2', '/usr/lib/libbz2.dylib'),
+  'libcharset': ('1', '/usr/lib/libcharset.1.dylib'),
+  'libc++': ('1', '/usr/lib/libc++.dylib'),
+  'libc++abi': ('1', '/usr/lib/libc++abi.dylib'),
+  'libffi': ('9', '/usr/lib/libffi.dylib'),
   'libiconv': ('7', '/usr/lib/libiconv.2.dylib'),
-  'libz': ('1', '/usr/lib/libz.1.dylib')
+  'liblzma': ('14', '/usr/lib/liblzma.5.dylib'),
+  'libxml2': ('18', '/usr/lib/libxml2.2.dylib'),
+  'libz': ('1', '/usr/lib/libz.1.dylib'),
 }
 
 # --- Command line options ---
@@ -308,7 +313,7 @@ class LibMetaDB:
       if not base_tuple:
         return
       (ref_basename, base_id) = base_tuple
-      if base_id in ID_BLACKLIST:
+      if base_id in IDS_TO_IGNORE:
         print(f'Ref is in blacklist, skipping: {ref_path}')
         return
       if libs_searched.get(ref_path, False):
@@ -323,8 +328,8 @@ class LibMetaDB:
       if not base_tuple:
         return
       (ref_basename, ref_base_id) = base_tuple
-      if ref_base_id in ID_BLACKLIST:
-        print(f'Ref is in blacklist, skipping: {ref_path}')
+      if ref_base_id in IDS_TO_IGNORE:
+        print(f'Ref is in ignore list, skipping: {ref_path}')
         return
 
       if self.log_verbose:
@@ -344,10 +349,10 @@ class LibMetaDB:
         base_tuple = parse_base(file_path)
         if not base_tuple:
           continue
-        (base_name, base_id) = base_tuple
-        # See notes for blacklist above
-        if base_id in ID_BLACKLIST:
-          print(f'File is in blacklist, skipping: {file_path}')
+        (_, base_id) = base_tuple
+        # See notes for ignore list above
+        if base_id in IDS_TO_IGNORE:
+          print(f'File is in ignore list, skipping: {file_path}')
           continue
 
         if self.log_verbose:
@@ -393,7 +398,6 @@ class LibMetaDB:
         print(f'✅ Already dual-arch: {basename}')
         shutil.copy2(arm64, tmpfile)
       else:
-        print(f'🔨 Merging {basename}')
         subprocess.run(['lipo', '-create', '-arch', 'arm64', arm64, '-arch', 'x86_64', x86_64, '-output', tmpfile])
 
       dst_path = os.path.join(dst_dir, basename)
@@ -406,20 +410,20 @@ class LibMetaDB:
     def merge_lib(lib_basename, _):
       path0 = os.path.join(libs0, lib_basename)
       path1 = os.path.join(libs1, lib_basename)
-      print(f'Merging libs in: [{path0}, {path1}]')
+      print(f'🔨 Merging libs in: [{path0}, {path1}]')
       merge_bin(lib_basename, path0, path1, self.lib_dir_path)
 
     for_all_libs_in_lib_dir(self.lib_dir_path, merge_lib)
 
     # Merge executable dirs
 
-    exe0 = os.path.join(archroot0, APP_FRAMEWORKS_RELPATH)
-    exe1 = os.path.join(archroot1, APP_FRAMEWORKS_RELPATH)
+    exe0 = os.path.join(archroot0, APP_EXECUTABLES_RELPATH)
+    exe1 = os.path.join(archroot1, APP_EXECUTABLES_RELPATH)
 
     def merge_exe(exe_basename, _):
       path0 = os.path.join(exe0, exe_basename)
       path1 = os.path.join(exe1, exe_basename)
-      print(f'Merging executables in: [{path0}, {path1}]')
+      print(f'🔨 Merging executables in: [{path0}, {path1}]')
       merge_bin(exe_basename, path0, path1, self.executable_dir_path)
 
     for_all_executables_in_executable_dir(self.executable_dir_path, merge_exe)
@@ -444,7 +448,7 @@ class CanonicalNameDB:
     self.lib_db = lib_db
 
     for base_id, variants_map in self.lib_db.name_variants_map.items():
-      usr_lib_entry = USR_LIB_WHITELIST.get(base_id, None)
+      usr_lib_entry = USR_LIB_ITEMS.get(base_id, None)
       if usr_lib_entry:
         popped = variants_map.pop(usr_lib_entry[0], '')
         if popped:
@@ -526,7 +530,7 @@ class CanonicalNameDB:
     print(f"Canonicalizing libs in {lib_dir}…")
     # Create libStaging, then copy all libs to be processed into it.
     # This side-steps any thorny issues which might be caused by symlinks, makes purging Frameworks directory easier.
-    lib_staging_dir_path = os.path.join(lib_dir, '../libStaging')
+    lib_staging_dir_path = os.path.abspath(os.path.join(lib_dir, '../libStaging'))
     os.makedirs(lib_staging_dir_path, exist_ok=True)
     print(f'Copying libs into {lib_staging_dir_path}')
 
@@ -535,7 +539,7 @@ class CanonicalNameDB:
 
     def copy_to_cname(canonical_name: str, compat_version: str, src_path: str):
       print(f'Canonical name for v{compat_version} = {canonical_name} → {src_path}')
-      dst_path = os.path.join(lib_staging_dir_path, canonical_name)
+      dst_path = os.path.abspath(os.path.join(lib_staging_dir_path, canonical_name))
       shutil.copyfile(src_path, dst_path)
       nonlocal copied_libs_count
       copied_libs_count += 1
@@ -552,17 +556,10 @@ class CanonicalNameDB:
       print(f'✂️ Removing old lib files and links from {lib_dir}')
       all_children: map[tuple[str, str]] = map(lambda name: (name, os.path.join(lib_dir, name)), os.listdir(lib_dir))
       old_lib_links = [child for child in all_children if os.path.islink(child[1])]
-      for link_basename, link_path in old_lib_links:
-        if link_basename.startswith('.libiconv'):
-          print(f'Will not remove lib file: {link_path}')
-        else:
-          os.unlink(link_path)
-
-      for oldlib_basename, oldlib_path in ls_files_in_dir(lib_dir):
-        if oldlib_basename.startswith('.libiconv'):
-          print(f'Will not remove lib file: {oldlib_basename}')
-        else:
-          os.remove(oldlib_path)
+      for _, link_path in old_lib_links:
+        os.unlink(link_path)
+      for _, lib_path in ls_files_in_dir(lib_dir):
+        os.remove(lib_path)
 
     # Second pass. Add missing LC_RPATH entries, rewrite lib references to use @rpath & canonical names.
 
@@ -574,7 +571,7 @@ class CanonicalNameDB:
       replacement_path = ''
       # First check for built-in system libraries which are also provided by Nix, but we want to point them to the
       # system versions instead of the Nix versions to avoid packaging issues & to save space.
-      usr_lib_entry = USR_LIB_WHITELIST.get(base_id, None)
+      usr_lib_entry = USR_LIB_ITEMS.get(base_id, None)
       if usr_lib_entry and compat_version == usr_lib_entry[0]:
         replacement_path = usr_lib_entry[1]
       else:
