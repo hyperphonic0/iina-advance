@@ -68,7 +68,7 @@
           libjxl = pkgs.libjxl;
 
           withGnutls = true;
-          withOpenjpeg = true;  # JPEG 2000 de/encoder
+          withOpenjpeg = true;   # JPEG 2000 de/encoder
 
           # May want to enable some of these in the near future
           withTheora = true;     # Theora video codec
@@ -211,55 +211,53 @@
                 cmakeFlags = (old.cmakeFlags or [ ]) ++ [ "-DBUILD_SHARED_LIBS=ON" ];
               }))
               pkgs.brotli
-              pkgs.dav1d
+              pkgs.dav1d          # AV1 video decoder
               pkgs.fontconfig
               pkgs.freetype
               pkgs.fribidi
               pkgs.gettext
               pkgs.glib
               pkgs.gmp
-              pkgs.gnutls
+              pkgs.gnutls         # TLS support, needed for network streams
               pkgs.graphite2
               pkgs.harfbuzz
               pkgs.lcms2
               pkgs.libarchive
               pkgs.libass
               pkgs.libb2
-              pkgs.libbluray
+              pkgs.libbluray      # Blu-ray support
               pkgs.libidn2
-              pkgs.libjpeg_turbo  # Needed for libjpeg
+              pkgs.libjpeg_turbo  # Needed to provide libjpeg
               pkgs.libjxl
               pkgs.libplacebo
               pkgs.libpng
               pkgs.libsamplerate
-              pkgs.libsodium
               pkgs.libtasn1
               pkgs.libuchardet
               pkgs.libunibreak
               pkgs.libunistring
-              pkgs.libwebp
+              pkgs.libwebp        # WebP image de/encoder
               pkgs.luajit
-              pkgs.lz4
-              pkgs.mujs  # JavaScript engine, needed for mpv's JS support
+              pkgs.lz4            # LZ4 compression, used by libarchive
+              pkgs.mujs           # JavaScript engine, needed for mpv's JS support
               pkgs.nettle
               pkgs.p11-kit
               pkgs.pcre2
               pkgs.rubberband
-              pkgs.shaderc  # Referenced by libplacebo, even though it requires Vulkan which we don't use
+              pkgs.shaderc        # Referenced by libplacebo, even though it requires Vulkan which we don't use
               pkgs.snappy
-              pkgs.soxr
+              pkgs.soxr           # SoX Resampler, needed for high-quality audio resampling
               pkgs.speex
-              pkgs.xz
+              pkgs.xz             # LZMA2 compression, needed by libarchive
               pkgs.zimg
               pkgs.zstd
 
               # Indirect libs
-              pkgs.bzip2
-              pkgs.expat     # Needed for fontconfig
-              pkgs.libdovi
-              pkgs.libvorbis
-              pkgs.openjpeg
-              pkgs.zstd.out
+              pkgs.expat          # Needed for fontconfig
+              pkgs.libdovi        # Dolby Vision, needed by libplacebo
+              pkgs.libvorbis      # Vorbis audio codec
+              pkgs.openjpeg       # JPEG 2000 de/encoder
+              pkgs.zstd.out       # Needed by libarchive
             ]
           )
         );
