@@ -887,12 +887,6 @@ final class StartupHandler {
       menuController.initMenus()
     }
 
-#if !MACOS_13_AVAILABLE
-    // show alpha in color panels
-    // This actually causes a window to open in the background. Only run this if newer API can't be used
-    NSColorPanel.shared.showsAlpha = true
-#endif
-
     // Init MediaPlayer integration
     MediaPlayerIntegration.shared.update()
 

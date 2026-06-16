@@ -55,16 +55,9 @@ class PrefSubViewController: PreferenceViewController, PreferenceWindowEmbeddabl
   override func viewDidLoad() {
     super.viewDidLoad()
 
-#if MACOS_13_AVAILABLE
-    if #available(macOS 13.0, *) {
-      [subColorWell, subBackgroundColorWell, subBorderColorWell, subShadowColorWell].forEach {
-        $0.colorWellStyle = .expanded
-        if #available(macOS 14.0, *) {
-          $0.supportsAlpha = true
-        }
-      }
+    [subColorWell, subBackgroundColorWell, subBorderColorWell, subShadowColorWell].forEach {
+      $0.supportsAlpha = true
     }
-#endif
 
     let defaultEncoding = Preference.string(for: .defaultEncoding)
     for encoding in Constants.encodings {

@@ -262,15 +262,12 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     }
 
     // Color Wells
-    if #available(macOS 13.0, *) {
-      subTextColorWell = NSColorWell(style: .default)
-      subTextBgColorWell = NSColorWell(style: .default)
-      subTextBorderColorWell = NSColorWell(style: .default)
-    } else {
-      subTextColorWell = RoundedColorWell()
-      subTextBgColorWell = RoundedColorWell()
-      subTextBorderColorWell = RoundedColorWell()
-    }
+    subTextColorWell = NSColorWell(style: .default)
+    subTextColorWell.supportsAlpha = true
+    subTextBgColorWell = NSColorWell(style: .default)
+    subTextBgColorWell.supportsAlpha = true
+    subTextBorderColorWell = NSColorWell(style: .default)
+    subTextBorderColorWell.supportsAlpha = true
     [(subTextColorWellContainer, subTextColorWell),
      (subTextBgColorWellContainer, subTextBgColorWell),
      (subTextBorderColorWellContainer, subTextBorderColorWell)].forEach { (view, well) in
