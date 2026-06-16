@@ -360,7 +360,7 @@ extension PlayerWindowController {
                   + (showThumbnail ? " thumbfast=\(usingThumbfast.yn)" : ""))
 
       // - Thumbnail
-      if showThumbnail && !usingThumbfast {
+      if showThumbnail {
         // Need integers.
         thumbWidth = round(thumbWidth)
         thumbHeight = round(thumbHeight)

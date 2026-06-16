@@ -45,7 +45,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   ///  or with `--macos-app-activation-policy=accessory`.
   ///
   /// If disabled, disables save/restore, history, plugins, and general UI for this launch.
-  var isInteractiveLaunch: Bool = true {
+  @MainActor var isInteractiveLaunch: Bool = true {
     didSet {
       let isEnabled = isInteractiveLaunch
       if !isEnabled {
@@ -196,12 +196,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
     AppDetailsLogging.shared.logAllAppDetails()
 
-    Logger.log.debug("App will launch\(isInteractiveLaunch ? "" : " (non-interactive)"). LaunchID: \(UIState.shared.currentLaunchID)")
+    let log = Logger.log
+    log.debug("App will launch\(isInteractiveLaunch ? "" : " (non-interactive)"). LaunchID: \(UIState.shared.currentLaunchID)")
 
-    Logger.log.debug("All app arguments: \(cmdLineArgs)")
+    log.debug("All app arguments: \(cmdLineArgs)")
     if let cli = startupHandler.commandLineState {
-      Logger.log.debug("Parsed IINA CLI args: stdin=\(cli.isStdin.yn) separateWindows=\(cli.openSeparateWindows?.yn ?? "nil") musicMode=\(cli.enterMusicMode.yn) pip=\(cli.enterPIP.yn). Filenames from arguments: \(cli.filenames.map{$0.pii})")
-      Logger.log.debug("Derived mpv properties from args: \(cli.mpvArguments)")
+      log.debug("Parsed IINA CLI args: stdin=\(cli.isStdin.yn) separateWindows=\(cli.openSeparateWindows?.yn ?? "nil") musicMode=\(cli.enterMusicMode.yn) pip=\(cli.enterPIP.yn). Filenames from arguments: \(cli.filenames.map{$0.pii})")
+      log.debug("Derived mpv properties from args: \(cli.mpvArguments)")
     }
 
     // Start asynchronously gathering and caching information about the hardware decoding
@@ -231,7 +232,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       ncDefaultObservers.append(.init(NSWindow.didChangeScreenNotification, { noti in
         let window = noti.object as! NSWindow
         let screenID = window.screen?.screenID.quoted ?? "nil"
-        Logger.log.verbose("WindowDidChangeScreen \(window.windowNumber): \(screenID)")
+        log.verbose("WindowDidChangeScreen \(window.windowNumber): \(screenID)")
       }))
     }
 #endif
@@ -252,7 +253,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
     /// Attach this in `applicationWillFinishLaunching`, because `application(openFiles:)` will be called after this but
     /// before `applicationDidFinishLaunching`.
-    notiHandler = NotificationHandler(Logger.log, prefDidChange: prefDidChange,
+    notiHandler = NotificationHandler(log, prefDidChange: prefDidChange,
                                       legacyPrefKeyObserver: self,
                                       observedPrefKeys, [
                                         .default: ncDefaultObservers
@@ -261,36 +262,36 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     // Install plugins
     if AppDelegate.iinaPluginSystemEnabled, FirstRunManager.isFirstRun(for: .init("installedDefaultPlugins")) {
       var hasError = false
-      Logger.log.debug("Installing default plugins")
+      log.debug("Installing default plugins")
       let pluginPath = Bundle.main.resourcePath?.appending("/plugins")
       if let pluginPath, FileManager.default.fileExists(atPath: pluginPath),
          let contents = try? FileManager.default.contentsOfDirectory(atPath: pluginPath) {
         let defaultPlugins = contents.filter { $0.hasSuffix(".iinaplgz") }
         for defaultPlugin in defaultPlugins {
           do {
-            Logger.log.debug("Installing default plugin: \(defaultPlugin)")
+            log.debug("Installing default plugin: \(defaultPlugin)")
             let path = pluginPath.appending("/\(defaultPlugin)")
             let plugin = try JavascriptPlugin.create(fromPackageURL: URL(fileURLWithPath: path))
             if JavascriptPlugin.plugins.contains(where: { $0.identifier == plugin.identifier }) {
-              Logger.log("Skipped \(plugin.identifier), already installed")
+              log.debug("Skipped \(plugin.identifier), already installed")
               continue
             }
             plugin.normalizePath()
             JavascriptPlugin.plugins.append(plugin)
             plugin.enabled = true
-            Logger.log("Installed \(plugin.identifier)")
+            log.debug("Installed \(plugin.identifier)")
           } catch let error {
             hasError = true
-            Logger.log(error.localizedDescription, level: .error)
+            log.error(error.localizedDescription)
           }
         }
       } else {
         hasError = true
-        Logger.log("Cannot find default plugins", level: .error)
+        log.error("Cannot find default plugins")
       }
 
       if hasError {
-        Logger.log.verbose("Error occurred installing default plugins; unsetting flag installedDefaultPlugins")
+        log.verbose("Error occurred installing default plugins; unsetting flag installedDefaultPlugins")
         FirstRunManager.unsetFirstRun(for: .init("installedDefaultPlugins"))
       }
     }
@@ -308,8 +309,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     UserDefaults.standard.set(true, forKey: "NSConstraintBasedLayoutVisualizeMutuallyExclusiveConstraints")
 #endif
 
-    // Call this *before* registering for url events, to guarantee that menu is init'd
-    AppInputConfig.loadSelectedConfBindingsIntoAppConfig()
+    if isInteractiveLaunch {
+      // Call this *before* registering for url events, to guarantee that menu is init'd
+      AppInputConfig.loadSelectedConfBindingsIntoAppConfig()
+    } else {
+      log.verbose("Skipping load of input conf file; app is not interactive")
+    }
   }
 
   private func registerUserDefaultValues() {

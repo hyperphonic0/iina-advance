@@ -2520,7 +2520,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
     viewportView.layer?.backgroundColor = newColor
   }
 
-  func resetCollectionBehavior() {
+  @MainActor func resetCollectionBehavior() {
     guard AppDelegate.shared.isInteractiveLaunch else { return }
 
     guard let window else { return }

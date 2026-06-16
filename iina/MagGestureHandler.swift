@@ -179,6 +179,7 @@ final class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
   /// Checks if the window (described by the gien geomeetry) is still maximized on screen, and if not, resets the zoom & pan values to zero.
   /// Makes no changes if pinch-to-zoom was not used (e.g., if zoomed using mpv key commands).
   func resetZoomIfNotMaximized(_ targetGeo: PWinGeometry) {
+    guard let pwc else { return }
     // Don't reset if still magnifying
     guard !pwc.isMagnifying else { return }
     guard pwc.isZoomedViaGesture, !targetGeo.mode.isFullScreen else { return }
@@ -191,6 +192,7 @@ final class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
   }
 
   func resetZoom() {
+    guard let pwc else { return }
     guard pwc.isZoomedViaGesture else { return }
     pwc.log.verbose("Resetting pinch-to-zoom props (video-zoom, video-pan-x, video-pan-y)")
 

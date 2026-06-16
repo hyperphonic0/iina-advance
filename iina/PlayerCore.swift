@@ -1424,6 +1424,7 @@ final class PlayerCore: NSObject {
     }
 
     DispatchQueue.main.async { [self] in
+      guard let pwc else { return }
       let screenshotViewController = ScreenshootOSDView()
       // Shrink to some fraction of the currently displayed video
       let relativeSize = pwc.videoView.frame.size * 0.3
@@ -1454,6 +1455,7 @@ final class PlayerCore: NSObject {
         return
       }
 
+      guard let pwc else { return }
       let screenshotViewController = ScreenshootOSDView()
       // Shrink to some fraction of the currently displayed video
       let relativeSize = pwc.videoView.frame.size * 0.3
@@ -1486,7 +1488,7 @@ final class PlayerCore: NSObject {
   /// Synchronize IINA with the state of the [mpv](https://mpv.io/manual/stable/) A-B loop command.
   func syncAbLoop() {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
-    guard isActive else { return }
+    guard isInteractivePlayer, isActive else { return }
 
     // Obtain the values of the ab-loop-a and ab-loop-b options representing the A & B loop points.
     let a = mpv.getDouble(MPVOption.PlaybackControl.abLoopA)
@@ -1676,6 +1678,7 @@ final class PlayerCore: NSObject {
   func speedDidChange(to speed: CGFloat) {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
     info.playSpeed = speed
+    guard isInteractivePlayer else { return }
     sendOSD(.speed(speed))
     saveState()  // record the new speed
     let paused = info._isPaused
@@ -1710,6 +1713,7 @@ final class PlayerCore: NSObject {
   @MainActor
   func setVideoAspectOverride(_ aspectString: String) {
     guard !isRestoring else { return }
+    guard let pwc else { return }
 
     let aspectLabel: String = Aspect.bestLabelFor(aspectString)
     guard pwc.geo.video.userAspectLabel != aspectLabel else { return }
@@ -1851,7 +1855,7 @@ final class PlayerCore: NSObject {
   }
 
   func getVideoZoom() -> Double {
-    let logZoom = pwc.player.mpv.getDouble(MPVOption.Video.videoZoom)
+    let logZoom = mpv.getDouble(MPVOption.Video.videoZoom)
     // mpv uses a logrithmic scale. Convert to linear scale:
     let linearZoom = pow(2.0, logZoom)
     return linearZoom
