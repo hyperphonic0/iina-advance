@@ -61,9 +61,6 @@
           withRubberband = true;
           rubberband = pkgs.rubberband;
 
-          withPlacebo = false;
-          libplacebo = pkgs.libplacebo;
-
           withJxl = true;
           libjxl = pkgs.libjxl;
 
@@ -74,6 +71,7 @@
           withTheora = true;     # Theora video codec
           withVorbis = true;     # Vorbis audio codec
 
+          withPlacebo = false;
           withX264 = false;      # H.264 video encoder, not super useful for IINA (& adds >4 MB to app size)
           withX265 = false;      # H.265 video encoder, not super useful for IINA (& adds >31 MB to app size)
           withAom = false;       # AV1 video encoder, not very useful for IINA
@@ -210,54 +208,52 @@
               (pkgs.libhwy.overrideAttrs (old: {
                 cmakeFlags = (old.cmakeFlags or [ ]) ++ [ "-DBUILD_SHARED_LIBS=ON" ];
               }))
-              pkgs.brotli
+              pkgs.brotli         # Brotli compression. Used for ass, fontconfig, bluray, & more
               pkgs.dav1d          # AV1 video decoder
-              pkgs.fontconfig
-              pkgs.freetype
-              pkgs.fribidi
-              pkgs.gettext
-              pkgs.glib
-              pkgs.gmp
+              pkgs.fontconfig     # Font configuration library
+              pkgs.freetype       # FreeType font rendering engine
+              pkgs.fribidi        # Hebrew and Arabic support
+              pkgs.gettext        # Internationalization library
+              pkgs.glib           # GTK GLib utility library. Required by harfbuzz
+              pkgs.gmp            # Provides arbitrary precision arithmetic. Required by several libs
               pkgs.gnutls         # TLS support, needed for network streams
-              pkgs.graphite2
-              pkgs.harfbuzz
-              pkgs.lcms2
-              pkgs.libarchive
-              pkgs.libass
-              pkgs.libb2
+              pkgs.graphite2      # Compiles Graphite-enabled fonts. Used by harfbuzz
+              pkgs.harfbuzz       # Text shaping engine. Used by avdevice, avfilter, ass
+              pkgs.lcms2          # Little CMS color management lib. Required by placebo, jxl
+              pkgs.libarchive     # Archive support
+              pkgs.libass         # ASS subtitle renderer
+              pkgs.libb2          # BLAKE2 hashing library
               pkgs.libbluray      # Blu-ray support
-              pkgs.libidn2
+              pkgs.libidn2        # Converts between ASCII & UTF domain names. Used by gnutls
               pkgs.libjpeg_turbo  # Needed to provide libjpeg
-              pkgs.libjxl
-              pkgs.libplacebo
-              pkgs.libpng
-              pkgs.libsamplerate
-              pkgs.libtasn1
-              pkgs.libuchardet
-              pkgs.libunibreak
-              pkgs.libunistring
+              pkgs.libjxl         # JPEG-XL support
+              pkgs.libplacebo     # Required by mpv
+              pkgs.libpng         # PNG image format support
+              pkgs.libsamplerate  # Sample Rate Converter for audio
+              pkgs.libtasn1       # ASN.1 library used by GnuTLS, p11-kit
+              pkgs.libuchardet    # Character encoding detection library
+              pkgs.libunibreak    # Unicode line breaking & word/grapheme breaking
+              pkgs.libunistring   # Unicode string handling
               pkgs.libwebp        # WebP image de/encoder
-              pkgs.luajit
-              pkgs.lz4            # LZ4 compression, used by libarchive
-              pkgs.mujs           # JavaScript engine, needed for mpv's JS support
-              pkgs.nettle
-              pkgs.p11-kit
-              pkgs.pcre2
-              pkgs.rubberband
-              pkgs.shaderc        # Referenced by libplacebo, even though it requires Vulkan which we don't use
-              pkgs.snappy
+              pkgs.luajit         # Lua Just-In-Time compiler. Required by mpv
+              pkgs.lz4            # LZ4 compression. Used by libarchive
+              pkgs.mujs           # JavaScript engine. Needed for mpv's JS support
+              pkgs.nettle         # GnuTLS dependency (cryptographic algorithms)
+              pkgs.p11-kit        # Tools for managing PKCS#11 modules (crypto keys / tokens)
+              pkgs.pcre2          # (Per-compatible) Regular expression pattern matching
+              pkgs.rubberband     # Enables FFmpeg to perform audio tempo & pitch modifications
+              pkgs.shaderc        # Referenced by libplacebo, even though it requires Vulkan which IINA doesn't use
+              pkgs.snappy         # Snappy compression
               pkgs.soxr           # SoX Resampler, needed for high-quality audio resampling
-              pkgs.speex
+              pkgs.speex          # Used by avcodec, avdevice, avfilter, avformat
               pkgs.xz             # LZMA2 compression, needed by libarchive
-              pkgs.zimg
-              pkgs.zstd
+              pkgs.zimg           # Image scaling & colorspace conversion library, needed by mpv
+              pkgs.zstd           # Needed by libarchive
 
               # Indirect libs
-              pkgs.expat          # Needed for fontconfig
               pkgs.libdovi        # Dolby Vision, needed by libplacebo
               pkgs.libvorbis      # Vorbis audio codec
               pkgs.openjpeg       # JPEG 2000 de/encoder
-              pkgs.zstd.out       # Needed by libarchive
             ]
           )
         );
