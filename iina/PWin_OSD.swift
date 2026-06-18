@@ -334,7 +334,7 @@ final class OSDState {
     osdAccessoryText.idString = "OSD-AccText"
     osdAccessoryText.wantsLayer = true
     osdAccessoryText.translatesAutoresizingMaskIntoConstraints = false
-    osdAccessoryText.setContentHuggingPriority(.init(251), for: .horizontal)
+    osdAccessoryText.setContentHuggingPriority(.init(249), for: .horizontal)
     osdAccessoryText.setContentHuggingPriority(.init(750), for: .vertical)
     osdAccessoryText.setContentCompressionResistancePriority(.init(499), for: .horizontal)
     osdAccessoryText.setContentCompressionResistancePriority(.init(1000), for: .vertical)
@@ -361,7 +361,7 @@ final class OSDState {
     osdVStackView.spacing = 0
     osdVStackView.detachesHiddenViews = true
     osdVStackView.translatesAutoresizingMaskIntoConstraints = false
-    osdVStackView.setHuggingPriority(.init(500), for: .vertical)
+    osdVStackView.setHuggingPriority(.init(499), for: .vertical)
     // #OSDPlusAdditionalInfoResizing
     osdVStackView.setHuggingPriority(.init(500), for: .horizontal)
 

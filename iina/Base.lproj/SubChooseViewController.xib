@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="24506" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="24765" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
     <dependencies>
-        <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="24506"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="24765"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
@@ -26,13 +25,13 @@
                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                     </textFieldCell>
                 </textField>
-                <scrollView borderType="none" autohidesScrollers="YES" horizontalLineScroll="52" horizontalPageScroll="10" verticalLineScroll="52" verticalPageScroll="10" usesPredominantAxisScrolling="NO" horizontalScrollElasticity="none" verticalScrollElasticity="none" translatesAutoresizingMaskIntoConstraints="NO" id="T82-Op-UIR" userLabel="SubChooserTable Scroll View">
+                <scrollView horizontalHuggingPriority="248" borderType="none" autohidesScrollers="YES" horizontalLineScroll="52" horizontalPageScroll="10" verticalLineScroll="52" verticalPageScroll="10" usesPredominantAxisScrolling="NO" horizontalScrollElasticity="none" verticalScrollElasticity="none" translatesAutoresizingMaskIntoConstraints="NO" id="T82-Op-UIR" userLabel="SubChooserTable Scroll View">
                     <rect key="frame" x="0.0" y="24" width="480" height="152"/>
                     <clipView key="contentView" autoresizesSubviews="NO" drawsBackground="NO" copiesOnScroll="NO" id="Jso-OO-xRN" userLabel="SubChooserTable Clip View">
                         <rect key="frame" x="0.0" y="0.0" width="480" height="152"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <tableView allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" tableStyle="fullWidth" columnReordering="NO" autosaveColumns="NO" typeSelect="NO" rowHeight="50" rowSizeStyle="automatic" viewBased="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Hut-pu-9Tv" userLabel="SubChooserTable Table View">
+                            <tableView verticalCompressionResistancePriority="499" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" tableStyle="fullWidth" columnReordering="NO" autosaveColumns="NO" typeSelect="NO" rowHeight="50" rowSizeStyle="automatic" viewBased="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Hut-pu-9Tv" userLabel="SubChooserTable Table View">
                                 <rect key="frame" x="0.0" y="0.0" width="480" height="152"/>
                                 <size key="intercellSpacing" width="3" height="2"/>
                                 <color key="backgroundColor" white="1" alpha="0.050000000000000003" colorSpace="deviceWhite"/>
@@ -162,7 +161,7 @@ Gw
                 <constraint firstItem="CFP-kG-Ixy" firstAttribute="top" secondItem="Hz6-mo-xeY" secondAttribute="top" id="YJn-Hp-Fnv"/>
                 <constraint firstAttribute="trailing" secondItem="i9Z-jA-8gU" secondAttribute="trailing" id="f09-vG-mFE"/>
                 <constraint firstItem="tFf-9S-9GB" firstAttribute="centerY" secondItem="i9Z-jA-8gU" secondAttribute="centerY" id="jDg-e5-ZRg"/>
-                <constraint firstAttribute="height" relation="greaterThanOrEqual" priority="99" constant="200" id="owS-WM-7c7"/>
+                <constraint firstAttribute="height" relation="greaterThanOrEqual" priority="499" constant="200" id="owS-WM-7c7"/>
             </constraints>
             <point key="canvasLocation" x="140" y="154"/>
         </customView>

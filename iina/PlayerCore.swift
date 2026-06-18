@@ -3141,7 +3141,6 @@ final class PlayerCore: NSObject {
   // MARK: - Track Meta
 
   func getMediaTitle(withExtension: Bool = true) -> String {
-    assert(DispatchQueue.isExecutingIn(mpv.queue))
     if let mediaTitle = mpv.getString(MPVProperty.mediaTitle) {
       if !mediaTitle.isEmpty, let path = mpv.getString(MPVProperty.path), let id = PlaybackID(path: path) {
         MediaMetaCache.shared.updateCachedMeta(id, mpvTitle: mediaTitle,
