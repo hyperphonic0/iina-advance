@@ -416,7 +416,7 @@ final class HistoryController {
     /// Make sure `reloadAll()` was called before this
     let recentDocumentsURLs = cachedRecentDocumentURLs
     guard Preference.bool(for: .enableRecentDocumentsWorkaround),
-          #available(macOS 14, *), Preference.bool(for: .recordRecentFiles),
+          Preference.bool(for: .recordRecentFiles),
           recentDocumentsURLs.isEmpty,
           let recentDocuments = Preference.array(for: .recentDocuments),
           !recentDocuments.isEmpty else {
@@ -480,7 +480,6 @@ final class HistoryController {
       postNotification(Notification(name: .recentDocumentsDidChange))
     }
 
-    guard #available(macOS 14, *) else { return }
     var recentDocuments: [Any] = []
     for document in NSDocumentController.shared.recentDocumentURLs {
       guard let bookmark = try? document.bookmarkData() else {

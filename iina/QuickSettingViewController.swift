@@ -379,11 +379,9 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     // and then just deny all of them. The denial will happen by default for NSViews.
     view.registerForDraggedTypes([NSPasteboard.PasteboardType.fileURL])
 
-    if #available(OSX 10.13, *) {
-      subTableView.registerForDraggedTypes([NSPasteboard.PasteboardType.fileURL])
-      secSubTableView.registerForDraggedTypes([NSPasteboard.PasteboardType.fileURL])
-      audioTableView.registerForDraggedTypes([NSPasteboard.PasteboardType.fileURL])
-    }
+    subTableView.registerForDraggedTypes([NSPasteboard.PasteboardType.fileURL])
+    secSubTableView.registerForDraggedTypes([NSPasteboard.PasteboardType.fileURL])
+    audioTableView.registerForDraggedTypes([NSPasteboard.PasteboardType.fileURL])
 
     player.log.verbose("QuickSettings viewDidLoad done")
   }

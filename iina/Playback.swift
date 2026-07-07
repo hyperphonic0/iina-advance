@@ -266,19 +266,9 @@ struct PlaybackID: Sendable, Equatable, Hashable {
       // running under macOS Sonoma or later. The behavior now matches URLComponents and will
       // automatically percent encode characters. Must not apply percent encoding to the string
       // passed to the URL initializer if the new new behavior is active.
-      let pstr: String
-      if #available(macOS 14, *) {
-        pstr = path
-      } else {
-        guard let encoded = path.addingPercentEncoding(withAllowedCharacters: .urlAllowed) else {
-          Logger.log.error("Cannot add percent encoding for \(path)")
-          return nil
-        }
-        pstr = encoded
-      }
-      url = URL(string: pstr)
+      url = URL(string: path)
       if url == nil {
-        Logger.log.error("Cannot parse url for \(pstr)")
+        Logger.log.error("Cannot parse url for \(path)")
       }
     }
     return url

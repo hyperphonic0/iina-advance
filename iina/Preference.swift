@@ -1458,12 +1458,11 @@ struct Preference {
     case subTrack
     case screenshot
     case plugins
-
+    
     private func makeSymbol(_ names: [String], _ fallbackImage: NSImage.Name) -> NSImage {
-        guard #available(macOS 14.0, *) else { return NSImage(named: fallbackImage)! }
-        let configuration = NSImage.SymbolConfiguration(pointSize: 14, weight: .medium)
-        return NSImage.sf(names, withConfiguration: configuration)!
-      }
+      let configuration = NSImage.SymbolConfiguration(pointSize: 14, weight: .medium)
+      return NSImage.sf(names, withConfiguration: configuration)!
+    }
 
     func image() -> NSImage {
       switch self {

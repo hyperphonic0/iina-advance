@@ -107,11 +107,12 @@ extension PlayerWindowController {
       if !currentLayout.isMusicMode || geo.musicMode.isViewportShown {
         // When restoring, need to set size of video ASAP or else it will briefly display with wrong initial size.
         // Also, can hangs result if video is not added to window by the time fileLoaded is called?
-        log.verbose("[Load] Configuring viewport for music mode")
         addViewportAndSubviewsToWindowIfNeeded()
         if currentLayout.isMusicMode {
+          log.verbose("[Load] Configuring viewport for music mode")
           viewportView.apply(geo.musicMode)
         } else {
+          log.verbose("[Load] Configuring viewport for windowed mode")
           viewportView.apply(geo.windowed)
         }
       }
@@ -143,7 +144,7 @@ extension PlayerWindowController {
   /// Lengthy testing revealed that this workaround, which was originally intended for HDR issues,
   /// also wards against this bug!
   private func initHdrWorkaroundView(in contentView: NSView) {
-    guard #available(macOS 13, *), Preference.bool(for: .enableHdrWorkaround) else { return }
+    guard Preference.bool(for: .enableHdrWorkaround) else { return }
     log.debug("[Load] Adding HDR full screen workaround")
 
     hdrWorkaroundView.wantsLayer = true

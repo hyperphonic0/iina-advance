@@ -512,9 +512,7 @@ class PlaylistViewController: NSViewController, NSMenuDelegate, SidebarTabGroupV
 
   @IBAction func sortingBtnAction(_ sender: NSButton) {
     let menu = NSMenu()
-    if #available(macOS 14.0, *) {
-      menu.addItem(.sectionHeader(title: NSLocalizedString("playlist.sorting.header", comment: "Sorting")))
-    }
+    menu.addItem(.sectionHeader(title: NSLocalizedString("playlist.sorting.header", comment: "Sorting")))
     menu.addItem(withTitle: NSLocalizedString("playlist.sorting.filename_ascending", comment: "Filename Ascending"),
                  action: #selector(sortPathAscending), keyEquivalent: "")
     menu.addItem(withTitle: NSLocalizedString("playlist.sorting.filename_descending", comment: "Filename Descending"),

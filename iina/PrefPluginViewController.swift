@@ -187,9 +187,7 @@ class PrefPluginViewController: PreferenceViewController, PreferenceWindowEmbedd
     config.userContentController.add(self, name: "iina")
     
     pluginPreferencesWebView = NonscrollableWebview(frame: .zero, configuration: config)
-    if #available(macOS 13.3, *) {
-      pluginPreferencesWebView.isInspectable = true
-    }
+    pluginPreferencesWebView.isInspectable = true
     pluginPreferencesViewController = PrefPluginPreferencesViewController()
     pluginPreferencesViewController.view = pluginPreferencesWebView
 

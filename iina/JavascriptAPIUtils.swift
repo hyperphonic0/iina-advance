@@ -108,12 +108,7 @@ class JavascriptAPIUtils: JavascriptAPI, JavascriptAPIUtilsExportable {
       var args = args
       if !file.contains("/") {
         if let url = searchBinary(file, in: Utility.binariesURL) ?? searchBinary(file, in: Utility.exeDirURL) {
-          // a binary included in IINA's bundle?
-          if #available(macOS 13.0, *) {
-            path = url.path(percentEncoded: false)
-          } else {
-            path = url.path
-          }
+          path = url.path(percentEncoded: false)
         } else {
           // assume it's a system command
           if useBash {

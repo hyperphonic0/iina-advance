@@ -134,7 +134,7 @@ struct AppDetailsLogging {
     if thermalState != .nominal {
       Logger.log("Thermal state: \(thermalState)")
     }
-    if #available(macOS 12, *), ProcessInfo.processInfo.isLowPowerModeEnabled {
+    if ProcessInfo.processInfo.isLowPowerModeEnabled {
       Logger.log("Low Power Mode is active")
     }
   }

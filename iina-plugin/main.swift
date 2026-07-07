@@ -102,14 +102,8 @@ func createPlugin(_ args: ArraySlice<String>) -> Bool {
   // plugin directory
   
   var pluginDir = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
-#if MACOS_13_AVAILABLE
-  if #available(macOS 13.0, *) {
-    pluginDir.append(component: name)
-  }
-#else
-  pluginDir.appendPathComponent(name)
-#endif
-  
+  pluginDir.append(component: name)
+
   func printErrorAndExit(_ message: String) -> Never {
     print(message)
     try? FileManager.default.removeItem(at: pluginDir)

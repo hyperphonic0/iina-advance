@@ -206,12 +206,7 @@ struct PlayerSaveState: CustomStringConvertible {
       return "PlayerSaveState(url=<ERROR>)"
     }
 
-    let urlPath: String
-    if #available(macOS 13.0, *) {
-      urlPath = staticURL.path(percentEncoded: false)
-    } else {
-      urlPath = staticURL.path
-    }
+    let urlPath: String = staticURL.path(percentEncoded: false)
 
     let filteredProps = properties.filter({ prop in
       switch prop.key {
