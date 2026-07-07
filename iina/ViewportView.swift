@@ -90,7 +90,7 @@ final class ViewportView: NSView {
 
   // MARK: - Spacers
 
-  func initVideoViewSpacers() {
+  private func initVideoViewSpacers() {
     // Reduce the unused dimension of each spacer to keep its size well-defined
     topSpacer.widthAnchor.constraint(equalToConstant: 0).isActive = true
     bottomSpacer.widthAnchor.constraint(equalToConstant: 0).isActive = true

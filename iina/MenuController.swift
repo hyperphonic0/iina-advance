@@ -597,9 +597,6 @@ class MenuController: NSObject, NSMenuDelegate {
       let title = isDisplayingPluginsPanel ? StringConstants.hidePluginsPanel : StringConstants.showPluginsPanel
       let showPanelItem = NSMenuItem(title: title, action: #selector(pwc.showPluginsPanel(_:)), keyEquivalent: "")
 
-      if #available (macOS 26, *) {
-        showPanelItem.image = .sf("puzzlepiece.extension")
-      }
       pluginMenu.addItem(showPanelItem)
     }
     pluginMenu.addItem(.separator())
@@ -615,11 +612,7 @@ class MenuController: NSObject, NSMenuDelegate {
       let menuItems = (instance.plugin.globalInstance?.menuItems ?? []) + instance.menuItems
       if menuItems.isEmpty { continue }
 
-      if #available(macOS 14.0, *) {
-        pluginMenu.addItem(.sectionHeader(title: instance.plugin.name))
-      } else {
-        pluginMenu.addItem(withTitle: instance.plugin.name, enabled: false)
-      }
+      pluginMenu.addItem(.sectionHeader(title: instance.plugin.name))
 
       for item in menuItems {
         if counter == 5 {

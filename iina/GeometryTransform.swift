@@ -101,6 +101,7 @@ struct GeometryTransform: Sendable {
 
   /// Convenience method which enqueues this GeometryTransform for execution.
   func submit() {
+    log.verbose("[GTF:\(name)] Submitting self")
     pwc.animationPipeline.submitGTF(self)
   }
 

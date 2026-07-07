@@ -104,11 +104,16 @@ extension PlayerWindowController {
       // Make sure to set this inside the animation task! See note above
       loaded = true
 
-      if currentLayout.isMusicMode, musicModeGeo.isViewportShown {
-        // When restoring, need to set size of video ASAP or else it will briefly display with wrong initial size
+      if !currentLayout.isMusicMode || geo.musicMode.isViewportShown {
+        // When restoring, need to set size of video ASAP or else it will briefly display with wrong initial size.
+        // Also, can hangs result if video is not added to window by the time fileLoaded is called?
         log.verbose("[Load] Configuring viewport for music mode")
         addViewportAndSubviewsToWindowIfNeeded()
-        viewportView.apply(musicModeGeo)
+        if currentLayout.isMusicMode {
+          viewportView.apply(geo.musicMode)
+        } else {
+          viewportView.apply(geo.windowed)
+        }
       }
 
       if player.disableUI { hideFadeableViews() }
