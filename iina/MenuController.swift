@@ -588,8 +588,6 @@ class MenuController: NSObject, NSMenuDelegate {
     let reloadPluginsItem = NSMenuItem(title: reloadTitle, action: #selector(AppDelegate.reloadAllPlugins(_:)),
                                        keyEquivalent: "")
 
-
-    pluginMenu.removeAllItems()
     pluginMenu.addItem(managePluginsItem)
 
     if let pwc = activePlayer?.pwc {
@@ -600,6 +598,7 @@ class MenuController: NSObject, NSMenuDelegate {
       pluginMenu.addItem(showPanelItem)
     }
     pluginMenu.addItem(.separator())
+    var justAddedSeparator = true
 
     var mappingItemPairs: [(KeyMapping, NSMenuItem)] = []
 
@@ -613,6 +612,7 @@ class MenuController: NSObject, NSMenuDelegate {
       if menuItems.isEmpty { continue }
 
       pluginMenu.addItem(.sectionHeader(title: instance.plugin.name))
+      justAddedSeparator = false
 
       for item in menuItems {
         if counter == 5 {
@@ -637,7 +637,9 @@ class MenuController: NSObject, NSMenuDelegate {
       }
     }
 
-    pluginMenu.addItem(.separator())
+    if !justAddedSeparator {
+      pluginMenu.addItem(.separator())
+    }
     pluginMenu.addItem(developerTool)
     pluginMenu.addItem(reloadPluginsItem)
 
