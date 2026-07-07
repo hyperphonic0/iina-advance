@@ -246,6 +246,7 @@ extension PlayerWindowController {
   private func initExitMusicModeButton(in contentView: NSView) {
     miniPlayerTrafficLightsBGView.translatesAutoresizingMaskIntoConstraints = false
     contentView.addSubview(miniPlayerTrafficLightsBGView)
+    miniPlayerTrafficLightsBGView.isHidden = true  // initially
     miniPlayerTrafficLightsBGView.addSubview(exitMusicModeButton)
     exitMusicModeButton.target = self
     exitMusicModeButton.action = #selector(backBtnAction(_:))
