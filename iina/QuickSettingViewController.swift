@@ -262,15 +262,12 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     }
 
     // Color Wells
-    if #available(macOS 13.0, *) {
-      subTextColorWell = NSColorWell(style: .default)
-      subTextBgColorWell = NSColorWell(style: .default)
-      subTextBorderColorWell = NSColorWell(style: .default)
-    } else {
-      subTextColorWell = RoundedColorWell()
-      subTextBgColorWell = RoundedColorWell()
-      subTextBorderColorWell = RoundedColorWell()
-    }
+    subTextColorWell = NSColorWell(style: .default)
+    subTextColorWell.supportsAlpha = true
+    subTextBgColorWell = NSColorWell(style: .default)
+    subTextBgColorWell.supportsAlpha = true
+    subTextBorderColorWell = NSColorWell(style: .default)
+    subTextBorderColorWell.supportsAlpha = true
     [(subTextColorWellContainer, subTextColorWell),
      (subTextBgColorWellContainer, subTextBgColorWell),
      (subTextBorderColorWellContainer, subTextBorderColorWell)].forEach { (view, well) in
@@ -382,11 +379,9 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     // and then just deny all of them. The denial will happen by default for NSViews.
     view.registerForDraggedTypes([NSPasteboard.PasteboardType.fileURL])
 
-    if #available(OSX 10.13, *) {
-      subTableView.registerForDraggedTypes([NSPasteboard.PasteboardType.fileURL])
-      secSubTableView.registerForDraggedTypes([NSPasteboard.PasteboardType.fileURL])
-      audioTableView.registerForDraggedTypes([NSPasteboard.PasteboardType.fileURL])
-    }
+    subTableView.registerForDraggedTypes([NSPasteboard.PasteboardType.fileURL])
+    secSubTableView.registerForDraggedTypes([NSPasteboard.PasteboardType.fileURL])
+    audioTableView.registerForDraggedTypes([NSPasteboard.PasteboardType.fileURL])
 
     player.log.verbose("QuickSettings viewDidLoad done")
   }

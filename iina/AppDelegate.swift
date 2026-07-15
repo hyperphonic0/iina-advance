@@ -45,7 +45,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   ///  or with `--macos-app-activation-policy=accessory`.
   ///
   /// If disabled, disables save/restore, history, plugins, and general UI for this launch.
-  var isInteractiveLaunch: Bool = true {
+  @MainActor var isInteractiveLaunch: Bool = true {
     didSet {
       let isEnabled = isInteractiveLaunch
       if !isEnabled {
@@ -58,6 +58,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   }
 
   static let iinaPluginSystemEnabled = Preference.bool(for: .iinaEnablePluginSystem)
+  let IINA_ENABLE_NEW_SETTINGS = false
 
   @MainActor let startupHandler = StartupHandler()
   private let shutdownHandler = ShutdownHandler()
@@ -112,6 +113,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       DispatchQueue.main.async {
         MediaPlayerIntegration.shared.update()
       }
+
+    case .themeMaterial:
+      setAppAppearance()
 
       // TODO: #1, see above
       //    case PK.hideWindowsWhenInactive:
@@ -192,12 +196,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
     AppDetailsLogging.shared.logAllAppDetails()
 
-    Logger.log.debug("App will launch\(isInteractiveLaunch ? "" : " (non-interactive)"). LaunchID: \(UIState.shared.currentLaunchID)")
+    let log = Logger.log
+    log.debug("App will launch\(isInteractiveLaunch ? "" : " (non-interactive)"). LaunchID: \(UIState.shared.currentLaunchID)")
 
-    Logger.log.debug("All app arguments: \(cmdLineArgs)")
+    log.debug("All app arguments: \(cmdLineArgs)")
     if let cli = startupHandler.commandLineState {
-      Logger.log.debug("Parsed IINA CLI args: stdin=\(cli.isStdin.yn) separateWindows=\(cli.openSeparateWindows?.yn ?? "nil") musicMode=\(cli.enterMusicMode.yn) pip=\(cli.enterPIP.yn). Filenames from arguments: \(cli.filenames.map{$0.pii})")
-      Logger.log.debug("Derived mpv properties from args: \(cli.mpvArguments)")
+      log.debug("Parsed IINA CLI args: stdin=\(cli.isStdin.yn) separateWindows=\(cli.openSeparateWindows?.yn ?? "nil") musicMode=\(cli.enterMusicMode.yn) pip=\(cli.enterPIP.yn). Filenames from arguments: \(cli.filenames.map{$0.pii})")
+      log.debug("Derived mpv properties from args: \(cli.mpvArguments)")
     }
 
     // Start asynchronously gathering and caching information about the hardware decoding
@@ -227,7 +232,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       ncDefaultObservers.append(.init(NSWindow.didChangeScreenNotification, { noti in
         let window = noti.object as! NSWindow
         let screenID = window.screen?.screenID.quoted ?? "nil"
-        Logger.log.verbose("WindowDidChangeScreen \(window.windowNumber): \(screenID)")
+        log.verbose("WindowDidChangeScreen \(window.windowNumber): \(screenID)")
       }))
     }
 #endif
@@ -239,6 +244,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       .enableCmdN,
       .resumeLastPosition,
       .useMediaKeys,
+      .themeMaterial,
       .screenshotUseRAMDisk,
       .screenshotRAMDiskSizeMB,
       //    .hideWindowsWhenInactive, // TODO: #1, see below
@@ -247,7 +253,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
     /// Attach this in `applicationWillFinishLaunching`, because `application(openFiles:)` will be called after this but
     /// before `applicationDidFinishLaunching`.
-    notiHandler = NotificationHandler(Logger.log, prefDidChange: prefDidChange,
+    notiHandler = NotificationHandler(log, prefDidChange: prefDidChange,
                                       legacyPrefKeyObserver: self,
                                       observedPrefKeys, [
                                         .default: ncDefaultObservers
@@ -256,36 +262,36 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     // Install plugins
     if AppDelegate.iinaPluginSystemEnabled, FirstRunManager.isFirstRun(for: .init("installedDefaultPlugins")) {
       var hasError = false
-      Logger.log.debug("Installing default plugins")
+      log.debug("Installing default plugins")
       let pluginPath = Bundle.main.resourcePath?.appending("/plugins")
       if let pluginPath, FileManager.default.fileExists(atPath: pluginPath),
          let contents = try? FileManager.default.contentsOfDirectory(atPath: pluginPath) {
         let defaultPlugins = contents.filter { $0.hasSuffix(".iinaplgz") }
         for defaultPlugin in defaultPlugins {
           do {
-            Logger.log.debug("Installing default plugin: \(defaultPlugin)")
+            log.debug("Installing default plugin: \(defaultPlugin)")
             let path = pluginPath.appending("/\(defaultPlugin)")
             let plugin = try JavascriptPlugin.create(fromPackageURL: URL(fileURLWithPath: path))
             if JavascriptPlugin.plugins.contains(where: { $0.identifier == plugin.identifier }) {
-              Logger.log("Skipped \(plugin.identifier), already installed")
+              log.debug("Skipped \(plugin.identifier), already installed")
               continue
             }
             plugin.normalizePath()
             JavascriptPlugin.plugins.append(plugin)
             plugin.enabled = true
-            Logger.log("Installed \(plugin.identifier)")
+            log.debug("Installed \(plugin.identifier)")
           } catch let error {
             hasError = true
-            Logger.log(error.localizedDescription, level: .error)
+            log.error(error.localizedDescription)
           }
         }
       } else {
         hasError = true
-        Logger.log("Cannot find default plugins", level: .error)
+        log.error("Cannot find default plugins")
       }
 
       if hasError {
-        Logger.log.verbose("Error occurred installing default plugins; unsetting flag installedDefaultPlugins")
+        log.verbose("Error occurred installing default plugins; unsetting flag installedDefaultPlugins")
         FirstRunManager.unsetFirstRun(for: .init("installedDefaultPlugins"))
       }
     }
@@ -303,8 +309,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     UserDefaults.standard.set(true, forKey: "NSConstraintBasedLayoutVisualizeMutuallyExclusiveConstraints")
 #endif
 
-    // Call this *before* registering for url events, to guarantee that menu is init'd
-    AppInputConfig.loadSelectedConfBindingsIntoAppConfig()
+    if isInteractiveLaunch {
+      // Call this *before* registering for url events, to guarantee that menu is init'd
+      AppInputConfig.loadSelectedConfBindingsIntoAppConfig()
+    } else {
+      log.verbose("Skipping load of input conf file; app is not interactive")
+    }
   }
 
   private func registerUserDefaultValues() {
@@ -313,7 +323,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
   func applicationDidFinishLaunching(_ aNotification: Notification) {
     Logger.log.verbose("App did finish launching")
-    
+
+    setAppAppearance()
+
     // Setup screenshot storage (RAM disk if enabled)
     if isInteractiveLaunch {
       ScreenshotStorageManager.shared.setup()
@@ -718,6 +730,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
         for query in queries {
           if query.name.hasPrefix("mpv_") {
             let mpvOptionName = String(query.name.dropFirst(4))
+            guard !mpvOptionName.contains("input-command") else {
+              Logger.log("mpv option \(mpvOptionName) rejected when parsing URL", level: .warning)
+              continue
+            }
             guard let mpvOptionValue = query.value else { continue }
             Logger.log("Setting \(mpvOptionName) to \(mpvOptionValue)")
             player.mpv.setString(mpvOptionName, mpvOptionValue)
@@ -828,7 +844,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   /// This is about conformance to [NSSecureCoding](https://developer.apple.com/documentation/foundation/nssecurecoding)
   /// which protects against object substitution attacks. If an application does not implement this method then a warning will be emitted
   /// reporting secure coding is not enabled for restorable state.
-  @available(macOS 12.0, *)
   @MainActor
   func applicationSupportsSecureRestorableState(_ app: NSApplication) -> Bool {
     return true
@@ -885,8 +900,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
   @MainActor
   @IBAction func showPreferencesWindow(_ sender: AnyObject?) {
-    Logger.log("Opening Preferences window", level: .verbose)
-    preferenceWindowController.openWindow(nil)
+    Logger.log.verbose("Opening Preferences window")
+    if IINA_ENABLE_NEW_SETTINGS {
+      SettingsWindow.default.show()
+    } else {
+      preferenceWindowController.openWindow(self)
+    }
   }
 
   @MainActor
@@ -1013,6 +1032,94 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   @MainActor @discardableResult
   func openPlayersForFiles(_ urls: [URL], useNewWindows: Bool? = nil) -> Int {
     startupHandler.openFiles(urls, useNewWindows: useNewWindows)
+  }
+
+  // MARK: - Other
+
+  @MainActor @objc func reloadAllPlugins(_ sender: NSMenuItem) {
+    // Remove the developer tool menu item that retains the plugin instance
+    AppDelegate.shared.menuController.pluginMenu.items
+      .compactMap { $0.submenu }.flatMap { $0.items }
+      .forEach { $0.representedObject = nil }
+    AppDelegate.shared.menuController.pluginMenu.removeAllItems()
+
+    for player in PlayerManager.shared.playerCores {
+      player.clearPlugins()
+    }
+
+    JavascriptPlugin.recreateAllPlugins()
+    JavascriptPlugin.loadGlobalInstances()
+
+    for player in PlayerManager.shared.playerCores {
+      for plugin in JavascriptPlugin.plugins {
+        player.reloadPlugin(plugin, forced: true)
+      }
+      // Try to emit the events that are already emitted.
+      // Of course this is not exhaustive, so users shouldn't rely on this function
+      if player.pwc.loaded {
+        player.events.emit(.windowLoaded)
+      }
+      player.events.emit(.mpvInitialized)
+      if !player.info.isPaused {
+        player.events.emit(.fileLoaded)
+        player.events.emit(.fileStarted)
+      }
+    }
+  }
+
+  /// Dump contents of all player cores to a txt file. Strictly for debugging. No localization needed.
+  @IBAction func dumpDebugInfo(_ sender: AnyObject) {
+    struct FileStream: TextOutputStream {
+      let handle: FileHandle
+      mutating func write(_ string: String) {
+        handle.write(Data(string.utf8))
+      }
+    }
+
+    let alert = NSAlert()
+    let path = NSString(string: "~/Downloads/iina-debug-dump-\(Date.timeIntervalSinceReferenceDate).txt").expandingTildeInPath
+    let url = URL(fileURLWithPath: path)
+    FileManager.default.createFile(atPath: path, contents: nil)
+    guard let handle = try? FileHandle(forWritingTo: url) else {
+      alert.messageText = "Error"
+      alert.informativeText = "Cannot get file handle at \(path)."
+      alert.alertStyle = .critical
+      alert.runModal()
+      return
+    }
+
+    var stream = FileStream(handle: handle)
+    for player in PlayerManager.shared.playerCores {
+      dump(player, to: &stream)
+      stream.write("\n\n")
+    }
+
+    alert.messageText = "Completed"
+    alert.informativeText = """
+      Dumped debug info to \(path).\n
+      The file contains filenames and URLs in your playlist! \
+      For your privacy, please consider removing them before sharing.
+      """
+    alert.alertStyle = .informational
+    alert.runModal()
+  }
+
+  private func setAppAppearance() {
+    let theme: Preference.Theme = Preference.enum(for: .themeMaterial)
+    if let explicitAppearance = NSAppearance(iinaTheme: theme) {
+      Logger.log.verbose("Changing app appearance to \(explicitAppearance.isDark ? "DARK" : "LIGHT")")
+      NSApp.appearance = explicitAppearance
+    } else {
+      Logger.log.verbose("Changing app appearance to inherit from OS")
+      NSApp.appearance = nil
+    }
+  }
+
+  /// Returns the intended appearance for player windows (light or dark), based on the `themeMaterial` pref,
+  /// and taking into account the currently configured system theme.
+  var targetWindowAppearance: NSAppearance {
+    // Can be nil, which means dynamic system appearance as set by MacOS (via NSApp)
+    return NSApp.effectiveAppearance
   }
 
   // MARK: - Recent Documents

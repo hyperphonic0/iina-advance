@@ -212,7 +212,7 @@ struct AppInputConfig: Sendable {
   let duplicateKeys: Set<String>
 
   func logEnabledBindings() {
-    if DebugConfig.logBindingsRebuild, Logger.enabled && Logger.Level.preferred >= .verbose {
+    if DebugConfig.logBindingsRebuild, Logger.isVerboseEnabled {
       let bindingList = bindingCandidateList.filter({ $0.isEnabled })
       AppInputConfig.log.verbose("Currently enabled bindings (\(bindingList.count)):\n\(bindingList.map { "\t\($0)" }.joined(separator: "\n"))")
     }

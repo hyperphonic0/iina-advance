@@ -232,6 +232,7 @@ extension PlayerWindowController {
         // Do not cache fadeables for show. But cache them for hide (ensures additionalInfoView is shown/hidden correctly).
         for v in fadeables {
           v.isHidden = false
+          v.needsDisplay = true
         }
 
         if restartFadeTimer {
@@ -242,6 +243,7 @@ extension PlayerWindowController {
           fadeableViews.topBarAnimationState = .shown
           for v in fadeablesInTopBar {
             v.isHidden = false
+            v.needsDisplay = true
           }
           for fadeableView in fadeablesInTopBarNative {
             fadeableView.isHidden = false
@@ -342,9 +344,7 @@ extension PlayerWindowController {
       if mustHideSeekPreview {
         // Hide seek preview & thumbnail
         seekPreview.hideTimer.cancel()
-        seekPreview.animationState = .willHide
-        seekPreview.thumbnailPeekView.animator().alphaValue = 0
-        seekPreview.timeLabel.animator().alphaValue = 0
+        fadeOutSeekPreview()
       }
     }
 

@@ -368,8 +368,11 @@ extension PlayerWindowController {
         log.verbose("Exiting interactive mode: converting windowedInteractive geo to windowed for outputGeo")
         prevWindowedGeo = inputGeometry.fromWindowedInteractiveMode()
       } else if inputGeometry.mode == .windowedNormal {
-        log.verbose("Reusing inputGeometry for outputGeo (inputGeometry.mode=\(inputGeometry.mode))")
-        prevWindowedGeo = inputGeometry
+        log.verbose("Adapting inputGeometry for outputGeo (inputGeometry.mode=\(inputGeometry.mode))")
+        prevWindowedGeo = outputLayout.buildGeometry(windowFrame: inputGeometry.windowFrame, screenID: inputGeometry.screenID, inputGeometry.video)
+        if isWindowInitialLayout {
+          return prevWindowedGeo
+        }
       } else {
         log.verbose("Reusing inputGeoSet.windowed for outputGeo (inputGeometry.mode=\(inputGeometry.mode))")
         prevWindowedGeo = inputGeoSet.windowed

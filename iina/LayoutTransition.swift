@@ -271,14 +271,18 @@ extension PlayerWindowController {
                                      || (inputLayout.controlBarGeo.timeLabelsWrapSlider != outputLayout.controlBarGeo.timeLabelsWrapSlider)))
     }
 
+    var isBottomBarOpening: Bool {
+      !inputLayout.hasBottomBar && outputLayout.hasBottomBar
+    }
+
     /// Note: this may not include OSC
     var isBottomBarPlacementChanging: Bool {
-      return inputLayout.bottomBarPlacement != outputLayout.bottomBarPlacement
+      inputLayout.bottomBarPlacement != outputLayout.bottomBarPlacement
     }
 
     var isBottomBarPlacementOrStyleChanging: Bool {
       // assume that if a style change is happening, it affects active panel
-      return isBottomBarPlacementChanging || (outputLayout.hasBottomOSC && isOSCStyleChanging)
+      isBottomBarPlacementChanging || (outputLayout.hasBottomOSC && isOSCStyleChanging)
     }
 
     var isSidebarsStyleChanging: Bool {
@@ -286,11 +290,11 @@ extension PlayerWindowController {
     }
 
     var isLeadingSidebarPlacementChanging: Bool {
-      return inputLayout.leadingSidebarPlacement != outputLayout.leadingSidebarPlacement
+      inputLayout.leadingSidebarPlacement != outputLayout.leadingSidebarPlacement
     }
 
     var isTrailingSidebarPlacementChanging: Bool {
-      return inputLayout.trailingSidebarPlacement != outputLayout.trailingSidebarPlacement
+      inputLayout.trailingSidebarPlacement != outputLayout.trailingSidebarPlacement
     }
 
     var isOpeningLeadingSidebar: Bool { isOpening(.leadingSidebar) }

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="24506" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="24765" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="24506"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="24765"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
@@ -501,8 +501,8 @@
                                 </textFieldCell>
                             </textField>
                             <button translatesAutoresizingMaskIntoConstraints="NO" id="705-dt-Zwl" userLabel="SpeedReset Button">
-                                <rect key="frame" x="324" y="382.5" width="16" height="21"/>
-                                <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="NSRefreshFreestandingTemplate" imagePosition="only" alignment="center" controlSize="small" refusesFirstResponder="YES" imageScaling="proportionallyUpOrDown" inset="2" id="e2B-Ie-9hS">
+                                <rect key="frame" x="324" y="382.5.5" width="16" height="21"/>
+                                <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="arrow.clockwise.circle.fill" catalog="system" imagePosition="only" alignment="center" controlSize="small" refusesFirstResponder="YES" imageScaling="proportionallyUpOrDown" inset="2" id="e2B-Ie-9hS">
                                     <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                     <font key="font" metaFont="message" size="11"/>
                                 </buttonCell>
@@ -879,7 +879,7 @@
                                 <subviews>
                                     <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="cjG-f1-Mkg" userLabel="Brightness Square Button">
                                         <rect key="frame" x="0.0" y="94" width="13" height="19"/>
-                                        <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="NSRefreshFreestandingTemplate" imagePosition="overlaps" alignment="center" refusesFirstResponder="YES" inset="2" id="63a-cd-eXa">
+                                        <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="arrow.clockwise.circle.fill" catalog="system" imagePosition="overlaps" alignment="center" refusesFirstResponder="YES" inset="2" id="63a-cd-eXa">
                                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                             <font key="font" metaFont="system"/>
                                         </buttonCell>
@@ -892,7 +892,7 @@
                                     </button>
                                     <button tag="1" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="KVl-YU-9O3" userLabel="Contrast Square Button">
                                         <rect key="frame" x="0.0" y="70" width="13" height="19"/>
-                                        <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="NSRefreshFreestandingTemplate" imagePosition="overlaps" alignment="center" refusesFirstResponder="YES" inset="2" id="NIq-6H-Orr">
+                                        <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="arrow.clockwise.circle.fill" catalog="system" imagePosition="overlaps" alignment="center" refusesFirstResponder="YES" inset="2" id="NIq-6H-Orr">
                                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                             <font key="font" metaFont="system"/>
                                         </buttonCell>
@@ -902,7 +902,7 @@
                                     </button>
                                     <button tag="2" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="lgg-zH-OLr" userLabel="Saturation Square Button">
                                         <rect key="frame" x="0.0" y="45" width="13" height="20"/>
-                                        <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="NSRefreshFreestandingTemplate" imagePosition="overlaps" alignment="center" refusesFirstResponder="YES" inset="2" id="D5D-O8-MdN">
+                                        <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="arrow.clockwise.circle.fill" catalog="system" imagePosition="overlaps" alignment="center" refusesFirstResponder="YES" inset="2" id="D5D-O8-MdN">
                                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                             <font key="font" metaFont="system"/>
                                         </buttonCell>
@@ -912,7 +912,7 @@
                                     </button>
                                     <button tag="3" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="fGZ-vI-EP8" userLabel="Gamma Square Button">
                                         <rect key="frame" x="0.0" y="21" width="13" height="19"/>
-                                        <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="NSRefreshFreestandingTemplate" imagePosition="overlaps" alignment="center" refusesFirstResponder="YES" inset="2" id="7sd-9d-D6H">
+                                        <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="arrow.clockwise.circle.fill" catalog="system" imagePosition="overlaps" alignment="center" refusesFirstResponder="YES" inset="2" id="7sd-9d-D6H">
                                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                             <font key="font" metaFont="system"/>
                                         </buttonCell>
@@ -922,7 +922,7 @@
                                     </button>
                                     <button tag="4" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="W7J-wR-UH3" userLabel="Hue Square Button">
                                         <rect key="frame" x="0.0" y="-3" width="13" height="19"/>
-                                        <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="NSRefreshFreestandingTemplate" imagePosition="overlaps" alignment="center" refusesFirstResponder="YES" inset="2" id="Mrx-t0-wfm">
+                                        <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="arrow.clockwise.circle.fill" catalog="system" imagePosition="overlaps" alignment="center" refusesFirstResponder="YES" inset="2" id="Mrx-t0-wfm">
                                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                             <font key="font" metaFont="system"/>
                                         </buttonCell>
@@ -1042,7 +1042,7 @@
             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
             <clipView key="contentView" autoresizesSubviews="NO" drawsBackground="NO" copiesOnScroll="NO" id="oVx-Sp-Lhl" userLabel="AudioTab Clip View">
                 <rect key="frame" x="0.0" y="0.0" width="360" height="536"/>
-                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                <autoresizingMask key="autoresizingMask"/>
                 <subviews>
                     <customView autoresizesSubviews="NO" translatesAutoresizingMaskIntoConstraints="NO" id="NZU-RD-Dm3" userLabel="AudioTab Flipped View" customClass="FlippedView" customModule="IINA_Advance" customModuleProvider="target">
                         <rect key="frame" x="0.0" y="9" width="360" height="527"/>
@@ -1068,7 +1068,7 @@
                                         <rect key="frame" x="0.0" y="420" width="360" height="75"/>
                                         <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" id="vgF-KN-yHf" userLabel="AudioTrackTable Clip View">
                                             <rect key="frame" x="0.0" y="0.0" width="360" height="75"/>
-                                            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                            <autoresizingMask key="autoresizingMask"/>
                                             <subviews>
                                                 <tableView focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" tableStyle="fullWidth" columnReordering="NO" columnResizing="NO" multipleSelection="NO" autosaveColumns="NO" rowSizeStyle="automatic" viewBased="YES" id="FLg-2m-Zaq" userLabel="AudioTrackTable Table View">
                                                     <rect key="frame" x="0.0" y="0.0" width="360" height="75"/>
@@ -2307,8 +2307,8 @@
                                         </textFieldCell>
                                     </textField>
                                     <button translatesAutoresizingMaskIntoConstraints="NO" id="8ZC-Wx-nt7">
-                                        <rect key="frame" x="326" y="329.5" width="16" height="21"/>
-                                        <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="NSRefreshFreestandingTemplate" imagePosition="only" alignment="center" controlSize="small" refusesFirstResponder="YES" imageScaling="proportionallyUpOrDown" inset="2" id="ojj-5V-n3t">
+                                        <rect key="frame" x="326" y="329.5.5" width="16" height="21"/>
+                                        <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="arrow.clockwise.circle.fill" catalog="system" imagePosition="only" alignment="center" controlSize="small" refusesFirstResponder="YES" imageScaling="proportionallyUpOrDown" inset="2" id="ojj-5V-n3t">
                                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                             <font key="font" metaFont="message" size="11"/>
                                         </buttonCell>
@@ -2689,7 +2689,7 @@
         </scrollView>
     </objects>
     <resources>
-        <image name="NSRefreshFreestandingTemplate" width="20" height="20"/>
+        <image name="arrow.clockwise.circle.fill" catalog="system" width="15" height="15"/>
         <image name="tab_audio" width="26" height="18"/>
         <image name="tab_sub" width="26" height="18"/>
         <image name="tab_video" width="26" height="18"/>

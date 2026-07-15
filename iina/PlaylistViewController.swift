@@ -134,10 +134,6 @@ class PlaylistViewController: NSViewController, NSMenuDelegate, SidebarTabGroupV
       btn?.alternateImage?.isTemplate = true
     }
 
-    if #unavailable(macOS 11.0) {
-      sortBtn.image = NSImage.init(named: "triangle-down")
-      sortBtn.image?.isTemplate = true
-    }
     deleteBtn.toolTip = NSLocalizedString("mini_player.delete", comment: "delete")
     loopBtn.toolTip = NSLocalizedString("mini_player.loop", comment: "loop")
     shuffleBtn.toolTip = NSLocalizedString("mini_player.shuffle", comment: "shuffle")
@@ -146,7 +142,7 @@ class PlaylistViewController: NSViewController, NSMenuDelegate, SidebarTabGroupV
     sortBtn.toolTip = NSLocalizedString("mini_player.sort", comment: "sort")
 
     // Use contentView appearance (for now)
-    updateTableColors(effectiveAppearance: player.pwc.window!.contentView!.effectiveAppearance)
+    updateTableColors(effectiveAppearance: AppDelegate.shared.targetWindowAppearance)
 
     hideTotalDuration()
     reloadData(playlist: true, chapters: true, animate: false)
@@ -248,46 +244,49 @@ class PlaylistViewController: NSViewController, NSMenuDelegate, SidebarTabGroupV
   private func reloadPlaylistTable(animate: Bool) {
     // Be sure to access playlist data only from within mpv queue
     assert(DispatchQueue.isExecutingIn(player.mpv.queue))
-    let playlistOld = displayedPlaylist
     let playlistNew = player.info.playlist
-    if let nowPlayingIndex = player.info.currentPlayback?.playlistPos,
-       nowPlayingIndex >= 0, nowPlayingIndex < playlistNew.count {
-      DispatchQueue.main.async { [self] in
+    pwc.animationPipeline.submitInstantTask { [self] in
+      let playlistOld = displayedPlaylist
+      displayedPlaylist = playlistNew
+      if let nowPlayingIndex = player.info.currentPlayback?.playlistPos,
+         nowPlayingIndex >= 0, nowPlayingIndex < playlistNew.count {
         // Update this prior to reload so the highlight is drawn correctly at first draw:
         lastNowPlayingIndex = nowPlayingIndex
       }
-    }
 
-    let sw = Utility.Stopwatch()
+      let sw = Utility.Stopwatch()
 
-    let doAfterReload: MainActorCallback = { [self] in
-      refreshNowPlayingIndex()
-      updateCachesForAllItems()
-      removeBtn.isEnabled = !playlistTableView.selectedRowIndexes.isEmpty
-      if needsScrollToCurrentItem {
-        needsScrollToCurrentItem = false
-        scrollPlaylistToCurrentItem()
-      }
-      player.log.verbose("Done with playlist table reload in \(sw.secElapsedString)")
-    }
-
-    if animate {
-      let tableUIChange = TableUIChangeBuilder.shared.buildDiff(oldRows: playlistOld,
-                                                                newRows: playlistNew, completionHandler: { [self] _ in
-        displayedPlaylist = playlistNew
-        pwc.animationPipeline.submitInstantTask {
-          doAfterReload()
+      let doAfterReload: MainActorCallback = { [self] in
+        refreshNowPlayingIndex(thenScrollToVisible: needsScrollToCurrentItem)
+        updateCachesForAllItems()
+        removeBtn.isEnabled = !playlistTableView.selectedRowIndexes.isEmpty
+        if needsScrollToCurrentItem {
+          needsScrollToCurrentItem = false
         }
-      })
-      player.log.verbose("Updating playlist table via diff")
-      playlistTableView.post(tableUIChange)
-    } else {
-      pwc.animationPipeline.submitInstantTask { [self] in
-        player.log.trace("Updating playlist table via reloadData")
-        playlistTableView.reloadData()
-        player.log.verbose("Updated playlist table via reloadData: \(playlistTableView.numberOfRows) rows")
-        doAfterReload()
+        player.log.verbose("Done with playlist table reload: \(playlistTableView.numberOfRows) rows in \(sw.secElapsedString)")
       }
+
+      if animate {
+        if playlistOld.count == playlistTableView.numberOfRows {
+          let tableUIChange = TableUIChangeBuilder.shared.buildDiff(oldRows: playlistOld,
+                                                                    newRows: playlistNew, completionHandler: { [self] _ in
+            pwc.animationPipeline.submitInstantTask {
+              doAfterReload()
+            }
+          })
+          player.log.verbose("Updating playlist table via diff: will have \(playlistNew.count) total rows")
+          playlistTableView.post(tableUIChange)
+          return
+        } else {
+          player.log.debug("Playlist table row count (\(playlistTableView.numberOfRows)) != expected \(playlistOld.count):"
+                           + " doing straight playlist table reload")
+        }
+      }
+
+      player.log.trace("Updating playlist table via reloadData")
+      playlistTableView.reloadData()
+      player.log.verbose("Updated playlist table via reloadData: \(playlistTableView.numberOfRows) rows")
+      doAfterReload()
     }
   }
 
@@ -299,13 +298,15 @@ class PlaylistViewController: NSViewController, NSMenuDelegate, SidebarTabGroupV
       isPlayingTextColor = NSColor.controlAccentColor.blended(withFraction: isPlayingTextBlendFraction, of: .textColor)!
       isPlayingPrefixTextColor = NSColor.controlAccentColor.blended(withFraction: isPlayingPrefixTextBlendFraction, of: .textColor)!
 
-      // Need a dedicated view behind each table to use for background color.
-      // NSTableView & its component views don't support translucent background color.
-      // Also note: CGColor does not support dark mode, so the view layer needs to be updated
-      // explicitly whenever the appearance changes.
-      let tableBackgroundColor = NSColor.sidebarTableBackground.cgColor
-      playlistTableBackgroundView.wantsLayer = true
-      playlistTableBackgroundView.layer?.backgroundColor = tableBackgroundColor
+      if let playlistTableBackgroundView {
+        // Need a dedicated view behind each table to use for background color.
+        // NSTableView & its component views don't support translucent background color.
+        // Also note: CGColor does not support dark mode, so the view layer needs to be updated
+        // explicitly whenever the appearance changes.
+        let tableBackgroundColor = NSColor.sidebarTableBackground.cgColor
+        playlistTableBackgroundView.wantsLayer = true
+        playlistTableBackgroundView.layer?.backgroundColor = tableBackgroundColor
+      }
     }
     reloadData(playlist: true, chapters: true, animate: false)
   }
@@ -358,12 +359,11 @@ class PlaylistViewController: NSViewController, NSMenuDelegate, SidebarTabGroupV
     assert(DispatchQueue.isExecutingIn(PlayerCore.playlistMetaLoadDQ))
     guard playlistTotalDurationIsReady else { return }
 
-    let playlist: [PlaybackID] = displayedPlaylist
-    let urls = playlist.map { $0.url }
-    let totalDuration = MediaMetaCache.shared.calculateTotalDuration(urls)
-
-    player.log.trace("Playlist: recalculated total duration: \(totalDuration)")
     pwc.animationPipeline.submitInstantTask { [self] in
+      let playlist: [PlaybackID] = displayedPlaylist
+      let urls = playlist.map { $0.url }
+      let totalDuration = MediaMetaCache.shared.calculateTotalDuration(urls)
+      player.log.trace("Playlist: recalculated total duration: \(totalDuration)")
       playlistTotalDuration = totalDuration
       showTotalDuration()
     }
@@ -512,9 +512,7 @@ class PlaylistViewController: NSViewController, NSMenuDelegate, SidebarTabGroupV
 
   @IBAction func sortingBtnAction(_ sender: NSButton) {
     let menu = NSMenu()
-    if #available(macOS 14.0, *) {
-      menu.addItem(.sectionHeader(title: NSLocalizedString("playlist.sorting.header", comment: "Sorting")))
-    }
+    menu.addItem(.sectionHeader(title: NSLocalizedString("playlist.sorting.header", comment: "Sorting")))
     menu.addItem(withTitle: NSLocalizedString("playlist.sorting.filename_ascending", comment: "Filename Ascending"),
                  action: #selector(sortPathAscending), keyEquivalent: "")
     menu.addItem(withTitle: NSLocalizedString("playlist.sorting.filename_descending", comment: "Filename Descending"),
@@ -776,9 +774,17 @@ extension PlaylistViewController: NSTableViewDelegate {
 
       switch identifier {
       case .isChosen:
-        let pointer = view.userInterfaceLayoutDirection == .rightToLeft ? StringConstants.blackLeftPointingTriangle : StringConstants.blackRightPointingTriangle
         // ▶︎ Is Playing icon
-        let text = isPlaying ? pointer : ""
+        let text: String
+        if isPlaying {
+          if view.userInterfaceLayoutDirection == .rightToLeft {
+            text = StringConstants.blackLeftPointingTriangle
+          } else {
+            text = StringConstants.blackRightPointingTriangle
+          }
+        } else {
+          text = ""
+        }
         v.textField?.setFormattedText(stringValue: text, textColor: isPlayingTextColor)
       case .trackName:
         let cellView = v as! PlaylistTrackCellView
@@ -795,7 +801,7 @@ extension PlaylistViewController: NSTableViewDelegate {
       let chapter = chapters[row]
 
       // next chapter time
-      let nextChapterTime = chapters[at: row+1]?.startTime ?? Double.infinity
+      let nextChapterTime = chapters[at: row+1]?.startTime ?? Double.greatestFiniteMagnitude
       let isCurrentChapter = player.info.chapter == row
       let textColor = isCurrentChapter ? isPlayingTextColor : .controlTextColor
 
@@ -839,6 +845,7 @@ extension PlaylistViewController: NSTableViewDelegate {
   }
 
   /// Rebuilds playlist table's `Track Name` column cell
+  @MainActor
   private func updateCellForPlaylistTrackNameColumn(_ cellView: PlaylistTrackCellView, rowIndex: Int, isPlaying: Bool) {
     guard let cachedMeta = getOrCreateMeta(forRowIndex: rowIndex) else {
       player.log.error("No playlist item found for rowIndex \(rowIndex). Skipping cell update")
@@ -914,7 +921,7 @@ extension PlaylistViewController: NSTableViewDelegate {
     reloadData(playlist: true, chapters: false)
   }
 
-  fileprivate func fileHistoryDidUpdate(_ noti: Notification) {
+  @MainActor fileprivate func fileHistoryDidUpdate(_ noti: Notification) {
     guard !AppDelegate.shared.isTerminating else { return }
     guard let url = noti.userInfo?["url"] as? URL else {
       player.log.error("Cannot update file history: no url found in userInfo!")
@@ -930,7 +937,7 @@ extension PlaylistViewController: NSTableViewDelegate {
     }
   }
 
-  private func getOrCreateMeta(forRowIndex rowIndex: Int) -> MediaMeta? {
+  @MainActor private func getOrCreateMeta(forRowIndex rowIndex: Int) -> MediaMeta? {
     guard rowIndex >= 0 else { return nil }
     let playlistItems = displayedPlaylist
     player.log.trace("Playlist: reloading cache for row \(rowIndex)/\(playlistItems.count)")
@@ -952,11 +959,18 @@ extension PlaylistViewController: NSTableViewDelegate {
       guard player.isActive else { return }
       // Get updated title from mpv
       let mpvTitle = player.mpv.getString(MPVProperty.playlistNTitle(rowIndex))
+      let watchLaterMD5: String?
+      if Preference.bool(for: .resumeLastPosition) {
+        let ignorePathForMD5 = player.mpv.getFlag(MPVOption.WatchLater.ignorePathInWatchLaterConfig)
+        watchLaterMD5 = playlistItem.mpvMD5(ignorePathForMD5: ignorePathForMD5)
+      } else {
+        watchLaterMD5 = nil
+      }
 
       PlayerCore.playlistMetaLoadDQ.async { [self] in
         // Get watch-later form file system; get other meta from ffmpeg:
         let cachedMeta = MediaMetaCache.shared.updateCachedMeta(playlistItem, mpvTitle: mpvTitle,
-                                                                pullFromWatchLater: true, pullFromFfmpeg: true)
+                                                                watchLaterMD5: watchLaterMD5, pullFromFfmpeg: true)
         // Now update the total length if needed (but only if it's already done calculating):
         if cachedMeta.duration != nil {
           // if FFmpeg got the duration successfully
@@ -987,6 +1001,7 @@ extension PlaylistViewController: NSTableViewDelegate {
         let mpvTitle = player.mpv.getString(MPVProperty.playlistNTitle(rowIndex))
         titles.append(mpvTitle) // may be nil
       }
+      let ignorePathForMD5 = player.mpv.getFlag(MPVOption.WatchLater.ignorePathInWatchLaterConfig)
 
       PlayerCore.playlistMetaLoadDQ.async { [self] in
         // Clear previous items & replace with new list
@@ -998,7 +1013,7 @@ extension PlaylistViewController: NSTableViewDelegate {
 
         if !isReloadingMeta {
           isReloadingMeta = true
-          continueReloadingCachedItems()
+          continueReloadingCachedItems(ignorePathForMD5: ignorePathForMD5)
         }
       }
     }
@@ -1011,7 +1026,7 @@ extension PlaylistViewController: NSTableViewDelegate {
   /// - By Waiting until processing is complete for the current item until enqueuing work for the next
   ///   item, we avoid tying up `PlayerCore.playlistMetaLoadDQ` for use with other work, notably for
   ///   `loadCachedItem`, which needs priority to ensure that the "Now Playing" item is correctly drawn.
-  fileprivate func continueReloadingCachedItems() {
+  fileprivate func continueReloadingCachedItems(ignorePathForMD5: Bool) {
     PlayerCore.playlistMetaLoadDQ.async { [self] in
       guard let workItem = playlistItemCacheLoadQueue.removeHead() else {
         // Finally, append a task to recalculate the total length. Do not show it until it is done!
@@ -1024,9 +1039,15 @@ extension PlaylistViewController: NSTableViewDelegate {
 
       let existingCachedMeta = MediaMetaCache.shared.getOrAddCachedMeta(for: workItem.itemID)
       if workItem.hasUpdate(for: existingCachedMeta) {
+        let watchLaterMD5: String?
+        if Preference.bool(for: .resumeLastPosition) {
+          watchLaterMD5 = workItem.itemID.mpvMD5(ignorePathForMD5: ignorePathForMD5)
+        } else {
+          watchLaterMD5 = nil
+        }
         // Get watch-later form file system; get other meta from ffmpeg:
         MediaMetaCache.shared.updateCachedMeta(workItem.itemID, mpvTitle: workItem.mpvTitle,
-                                               pullFromWatchLater: true, pullFromFfmpeg: true)
+                                               watchLaterMD5: watchLaterMD5, pullFromFfmpeg: true)
         // Refresh each row as it gets updated. May take a while to refresh all
         pwc.animationPipeline.submitInstantTask{ [self] in
           /// This should trigger a call to `updateCellForPlaylistTrackNameColumn` to rebuild the row
@@ -1034,7 +1055,7 @@ extension PlaylistViewController: NSTableViewDelegate {
         }
       }
 
-      continueReloadingCachedItems()
+      continueReloadingCachedItems(ignorePathForMD5: ignorePathForMD5)
     }
   }
 
@@ -1060,15 +1081,8 @@ extension PlaylistViewController: NSTableViewDelegate {
     player.log.verbose("Updating nowPlayingIndex: \(oldNowPlayingIndex) → \(newNowPlayingIndex)")
     lastNowPlayingIndex = newNowPlayingIndex
 
-    // ... also make sure the old "now playing" row is redrawn so it loses its status
-    loadCachedItem(forRowIndex: oldNowPlayingIndex)
-    // If "now playing" row changed, make sure the new "now playing" row is redrawn to show its new status...
-    loadCachedItem(forRowIndex: newNowPlayingIndex)
-    // The calls to loadCachedItem should refresh the given indexes, but will go through multiple queues
-    // to do so and may be delayed by a minute or more. We need to update the nowPlaying status ASAP,
-    // so just add extra redraws right away:
-    reloadPlaylistRow(oldNowPlayingIndex)
-    reloadPlaylistRow(newNowPlayingIndex)
+    // Redraw all rows. Too difficult to try to figure out a minimal redraw set
+    reloadAllPlaylistRows()
 
     if thenScrollToVisible {
       playlistTableView.scrollRowToVisible(newNowPlayingIndex)

@@ -24,9 +24,6 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
   /** For blacking out other screens. */
   var blackWindows: [NSWindow] = []
 
-  /// See `PWin_Observers.swift`.
-  var cachedEffectiveAppearanceName: String? = nil
-
   // MARK: - View Controllers
 
   /// The quick setting sidebar (video, audio, subtitles).
@@ -63,6 +60,8 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
 
   /// For responding to changes to app prefs & other notifications
   var notiHandler: NotificationHandler!
+  var appAppearanceObservation: NSKeyValueObservation?
+
 
   var oscBarRenderer: BarRenderer?
   let oscKnobRenderer = KnobRenderer()
@@ -303,7 +302,11 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
     } else if let savedGeo = PWinGeometry.fromCSV(csv, Logger.log) {
       if savedGeo.mode.isWindowed && !savedGeo.screenFit.isFullScreen {
         Logger.log.verbose("Loaded pref \(Preference.Key.uiLastClosedWindowedModeGeometry.quoted)): \(savedGeo)")
-        return savedGeo
+
+        let validLayout = LayoutState.fromPrefs(andMode: savedGeo.mode)
+        let correctedGeo = validLayout.buildGeometry(windowFrame: savedGeo.windowFrame, screenID: savedGeo.screenID, savedGeo.video)
+        Logger.log.verbose("Corrected windowedModeGeoLastClosed: \(correctedGeo)")
+        return correctedGeo
       } else {
         Logger.log.error("Saved pref \(Preference.Key.uiLastClosedWindowedModeGeometry.quoted)) is invalid."
                          + " Falling back to default geometry (found: \(savedGeo))")
@@ -684,28 +687,35 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
   /// Set material & theme (light or dark mode) for OSC and title bar.
   /// Make sure this is running inside an animation task too!
   @MainActor
-  func applyThemeMaterial(using layoutState: LayoutState, _ windowEffectiveAppearance: NSAppearance, _ window: NSWindow, _ screen: NSScreen) {
-    log.verbose("Applying theme material for screen \(screen.screenID.pii.quoted): windowIsDark=\(windowEffectiveAppearance.isDark.yesno)")
-    let contentView = window.contentView!
+  func applyThemeMaterial(using layoutState: LayoutState, _ window: NSWindow, _ screen: NSScreen) {
+    let targetWindowAppearance = AppDelegate.shared.targetWindowAppearance
+    let topBarAppearance = layoutState.topBarAppearance(targetWindowAppearance: targetWindowAppearance)
+    log.verbose("Applying theme material for screen \(screen.screenID.pii.quoted): "
+                + "window=\(targetWindowAppearance.isDark ? "DARK" : "LIGHT") "
+                + "topBar=\(topBarAppearance.isDark ? "DARK" : "LIGHT") "
+                + "currentWindow=\(window.effectiveAppearance.isDark ? "DARK" : "LIGHT")")
 
-    if playlistView.isViewLoaded {
-      playlistView.updateTableColors(effectiveAppearance: windowEffectiveAppearance)
-    }
-
-    let topBarAppearance = layoutState.topBarColorScheme.hasClearBG ? NSAppearance(iinaTheme: .dark)! : windowEffectiveAppearance
-    /// Setting `window.appearance` will trigger a change to `#keyPath(window.effectiveAppearance)`.
+    log.verbose("Changing window appearance: \(window.effectiveAppearance.isDark ? "DARK" : "LIGHT") → "
+                + "\(topBarAppearance.isDark ? "DARK" : "LIGHT")")
     /// Need to call this to set native title bar colors.
     window.appearance = topBarAppearance
-    /// Call this to change all other colors
-    contentView.appearance = windowEffectiveAppearance
-    osd.updateColors(windowAppearance: windowEffectiveAppearance)
-    oscBarRenderer = BarRenderer(windowAppearance: windowEffectiveAppearance,
+    /// But setting `window.appearance` will also change `contentView.appearance`, which we don't want.
+    /// Revert it:
+    window.contentView?.appearance = targetWindowAppearance
+
+    if playlistView.isViewLoaded {
+      playlistView.updateTableColors(effectiveAppearance: targetWindowAppearance)
+    }
+
+    // Do not set contentView's appearance; that will affect blending of top bar. Set views a la carte elsewhere
+    osd.updateColors(windowAppearance: targetWindowAppearance)
+    oscBarRenderer = BarRenderer(windowAppearance: targetWindowAppearance,
                                  colorScheme: layoutState.oscColorScheme,
                                  sliderBarHeight_Normal: layoutState.controlBarGeo.sliderBarHeightNormal)
     oscKnobRenderer.invalidateCachedKnobs()
 
     // TODO: clean up this nasty code
-    let oscAppearance = layoutState.oscColorScheme.hasClearBG ? NSAppearance(iinaTheme: .dark)! : contentView.effectiveAppearance
+    let oscAppearance = layoutState.oscColorScheme.hasClearBG ? NSAppearance(iinaTheme: .dark)! : targetWindowAppearance
     oscAppearance.performAsCurrentDrawingAppearance {
       playSliderCell.abLoopA.updateKnobImage(to: .loopKnob)
       playSliderCell.abLoopB.updateKnobImage(to: .loopKnob)
@@ -716,7 +726,6 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
       playSlider.needsDisplay = true
       volumeSlider.needsDisplay = true
     }
-    contentView.needsDisplay = true
   }
 
   func updateArrowButtonAccelerationFromPrefs() {
@@ -857,7 +866,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
 
     resetCollectionBehavior()
 
-    /// Enqueue this in case `windowDidLoad` is not yet done
+    /// Enqueue this in case `finishLoading` is not yet done
     animationPipeline.submitInstantTask{ [self] in
       if player.info.isNetworkResource {
         log.verbose("Showing bufferIndicatorView for network stream")
@@ -998,12 +1007,11 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
       /// Setting these vars is especially important for copying to windowedModeGeoLastClosed, etc, below.
       geo = buildGeoSet(forceWinFrameUpdate: true)
 
-      // Reset layout & its state (or at least the big stuff) for reopen: close sidebars, disable OSC
+      // Reset layout & its state (or at least the big stuff) for reopen: close sidebars
       let currentLayout = currentLayout
       let newLayoutState = currentLayout.clone(leadingSidebar: currentLayout.leadingSidebar.clone(visibility: .closed),
                                                trailingSidebar: currentLayout.trailingSidebar.clone(visibility: .closed),
-                                               isInPiP: false,
-                                               enableOSC: false)
+                                               isInPiP: false)
       let resetTransition = buildLayoutTransition(named: "ResetWindowOnClose", from: currentLayout, to: newLayoutState)
       let tasks = buildTasks(for: resetTransition, totalStartingDuration: 0, totalEndingDuration: 0)
 
@@ -1332,7 +1340,6 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
 
       animationPipeline.submitInstantTask({ [self] in
         log.verbose("WndDidChangeScreen wNum=\(window.windowNumber): frame=\(window.frame) screenID=\(screen.screenID.quoted) screenFrame=\(screen.frame)")
-        applyThemeMaterial(using: currentLayout, window.effectiveAppearance, window, screen)  // scaleFactor may have changed
         videoView.refreshAllVideoDisplayState()
         player.events.emit(.windowScreenChanged)
       })
@@ -1388,7 +1395,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
   func windowDidMove(_ notification: Notification) {
     guard let window = window else { return }
     guard !window.inLiveResize, !isAnimatingLayoutTransition, !isApplyingPWinGeo, !isMagnifying, !sessionState.isRestoring else { return }
-    log.verbose("WndDidMove")
+    log.trace("WndDidMove")
     guard !isAnimating else { return }
 
     // Do not allow scrolling if window recently moved! By default, multi-touch gestures can trigger scrolling
@@ -2010,22 +2017,29 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
   /// Updates all UI controls
   @MainActor
   func updateUIControls(_ playbackTime: PlaybackTimeInfo, _ cacheState: CacheState?, rangesDidChange: Bool, isPaused: Bool) {
-    // This method is often run outside of the animation queue, which can be dangerous.
-    // Just don't update in this case
-    guard !isAnimatingLayoutTransition, !isApplyingPWinGeo else { return }
     guard loaded else { return }
+    let isScrollingOrDraggingPlaySlider = isScrollingOrDraggingPlaySlider
 
-    // scroll wheel will set newer value; do not overwrite it until it is done
     if !isScrollingOrDraggingPlaySlider {
+      // Need to update playback time even if not updating the window UI, because this info is relied on
+      // by Now Playing info (class MediaPlayerIntegration)
       player.info.playbackTime = playbackTime
       if let cacheState {
         player.info.cacheState = cacheState
       }
-      if rangesDidChange {
-        // Redraw PlaySlider to reflect change:
-        if let osc = currentControlBar, !osc.isHidden {
-          playSlider.needsDisplay = true
-        }
+    }
+
+    // This method is often run outside of the animation queue, which can be dangerous.
+    // Just don't update UI when animating:
+    guard !isAnimatingLayoutTransition, !isApplyingPWinGeo else { return }
+    // Don't bother with live updates if window is not currently visible
+    guard isOpen else { return }
+
+    // scroll wheel will set newer value; do not overwrite it until it is done
+    if !isScrollingOrDraggingPlaySlider && rangesDidChange {
+      // Redraw PlaySlider to reflect change:
+      if let osc = currentControlBar, !osc.isHidden {
+        playSlider.needsDisplay = true
       }
     }
 
@@ -2506,7 +2520,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
     viewportView.layer?.backgroundColor = newColor
   }
 
-  func resetCollectionBehavior() {
+  @MainActor func resetCollectionBehavior() {
     guard AppDelegate.shared.isInteractiveLaunch else { return }
 
     guard let window else { return }

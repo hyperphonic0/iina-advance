@@ -334,7 +334,7 @@ final class OSDState {
     osdAccessoryText.idString = "OSD-AccText"
     osdAccessoryText.wantsLayer = true
     osdAccessoryText.translatesAutoresizingMaskIntoConstraints = false
-    osdAccessoryText.setContentHuggingPriority(.init(251), for: .horizontal)
+    osdAccessoryText.setContentHuggingPriority(.init(249), for: .horizontal)
     osdAccessoryText.setContentHuggingPriority(.init(750), for: .vertical)
     osdAccessoryText.setContentCompressionResistancePriority(.init(499), for: .horizontal)
     osdAccessoryText.setContentCompressionResistancePriority(.init(1000), for: .vertical)
@@ -361,7 +361,7 @@ final class OSDState {
     osdVStackView.spacing = 0
     osdVStackView.detachesHiddenViews = true
     osdVStackView.translatesAutoresizingMaskIntoConstraints = false
-    osdVStackView.setHuggingPriority(.init(500), for: .vertical)
+    osdVStackView.setHuggingPriority(.init(499), for: .vertical)
     // #OSDPlusAdditionalInfoResizing
     osdVStackView.setHuggingPriority(.init(500), for: .horizontal)
 
@@ -396,7 +396,6 @@ final class OSDState {
 
   @MainActor
   fileprivate func updateIconSize(isIconVisible: Bool) {
-    guard #available(macOS 11.0, *) else { return }
     let iconHeight, iconWidth: CGFloat
 
     // Don't want to animate the following
@@ -680,7 +679,8 @@ extension PlayerWindowController {
     let hasAdditionalInfo = stageGeo.shouldHaveAdditionalInfo
     let osdPosition: Preference.OSDPosition = Preference.enum(for: .osdPosition)
 
-    log.verbose("[OSD] Updating constraints: hasOSD=\(hasOSD.yn) hasAddlInfo=\(hasAdditionalInfo.yn) leadingSB=\(hasLeadingSidebar.yn) trailingSB=\(hasTrailingSidebar.yn) offsetFromTop=\(offsetFromTop)")
+    log.verbose("[OSD] Updating constraints: hasOSD=\(hasOSD.yn) hasAddlInfo=\(hasAdditionalInfo.yn) "
+                + "leadingSB=\(hasLeadingSidebar.yn) trailingSB=\(hasTrailingSidebar.yn) offsetFromTop=\(offsetFromTop)")
 
     let leadingView = osdPosition == .topLeading ? (hasOSD ? osd.osdView : nil) :  (hasAdditionalInfo ? osd.additionalInfoView : nil)
     let trailingView = osdPosition == .topLeading ? (hasAdditionalInfo ? osd.additionalInfoView : nil) :  (hasOSD ? osd.osdView : nil)
@@ -945,8 +945,6 @@ extension PlayerWindowController {
 
   @MainActor
   private func updateOSDIcon(from message: OSDMessage) {
-    guard #available(macOS 11.0, *) else { return }
-
     var icon: NSImage? = nil
     var isIconGrayedOut = false
 
@@ -998,11 +996,12 @@ extension PlayerWindowController {
 
   /// Do not call `enqueueOSDForDisplay` directly. Call `PlayerCore.sendOSD` instead.
   ///
-  /// There is a timing issue that can occur when the user holds down a key to rapidly repeat a key binding or menu item equivalent,
-  /// which should result in an OSD being displayed for each keypress. But for some reason, the task to update the OSD,
-  /// which is enqueued via `DispatchQueue.main.async` (or even `sync`), does not run at all while the key events continue to come in.
-  /// To work around this issue, we instead enqueue the tasks to display OSD using a simple LinkedList and Lock. Then when
-  /// `updateUIControls()` via the `DisplayLink` callback, the OSD messages will be dequeued & displayed.
+  /// There is a timing issue that can occur when the user holds down a key to rapidly repeat a key binding or menu item
+  /// equivalent, which should result in an OSD being displayed for each keypress. But for some reason, the task to
+  /// update the OSD, which is enqueued via `DispatchQueue.main.async` (or even `sync`), does not run at all while the
+  /// key events continue to come in.
+  /// To work around this issue, we instead enqueue the tasks to display OSD using a simple LinkedList and Lock.
+  /// Then when `updateUIControls()` via the `DisplayLink` callback, the OSD messages will be dequeued & displayed.
   fileprivate func enqueueOSDForDisplay(_ msg: OSDMessage, autoHide: Bool, accessoryViewController: NSViewController?) {
     if case .debug = msg {
       log.verbose("DebugOSD: \(msg)")
@@ -1085,11 +1084,12 @@ extension PlayerWindowController {
         log.verbose("[OSD] Ignoring request for 'seek': position or duration is missing")
         return
       }
-      let positionDelta = abs(position - (osd.lastPlaybackPosition ?? Double.infinity))
-      let durationDelta = abs(duration - (osd.lastPlaybackDuration ?? Double.infinity))
+      let positionDelta = abs(position - (osd.lastPlaybackPosition ?? Double.greatestFiniteMagnitude))
+      let durationDelta = abs(duration - (osd.lastPlaybackDuration ?? Double.greatestFiniteMagnitude))
       guard positionDelta > Constants.OSD.osdSeekMinDeltaSec ||
             durationDelta > Constants.OSD.osdSeekMinDeltaSec else {
-        log.verbose("[OSD] Ignoring redundant request for 'seek'; neither position or duration has changed (Δp=\(positionDelta) Δd=\(durationDelta))")
+        log.verbose("[OSD] Ignoring redundant request for 'seek'; neither position or duration has changed "
+                    + "(Δp=\(positionDelta) Δd=\(durationDelta))")
         return
       }
       osd.lastPlaybackPosition = position
@@ -1109,7 +1109,9 @@ extension PlayerWindowController {
       osd.lastPlaybackDuration = player.info.playbackTime.durationSec
 
     case .crop(let newCropLabel):
-      if newCropLabel == StringConstants.noneCropIdentifier && !isInInteractiveMode && player.info.videoFiltersDisabled[Constants.FilterLabel.crop] != nil {
+      if newCropLabel == StringConstants.noneCropIdentifier,
+         !isInInteractiveMode,
+         player.info.videoFiltersDisabled[Constants.FilterLabel.crop] != nil {
         log.verbose("[OSD] Ignoring request for Crop 'None': looks like user starting to edit an existing crop")
         return
       }
@@ -1134,43 +1136,42 @@ extension PlayerWindowController {
     log.verbose("[OSD] Setting lastDisplayedMsg = \(msg)")
     osd.lastDisplayedMsg = msg
 
-    if #available(macOS 11.0, *) {
-      /// The pseudo-OSDMessage `seekRelative`, if present, contains the step time for a relative seek.
-      /// But because it needs to be parsed from the mpv log, it is sent as a separate msg which arrives immediately
-      /// prior to the `seek` msg. With some smart logic, the info from the two messages can be combined to display
-      /// the most appropriate "jump" icon in the OSD in addition to the time display & progress bar.
-      if case .seekRelative(let stepString) = msg, let step = Double(stepString) {
-        log.verbose("[OSD] Showing '\(msg)'")
+    /// The pseudo-OSDMessage `seekRelative`, if present, contains the step time for a relative seek.
+    /// But because it needs to be parsed from the mpv log, it is sent as a separate msg which arrives immediately
+    /// prior to the `seek` msg. With some smart logic, the info from the two messages can be combined to display
+    /// the most appropriate "jump" icon in the OSD in addition to the time display & progress bar.
+    if case .seekRelative(let stepString) = msg, let step = Double(stepString) {
+      log.verbose("[OSD] Showing '\(msg)'")
 
-        let isBackward = step < 0
-        let accDescription = "Relative Seek \(isBackward ? "Backward" : "Forward")"
-        var name: String
-        switch abs(step) {
-        case 5, 10, 15, 30, 45, 60, 75, 90:
-          let absStep = Int(abs(step))
-          name = isBackward ? "gobackward.\(absStep)" : "goforward.\(absStep)"
-        default:
-          name = isBackward ? "gobackward.minus" : "goforward.plus"
-        }
-        /// Set icon for next msg, which is expected to be a `seek`
-        osd.nextSeekIcon = NSImage(systemSymbolName: name, accessibilityDescription: accDescription)!
-        /// Done with `seekRelative` msg. It is not used for display.
-        return
-      } else if case .seek(_, _) = msg {
-        /// Shift next icon into current icon, which will be used until the next call to `displayOSD()`
-        /// (although note that there can be subsequent calls to `updateOSDViews()` to update the OSD's displayed time while playing,
-        /// but those do not count as "new" OSD messages, and thus will continue to use `osd.currentSeekIcon`).
-        if isScrollingOrDraggingPlaySlider {
-          // give up on fancy OSD for scroll wheel seek (for now)
-          osd.currentSeekIcon = nil
-          osd.nextSeekIcon = nil
-        } else if osd.nextSeekIcon != nil {
-          osd.currentSeekIcon = osd.nextSeekIcon
-          osd.nextSeekIcon = nil
-        }
-      } else {
-        osd.currentSeekIcon = nil
+      let isBackward = step < 0
+      let accDescription = "Relative Seek \(isBackward ? "Backward" : "Forward")"
+      var name: String
+      switch abs(step) {
+      case 5, 10, 15, 30, 45, 60, 75, 90:
+        let absStep = Int(abs(step))
+        name = isBackward ? "gobackward.\(absStep)" : "goforward.\(absStep)"
+      default:
+        name = isBackward ? "gobackward.minus" : "goforward.plus"
       }
+      /// Set icon for next msg, which is expected to be a `seek`
+      osd.nextSeekIcon = NSImage(systemSymbolName: name, accessibilityDescription: accDescription)!
+      /// Done with `seekRelative` msg. It is not used for display.
+      return
+    } else if case .seek(_, _) = msg {
+      /// Shift next icon into current icon, which will be used until the next call to `displayOSD()`
+      /// (although note that there can be subsequent calls to `updateOSDViews()` to update the OSD's displayed time
+      /// while playing, but those do not count as "new" OSD messages, and thus will continue to use
+      /// `osd.currentSeekIcon`).
+      if isScrollingOrDraggingPlaySlider {
+        // give up on fancy OSD for scroll wheel seek (for now)
+        osd.currentSeekIcon = nil
+        osd.nextSeekIcon = nil
+      } else if osd.nextSeekIcon != nil {
+        osd.currentSeekIcon = osd.nextSeekIcon
+        osd.nextSeekIcon = nil
+      }
+    } else {
+      osd.currentSeekIcon = nil
     }
 
     // Restart timer

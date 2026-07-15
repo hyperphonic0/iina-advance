@@ -156,7 +156,7 @@ class ScrollableSliderCell: NSSliderCell {
     if hasClearBG {
       return NSAppearance(iinaTheme: .dark)
     }
-    return slider.window?.contentView?.iinaAppearance
+    return slider.effectiveAppearance
   }
 
   var isDarkMode: Bool {
@@ -210,13 +210,7 @@ class ScrollableSliderCell: NSSliderCell {
     let originX = (barRect.origin.x + slider.progressRatio * effectiveBarWidth).rounded()
     let superKnobRect = super.knobRect(flipped: flipped)
 
-    let height: CGFloat
-    if #available(macOS 11, *) {
-      height = (barRect.origin.y - superKnobRect.origin.y) * 2 + barRect.height
-    } else {
-      height = superKnobRect.height
-    }
-
+    let height: CGFloat = (barRect.origin.y - superKnobRect.origin.y) * 2 + barRect.height
     return NSRect(x: originX, y: superKnobRect.origin.y, width: knobWidth, height: height)
   }
 

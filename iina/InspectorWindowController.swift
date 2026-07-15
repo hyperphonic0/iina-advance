@@ -16,7 +16,6 @@ final class InspectorWindowController: WindowController, NSWindowDelegate, NSTab
 
   @IBOutlet weak var tabView: NSTabView!
   @IBOutlet weak var tabButtonGroup: NSSegmentedControl!
-  @IBOutlet weak var tabButtonGroupBottomLine: NSBox!
   @IBOutlet weak var trackPopup: NSPopUpButton!
 
   @IBOutlet weak var pathField: NSTextField!
@@ -24,6 +23,8 @@ final class InspectorWindowController: WindowController, NSWindowDelegate, NSTab
   @IBOutlet weak var fileFormatField: NSTextField!
   @IBOutlet weak var chaptersField: NSTextField!
   @IBOutlet weak var editionsField: NSTextField!
+  @IBOutlet weak var titleField: NSTextField!
+  @IBOutlet weak var commentField: NSTextField!
 
   @IBOutlet weak var durationField: NSTextField!
   @IBOutlet weak var vformatField: NSTextField!
@@ -79,6 +80,7 @@ final class InspectorWindowController: WindowController, NSWindowDelegate, NSTab
   private var watchProperties: [String] = []
 
   private var observers: [NSObjectProtocol] = []
+  private var appAppearanceObservation: NSKeyValueObservation?
 
   // MARK: Init
 
@@ -156,26 +158,63 @@ final class InspectorWindowController: WindowController, NSWindowDelegate, NSTab
     tabView.selectTabViewItem(at: selectTabIndex)
     // Do not select tab by default
     window?.initialFirstResponder = nil
+
+    updateInfo()
+    watchTableView.scrollRowToVisible(0)
+
+    if let info = PlayerManager.shared.lastActivePlayer?.info {
+      Logger.Sub.inspector.verbose("""
+      Video tracks:
+      \(info.videoTracks.compactMap { $0.longDescription }.joined(separator: "\n"))
+      """)
+      Logger.Sub.inspector.verbose("""
+      Audio tracks:
+      \(info.audioTracks.compactMap { $0.longDescription }.joined(separator: "\n"))
+      """)
+      Logger.Sub.inspector.verbose("""
+      Subtitle tracks:
+      \(info.subTracks.compactMap { $0.longDescription }.joined(separator: "\n"))
+      """)
+    }
   }
 
   override func showWindow(_ sender: Any?) {
     updateInfo()
+
+    updateWindowAppearance()
     deleteButton.isEnabled = !watchTableView.selectedRowIndexes.isEmpty
     watchTableView.sizeLastColumnToFit()
     watchTableView.scrollRowToVisible(0)
 
-    removeTimerAndListeners()
-    updateTimer = Timer.scheduledTimer(timeInterval: TimeInterval(1), target: self, selector: #selector(dynamicUpdate), userInfo: nil, repeats: true)
-    observers.append(NotificationCenter.default.addObserver(forName: .iinaFileLoaded, object: nil, queue: .main, using: self.needsUpdate))
-    observers.append(NotificationCenter.default.addObserver(forName: .iinaPlayerWindowChanged, object: nil, queue: .main, using: self.needsUpdate))
+    addTimerAndListeners()
 
     super.showWindow(sender)
+
+    // Log additional information for developers when the inspector window is shown.
+    MemoryUsage.shared.logUsage("after showing inspector window")
   }
 
   func windowWillClose(_ notification: Notification) {
     Logger.log.verbose("Closing Inspector window")
     // Remove timer & listeners to conserve resources
     removeTimerAndListeners()
+  }
+
+  private func addTimerAndListeners() {
+    removeTimerAndListeners()
+
+    appAppearanceObservation = NSApp.observe(\.effectiveAppearance, options: [.new, .old]) { [self] app, change in
+      let oldAppearance = change.oldValue
+      let newAppearance = change.newValue
+      guard oldAppearance != newAppearance else { return }
+      Logger.log.verbose("NSApp appearance changed: dark=\(oldAppearance?.isDark.yn ?? "nil") "
+                         + "→ dark=\(newAppearance?.isDark.yn ?? "nil")")
+      updateWindowAppearance()
+    }
+
+    updateTimer = Timer.scheduledTimer(timeInterval: TimeInterval(1), target: self, selector: #selector(dynamicUpdate), userInfo: nil, repeats: true)
+    observers.append(NotificationCenter.default.addObserver(forName: .iinaFileLoaded, object: nil, queue: .main, using: self.needsUpdate))
+    observers.append(NotificationCenter.default.addObserver(forName: .iinaPlayerWindowChanged, object: nil, queue: .main, using: self.needsUpdate))
   }
 
   // This is safe to run even if not needed
@@ -188,6 +227,14 @@ final class InspectorWindowController: WindowController, NSWindowDelegate, NSTab
       }
     }
     observers = []
+    appAppearanceObservation?.invalidate()
+    appAppearanceObservation = nil
+  }
+
+  /// Updates the window's appearance to match NSApp. Unclear why this doesn't happen automatically...
+  private func updateWindowAppearance() {
+    guard let window else { return }
+    window.appearance = AppDelegate.shared.targetWindowAppearance
   }
 
   // MARK: - Data updates
@@ -228,14 +275,16 @@ final class InspectorWindowController: WindowController, NSWindowDelegate, NSTab
 
     for (k, v) in dynamicStrProperties {
       let value = controller.getString(k)
-      v.stringValue = value ?? "N/A"
+      v.stringValue = value ?? NSLocalizedString("general.na", comment: "N/A")
+      v.isSelectable = value != nil
       self.setLabelColor(v, by: value != nil)
     }
 
     let sigPeak = controller.getDouble(MPVProperty.videoParamsSigPeak);
     self.vprimariesField.stringValue = sigPeak > 0
       ? "\(controller.getString(MPVProperty.videoParamsPrimaries) ?? "?") / \(controller.getString(MPVProperty.videoParamsGamma) ?? "?") (\(sigPeak > 1 ? "H" : "S")DR)"
-      : "N/A";
+    : NSLocalizedString("general.na", comment: "N/A");
+    self.vprimariesField.isSelectable = sigPeak > 0
     self.setLabelColor(self.vprimariesField, by: sigPeak > 0)
 
     let isFileLoaded = player.info.isFileLoaded
@@ -263,9 +312,13 @@ final class InspectorWindowController: WindowController, NSWindowDelegate, NSTab
       } else if let swPf = controller.getString(MPVProperty.videoParamsPixelformat) {
         self.vPixelFormat.stringValue = "\(swPf) (SW)"
       }
+      self.vcolorspaceField.isSelectable = true
+      self.vPixelFormat.isSelectable = true
     } else {
-      self.vcolorspaceField.stringValue = "N/A"
-      self.vPixelFormat.stringValue = "N/A"
+      self.vcolorspaceField.stringValue = NSLocalizedString("general.na", comment: "N/A")
+      self.vPixelFormat.stringValue = NSLocalizedString("general.na", comment: "N/A")
+      self.vcolorspaceField.isSelectable = false
+      self.vPixelFormat.isSelectable = false
     }
     self.setLabelColor(self.vcolorspaceField, by: isFileLoaded)
     self.setLabelColor(self.vPixelFormat, by: isFileLoaded)
@@ -277,11 +330,16 @@ final class InspectorWindowController: WindowController, NSWindowDelegate, NSTab
 
     // string properties
 
+    // File level metadata.
+    let commentKey = MPVProperty.metadata + "/by-key/comment"
+
     let strProperties: [String: NSTextField] = [
       MPVProperty.path: self.pathField,
       MPVProperty.fileFormat: self.fileFormatField,
       MPVProperty.chapters: self.chaptersField,
       MPVProperty.editions: self.editionsField,
+      MPVProperty.mediaTitle: self.titleField,
+      commentKey: self.commentField,
       // in mpv 0.38, video-codec-name is an alias of current-tracks/video/codec, etc
       MPVProperty.currentTracksVideoCodec: self.vformatField,
       MPVProperty.currentTracksVideoCodecDesc: self.vcodecField,
@@ -290,14 +348,28 @@ final class InspectorWindowController: WindowController, NSWindowDelegate, NSTab
       MPVProperty.currentTracksAudioCodecDesc: self.acodecField,
       MPVProperty.audioParamsFormat: self.aformatField,
       MPVProperty.audioParamsChannels: self.achannelsField,
-      MPVProperty.audioBitrate: self.abitrateField,
       MPVProperty.audioParamsSamplerate: self.asamplerateField
     ]
 
     for (k, v) in strProperties {
       var value = controller.getString(k)
       if value == "" { value = nil }
-      v.stringValue = value ?? "N/A"
+      // If the video does not have a title then mpv returns the filename. If that is the case
+      // then clear the value. The filename is already being displayed in the path.
+      if k == MPVProperty.mediaTitle, let filename = controller.getString(MPVProperty.filename),
+         value == filename {
+        value = nil
+      }
+      // The value of these properties may contain links, if so make them clickable.
+      if k == MPVProperty.path || k == commentKey, let value, let link = self.formLink(value) {
+        v.attributedStringValue = link
+        // Must enable this for the link to be clickable.
+        v.allowsEditingTextAttributes = true
+      } else {
+        v.stringValue = value ?? NSLocalizedString("general.na", comment: "N/A")
+        v.allowsEditingTextAttributes = false
+      }
+      v.isSelectable = value != nil
       self.setLabelColor(v, by: value != nil)
     }
 
@@ -325,7 +397,7 @@ final class InspectorWindowController: WindowController, NSWindowDelegate, NSTab
     self.trackPopup.removeAllItems()
     var needSeparator = false
     for track in info.videoTracks {
-      self.trackPopup.menu?.addItem(withTitle: "Video" + track.readableTitle,
+      self.trackPopup.menu?.addItem(withTitle: NSLocalizedString("track.video", comment: "Video") + track.readableTitle,
                                     action: nil, tag: nil, obj: track, stateOn: false)
       needSeparator = true
     }
@@ -333,7 +405,7 @@ final class InspectorWindowController: WindowController, NSWindowDelegate, NSTab
       self.trackPopup.menu?.addItem(NSMenuItem.separator())
     }
     for track in info.audioTracks {
-      self.trackPopup.menu?.addItem(withTitle: "Audio" + track.readableTitle,
+      self.trackPopup.menu?.addItem(withTitle: NSLocalizedString("track.audio", comment: "Audio") + track.readableTitle,
                                     action: nil, tag: nil, obj: track, stateOn: false)
       needSeparator = true
     }
@@ -341,7 +413,7 @@ final class InspectorWindowController: WindowController, NSWindowDelegate, NSTab
       self.trackPopup.menu?.addItem(NSMenuItem.separator())
     }
     for track in info.subTracks {
-      self.trackPopup.menu?.addItem(withTitle: "Subtitle" + track.readableTitle,
+      self.trackPopup.menu?.addItem(withTitle: NSLocalizedString("track.sub", comment: "Subtitle") + track.readableTitle,
                                     action: nil, tag: nil, obj: track, stateOn: false)
     }
     self.trackPopup.selectItem(at: 0)
@@ -384,7 +456,8 @@ final class InspectorWindowController: WindowController, NSWindowDelegate, NSTab
     ]
 
     for (str, field) in strProperties {
-      field.stringValue = str ?? "N/A"
+      field.stringValue = str ?? NSLocalizedString("general.na", comment: "N/A")
+      field.isSelectable = str != nil
       setLabelColor(field, by: str != nil)
     }
   }
@@ -410,23 +483,33 @@ final class InspectorWindowController: WindowController, NSWindowDelegate, NSTab
       return cell
     case .value:
       if let textField = cell.textField {
+        textField.allowsEditingTextAttributes = false
         guard let player = PlayerManager.shared.lastActivePlayer, player.isActive else {
           // If no active player, just show blank values
           textField.stringValue = ""
           return cell
         }
         
-        guard !player.isStopping, let value = player.mpv.getString(property) else {
+        guard let value = player.mpv.getString(property) else {
           let errorString = NSLocalizedString("inspector.error", comment: "Error")
 
-          let mutableString = NSMutableAttributedString(string: errorString)
-          mutableString.addItalic(using: textField.font)
-          textField.attributedStringValue = mutableString
+          let italicDescriptor: NSFontDescriptor = textField.font!.fontDescriptor.withSymbolicTraits(NSFontDescriptor.SymbolicTraits.italic)
+          let errorFont = NSFont(descriptor: italicDescriptor, size: textField.font!.pointSize)
+
+          textField.attributedStringValue = NSMutableAttributedString(string: errorString, attributes: [.font: errorFont!])
+          textField.isSelectable = false
           textField.textColor = .disabledControlTextColor
           return cell
         }
 
-        textField.stringValue = value
+        if let link = formLink(value) {
+          textField.attributedStringValue = link
+          // Must enable this for the link to be clickable.
+          textField.allowsEditingTextAttributes = true
+        } else {
+          textField.stringValue = value
+        }
+        textField.isSelectable = true
         textField.textColor = .labelColor
       }
       return cell
@@ -600,7 +683,16 @@ final class InspectorWindowController: WindowController, NSWindowDelegate, NSTab
   }
 
 
-  // MARK: Utils
+  // MARK: - Utils
+
+  /// Form a link from the given string.
+  /// - Parameter value: String value that may be a link.
+  /// - Returns: If `value` should be represented as a clickable link, an attributed string containing a link, otherwise ` nil`.
+  private func formLink(_ value: String) -> NSAttributedString? {
+    guard let url = URL(string: value), let scheme = url.scheme,
+          scheme == "http" || scheme == "https" else { return nil }
+      return NSAttributedString(string: value, attributes: [.link: url])
+  }
 
   private func setLabelColor(_ label: NSTextField, by state: Bool) {
     label.textColor = state ? NSColor.labelColor : NSColor.disabledControlTextColor
@@ -677,4 +769,8 @@ fileprivate func readWatchListFromPasteboard(_ pasteboard: NSPasteboard) -> [Str
     }
   }
   return sanitizedItems
+}
+
+fileprivate extension Logger.Sub {
+  static let inspector = Logger.makeSubsystem("inspector", symbolName: ["tablecells"])
 }

@@ -12,14 +12,16 @@ jobs:
     strategy:
       matrix:
         include:
-          - xcode: "26.0"
+          - xcode: "26.5"
             deployment_target: ""
     runs-on:  macos-26
     steps:
       - uses: actions/checkout@v6
 
       - name: Install dependencies
-        run: ./other/download_libs.sh
+        run: ./other/download_libs.sh $DOWNLOAD_LIBS_ARGS
+        env:
+          DOWNLOAD_LIBS_ARGS: ${{ github.event_name == 'pull_request' && '--skip-plugins' || '' }}
 
       - name: Build
         run: xcodebuild -project iina.xcodeproj ONLY_ACTIVE_ARCH=NO -scheme iina -configuration Nightly ${{ matrix.deployment_target }}
@@ -34,4 +36,3 @@ jobs:
         with:
           name: IINA
           path: ~/iina.tar.xz
-

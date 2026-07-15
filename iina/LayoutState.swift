@@ -63,9 +63,9 @@ struct LayoutState {
   let hasTopPaddingForCameraHousing: Bool
 
   /// LeadingSidebar toggle button.
-  var leadingSidebarToggleButton: VisibilityMode
+  let leadingSidebarToggleButton: VisibilityMode
   /// TrailingSidebar toggle button.
-  var trailingSidebarToggleButton: VisibilityMode
+  let trailingSidebarToggleButton: VisibilityMode
 
   // MARK: Init / Factory
 
@@ -274,7 +274,7 @@ struct LayoutState {
 
   static func effectiveGlobalColorSchemeFromPrefs() -> Preference.PanelColorScheme {
     guard #available(macOS 26.0, *) else {
-      return .visualEffectView
+      return .none
     }
     let globalScheme: Preference.PanelColorScheme = Preference.enum(for: .globalColorScheme)
     switch globalScheme {
@@ -292,18 +292,35 @@ struct LayoutState {
 
   /// OSC color scheme
   static var effectiveOSCColorSchemeFromPrefs: Preference.PanelColorScheme {
-    let globalScheme: Preference.PanelColorScheme = Preference.enum(for: .globalColorScheme)
+    let globalScheme: Preference.PanelColorScheme = effectiveGlobalColorSchemeFromPrefs()
 
     if Preference.bool(for: .enableOSC) {
       let oscPosition: Preference.OSCPosition = Preference.enum(for: .oscPosition)
       if (oscPosition == .bottom && (Preference.enum(for: .bottomBarPlacement) == Preference.PanelPlacement.insideViewport))
           || (oscPosition == .top && (Preference.enum(for: .topBarPlacement) == Preference.PanelPlacement.insideViewport)) {
         guard globalScheme == .none else { return globalScheme }
-        let colorSchme: Preference.PanelColorScheme = Preference.enum(for: .oscColorScheme)
-        return colorSchme
+        let colorScheme: Preference.PanelColorScheme = Preference.enum(for: .oscColorScheme)
+        switch colorScheme {
+        case .clearGlass, .tintedGlass:
+          guard #available(macOS 26.0, *) else {
+            return .visualEffectView
+          }
+        default:
+          break
+        }
+        return colorScheme
       } else if oscPosition == .floating {
         guard globalScheme == .none else { return globalScheme }
-        return Preference.enum(for: .oscFloatingColorScheme)
+        let colorScheme: Preference.PanelColorScheme = Preference.enum(for: .oscFloatingColorScheme)
+        switch colorScheme {
+        case .clearGlass, .tintedGlass:
+          guard #available(macOS 26.0, *) else {
+            return .visualEffectView
+          }
+        default:
+          break
+        }
+        return colorScheme
       }
     }
     return .visualEffectView
@@ -316,7 +333,7 @@ struct LayoutState {
       return .visualEffectView
     }
 
-    let globalScheme: Preference.PanelColorScheme = Preference.enum(for: .globalColorScheme)
+    let globalScheme: Preference.PanelColorScheme = effectiveGlobalColorSchemeFromPrefs()
     guard globalScheme == .none else { return globalScheme }
 
     // If top OSC, use that value
@@ -326,6 +343,10 @@ struct LayoutState {
 
     let topBarColorScheme: Preference.PanelColorScheme = Preference.enum(for: .topBarColorScheme)
     switch topBarColorScheme {
+    case .clearGlass, .tintedGlass:
+      guard #available(macOS 26.0, *) else {
+        return .visualEffectView
+      }
     case .clearGradient:
       // Not allowed if not using top OSC
       return .visualEffectView
@@ -337,22 +358,23 @@ struct LayoutState {
 
   /// Sidebars color scheme
   static var effectiveSidebarsColorSchemeFromPrefs: Preference.PanelColorScheme {
-    let globalScheme: Preference.PanelColorScheme = Preference.enum(for: .globalColorScheme)
+    let globalScheme: Preference.PanelColorScheme = effectiveGlobalColorSchemeFromPrefs()
     switch globalScheme {
-    case .tintedGlass, .visualEffectView:
-      return globalScheme
     case .clearGlass:
       // Clear glass not allowed for sidebars (doesn't look good)
       return .tintedGlass
-    default:
+    case .none:
       break
+    default:
+      return globalScheme
     }
     
     let colorScheme: Preference.PanelColorScheme = Preference.enum(for: .sidebarsColorScheme)
     switch colorScheme {
-    case .tintedGlass, .visualEffectView:
-      return colorScheme
-    case .clearGlass:
+    case .clearGlass, .tintedGlass:
+      guard #available(macOS 26.0, *) else {
+        return .visualEffectView
+      }
       // Clear glass not allowed for sidebars
       return .tintedGlass
     default:
@@ -361,17 +383,39 @@ struct LayoutState {
   }
 
   static var effectiveOSDColorSchemeFromPrefs: Preference.PanelColorScheme {
-    let globalScheme: Preference.PanelColorScheme = Preference.enum(for: .globalColorScheme)
+    let globalScheme: Preference.PanelColorScheme = effectiveGlobalColorSchemeFromPrefs()
     guard globalScheme == .none else { return globalScheme }
 
-    return Preference.enum(for: .osdColorScheme)
+    let colorScheme: Preference.PanelColorScheme = Preference.enum(for: .osdColorScheme)
+    switch colorScheme {
+    case .clearGlass, .tintedGlass:
+      guard #available(macOS 26.0, *) else {
+        return .visualEffectView
+      }
+      return colorScheme
+    case .clearGradient:
+      return .visualEffectView
+    default:
+      return colorScheme
+    }
   }
 
   static var effectiveOSCFloatingColorSchemeFromPrefs: Preference.PanelColorScheme {
-    let globalScheme: Preference.PanelColorScheme = Preference.enum(for: .globalColorScheme)
+    let globalScheme: Preference.PanelColorScheme = effectiveGlobalColorSchemeFromPrefs()
     guard globalScheme == .none else { return globalScheme }
 
-    return Preference.enum(for: .oscFloatingColorScheme)
+    let colorScheme: Preference.PanelColorScheme = Preference.enum(for: .oscFloatingColorScheme)
+    switch colorScheme {
+    case .clearGlass, .tintedGlass:
+      guard #available(macOS 26.0, *) else {
+        return .visualEffectView
+      }
+      return colorScheme
+    case .clearGradient:
+      return .visualEffectView
+    default:
+      return colorScheme
+    }
   }
 
   // MARK: - Computed Properties
@@ -380,6 +424,25 @@ struct LayoutState {
 
   var titleBar: VisibilityMode {
     LayoutState.titleBarVisibility(for: mode, topBarPlacement: topBarPlacement, isLegacyStyle: isLegacyStyle)
+  }
+
+  /// Same as `oscBarAppearance`
+  func bottomBarAppearance(targetWindowAppearance: NSAppearance) -> NSAppearance {
+    return oscBarAppearance(targetWindowAppearance: targetWindowAppearance)
+  }
+
+  func topBarAppearance(targetWindowAppearance: NSAppearance) -> NSAppearance {
+    if topBarColorScheme.hasClearBG {
+      return NSAppearance(iinaTheme: .dark)!
+    }
+    return targetWindowAppearance
+  }
+
+  func oscBarAppearance(targetWindowAppearance: NSAppearance) -> NSAppearance {
+    if oscColorScheme.hasClearBG {
+      return NSAppearance(iinaTheme: .dark)!
+    }
+    return targetWindowAppearance
   }
 
   fileprivate static func titleBarVisibility(for mode: PlayerWindowMode,
@@ -527,6 +590,15 @@ struct LayoutState {
   var isLeadingSidebarVisible: Bool { leadingSidebar.isVisible }
   var isTrailingSidebarVisible: Bool { trailingSidebar.isVisible }
   var isAnySidebarVisible: Bool { leadingSidebar.isVisible || trailingSidebar.isVisible }
+  func isVisible(sidebarTabGroup: Sidebar.TabGroup) -> Bool {
+    if leadingSidebar.isVisible && leadingSidebar.visibleTabGroup == sidebarTabGroup {
+      return true
+    }
+    if trailingSidebar.isVisible && trailingSidebar.visibleTabGroup == sidebarTabGroup {
+      return true
+    }
+    return false
+  }
 
   var topBarHeight: CGFloat {
     if mode == .musicMode {

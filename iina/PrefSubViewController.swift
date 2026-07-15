@@ -21,7 +21,7 @@ class PrefSubViewController: PreferenceViewController, PreferenceWindowEmbeddabl
   }
 
   var preferenceTabImage: NSImage {
-    return makeSymbol("captions.bubble", fallbackImage: "pref_sub")
+    return .sf("captions.bubble", withConfiguration: symbolConfiguration)!
   }
 
   override var sectionViews: [NSView] {
@@ -55,16 +55,9 @@ class PrefSubViewController: PreferenceViewController, PreferenceWindowEmbeddabl
   override func viewDidLoad() {
     super.viewDidLoad()
 
-#if MACOS_13_AVAILABLE
-    if #available(macOS 13.0, *) {
-      [subColorWell, subBackgroundColorWell, subBorderColorWell, subShadowColorWell].forEach {
-        $0.colorWellStyle = .expanded
-        if #available(macOS 14.0, *) {
-          $0.supportsAlpha = true
-        }
-      }
+    [subColorWell, subBackgroundColorWell, subBorderColorWell, subShadowColorWell].forEach {
+      $0.supportsAlpha = true
     }
-#endif
 
     let defaultEncoding = Preference.string(for: .defaultEncoding)
     for encoding in Constants.encodings {
@@ -207,7 +200,7 @@ class ASSOverrideLevelTransformer: ValueTransformer {
   override func transformedValue(_ value: Any?) -> Any? {
     guard let num = value as? NSNumber,
           let level = Preference.SubOverrideLevel(rawValue: num.intValue) else { return nil }
-    return level.string
+    return String(describing: level)
   }
 }
 

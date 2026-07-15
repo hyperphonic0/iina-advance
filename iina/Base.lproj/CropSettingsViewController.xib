@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="24412" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="24765" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="24412"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="24765"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
@@ -27,7 +27,7 @@
                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                     </textFieldCell>
                 </textField>
-                <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="hsz-Wv-zHe">
+                <textField focusRingType="none" horizontalHuggingPriority="249" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="hsz-Wv-zHe">
                     <rect key="frame" x="62" y="48" width="33" height="14"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="14" id="8Hk-sR-8dp"/>
@@ -39,9 +39,9 @@
                     </textFieldCell>
                 </textField>
                 <segmentedControl autoresizesSubviews="NO" focusRingType="none" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="yrf-Aq-Gy6">
-                    <rect key="frame" x="24" y="16" width="270" height="24"/>
+                    <rect key="frame" x="18" y="16" width="300" height="24"/>
                     <constraints>
-                        <constraint firstAttribute="width" constant="270" id="qav-yS-38r"/>
+                        <constraint firstAttribute="width" constant="300" id="qav-yS-38r"/>
                     </constraints>
                     <segmentedCell key="cell" refusesFirstResponder="YES" borderStyle="border" focusRingType="none" alignment="left" segmentDistribution="fillProportionally" style="rounded" trackingMode="selectOne" id="bQc-2s-1MS">
                         <font key="font" metaFont="system"/>
@@ -60,7 +60,7 @@
                     </connections>
                 </segmentedControl>
                 <textField focusRingType="none" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="7a4-Wz-kzd" userLabel="CustomCropEntry Text Field">
-                    <rect key="frame" x="298" y="16" width="58" height="24"/>
+                    <rect key="frame" x="322" y="16" width="58" height="24"/>
                     <constraints>
                         <constraint firstAttribute="width" constant="58" id="pNn-1d-GJj"/>
                     </constraints>

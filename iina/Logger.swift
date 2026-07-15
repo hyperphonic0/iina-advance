@@ -23,13 +23,21 @@ struct Logger {
 
   // MARK: - Level
 
-  enum Level: Int, Comparable, CustomStringConvertible {
+  @objc
+  enum Level: Int, Comparable, CustomStringConvertible, CaseIterable, InitializingFromKey {
+
+    static var defaultValue = Level.debug
+
     static func < (lhs: Level, rhs: Level) -> Bool {
       return lhs.rawValue < rhs.rawValue
     }
 
     /// Don't really care about race conditions here; would rather have faster performance
-    nonisolated(unsafe) static var preferred: Level = .error
+    nonisolated(unsafe) static var preferred: Level = Level(rawValue: Preference.integer(for: .logLevel).clamped(to: 0...3))!
+
+    init?(key: Preference.Key) {
+      self.init(rawValue: Preference.integer(for: key))
+    }
 
     case trace = -1
     case verbose
@@ -39,18 +47,37 @@ struct Logger {
 
     var description: String {
       switch self {
-      case .trace: return "T"
-      case .verbose: return "V"
-      case .debug: return "D"
-      case .warning: return "W"
-      case .error: return "E"
+      case .trace: return "trace"
+      case .verbose: return "verbose"
+      case .debug: return "debug"
+      case .warning: return "warning"
+      case .error: return "error"
+      }
+    }
+    
+    var shortForm: String {
+      switch self {
+      case .trace: return "t"
+      case .verbose: return "v"
+      case .debug: return "d"
+      case .warning: return "w"
+      case .error: return "e"
+      }
+    }
+
+    var color: NSColor {
+      switch self {
+      case .trace: return .systemGray
+      case .verbose: return .systemGray
+      case .debug: return .systemGreen
+      case .warning: return .systemYellow
+      case .error: return .systemRed
       }
     }
   }
 
   // MARK: Vars & More!
-
-  static let general = Logger.makeSubsystem("iina")
+  static let general = Logger.makeSubsystem("iina", symbolName: ["star.fill"])
   static let input = Logger.makeSubsystem("input")
   static let restore = Logger.makeSubsystem("restore")
   private static let loggerSubsystem = Logger.makeSubsystem("logger")
@@ -84,7 +111,6 @@ struct Logger {
   private static let fsLock = Lock()
 
   private static let structuresLock = Lock()
-  nonisolated(unsafe) private static var logsForLogWindow: [Logger.Log] = []
   nonisolated(unsafe) private static var subsystems: [any Subsystem] = []
 
   static func subsystem(forPlayerID playerID: String) -> any Subsystem {
@@ -92,7 +118,8 @@ struct Logger {
       if let subsystem = playerLogs[playerID] {
         return subsystem
       }
-      let subsystem = SimpleSubsystem(rawValue: String(format: StringConstants.iinaPlayerCategoryFmt, playerID))
+      let subsystem = SimpleSubsystem(rawValue: String(format: StringConstants.iinaPlayerCategoryFmt, playerID),
+                                      symbolName: ["play.circle"])
 
       playerLogs[playerID] = subsystem
       return subsystem
@@ -186,12 +213,12 @@ struct Logger {
 
   class Log: NSObject {
     @objc dynamic let subsystem: String
-    @objc dynamic let level: Int
+    @objc dynamic let level: Level
     @objc dynamic let message: String
     @objc dynamic let date: String
     let logString: String
 
-    init(subsystem: String, level: Int, message: String, date: String, logString: String) {
+    init(subsystem: String, level: Level, message: String, date: String, logString: String) {
       self.subsystem = subsystem
       self.level = level
       self.message = message
@@ -208,6 +235,7 @@ struct Logger {
   struct DecoratedSubsystem: Subsystem {
     typealias RawValue = String
     var rawValue: String { originalSS.rawValue }
+    var image: NSImage?
 
     let preamble: String
     let originalSS: any Subsystem
@@ -225,6 +253,7 @@ struct Logger {
     init(original: any Subsystem, preamble: String) {
       self.preamble = preamble
       originalSS = original
+      image = original.image
     }
 
     // Unfortunately we need to execute the closure so that we can prepend the preamble...
@@ -274,6 +303,7 @@ struct Logger {
     var isVerboseEnabled: Bool { get }
     var isDebugEnabled: Bool { get }
     var isErrorEnabled: Bool { get }
+    var image: NSImage? { get }
 
     func trace(_ rawMessage: @autoclosure () -> String)
     func verbose(_ rawMessage: @autoclosure () -> String)
@@ -288,14 +318,22 @@ struct Logger {
 
   struct SimpleSubsystem: Subsystem {
     let rawValue: String
+    var image: NSImage?
 
     var isTraceEnabled: Bool { Logger.isTraceEnabled }
     var isVerboseEnabled: Bool { Logger.isVerboseEnabled }
     var isDebugEnabled: Bool { Logger.isDebugEnabled}
     var isErrorEnabled: Bool { Logger.isErrorEnabled }
 
+    var added = false
+
     init(rawValue: String) {
       self.rawValue = rawValue
+    }
+
+    init(rawValue: String, symbolName: [String] = []) {
+      self.init(rawValue: rawValue)
+      self.image = .sf(symbolName)
     }
 
     func trace(_ rawMessage: @autoclosure () -> String) {
@@ -341,24 +379,24 @@ struct Logger {
 
   }  // end class Subsystem
 
-  static func makeSubsystem(_ player: PlayerCore, fmt: String) -> any Subsystem {
-    return makeSubsystem(String(format: fmt, player.label))
+  static func makeSubsystem(_ player: PlayerCore, fmt: String, symbolName: [String] = []) -> any Subsystem {
+    return makeSubsystem(String(format: fmt, player.label), symbolName: symbolName)
   }
 
-  static func makeSubsystem(_ rawValue: String) -> any Subsystem {
-    structuresLock.withLock {
+  static func makeSubsystem(_ rawValue: String, symbolName: [String] = []) -> any Subsystem {
+    structuresLock.withLock() {
       for (index, subsystem) in subsystems.enumerated() {
         // The first subsystem will always be "iina"
         if index == 0 { continue }
         if rawValue < subsystem.rawValue {
-          let newSubsystem = SimpleSubsystem(rawValue: rawValue)
+          let newSubsystem = SimpleSubsystem(rawValue: rawValue, symbolName: symbolName)
           subsystems.insert(newSubsystem, at: index)
           return newSubsystem
         } else if rawValue == subsystem.rawValue {
           return subsystem
         }
       }
-      let newSubsystem = SimpleSubsystem(rawValue: rawValue)
+      let newSubsystem = SimpleSubsystem(rawValue: rawValue, symbolName: symbolName)
       subsystems.append(newSubsystem)
       return newSubsystem
     }
@@ -560,7 +598,14 @@ struct Logger {
   private static func formatMessage(_ message: String, _ level: Level, _ subsystem: any Subsystem,
                                     _ appendNewlineAtTheEnd: Bool, _ date: Date = Date()) -> String {
     let time = dateFormatter.string(from: date)
-    return "\(time) |\(subsystem.rawValue) \(level.description)| \(message)\(appendNewlineAtTheEnd ? "\n" : "")"
+    return "\(time) |\(subsystem.rawValue) \(level.shortForm)| \(message)\(appendNewlineAtTheEnd ? "\n" : "")"
+  }
+
+  /// Whether the logger is emitting messages at the given level.
+  /// - Parameter level: The log level to check.
+  /// - Returns: `true` if messages at the given level will be emitted; `false` if the logger is suppressing messages at this level.
+  static func isEmitting(_ level: Level) -> Bool {
+    isEnabled(level)
   }
 
   /// Log a message.
@@ -622,9 +667,9 @@ struct Logger {
     guard needsElsewhere else { return }
 
     // Record the log line for use in the Logs window...
-    let log = Log(subsystem: subsystem.rawValue, level: level.rawValue, message: message, date: dateFormatter.string(from: date), logString: string)
-    structuresLock.withLock {
-      logsForLogWindow.append(log)
+    let log = Log(subsystem: subsystem.rawValue, level: level, message: message, date: dateFormatter.string(from: date), logString: string)
+    Task { @MainActor in
+      AppDelegate.shared.logWindow.append(log)
     }
 
     guard enableLogToFile else { return }
@@ -639,15 +684,7 @@ struct Logger {
     }
   }
 
-  static func popNewestLinesForLogWindow() -> [Log] {
-    structuresLock.withLock {
-      let latestLogs = logsForLogWindow
-      logsForLogWindow.removeAll()
-      return latestLogs
-    }
-  }
-
-
+  
   // MARK: - Failure
 
   static func ensure(_ condition: @autoclosure () -> Bool, _ errorMessage: String = "Assertion failed in \(#line):\(#file)", _ cleanup: Callback = {}) {

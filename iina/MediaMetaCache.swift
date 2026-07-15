@@ -133,13 +133,27 @@ class MediaMetaCache {
     }
   }
 
-  func getOrCreateBookmark(fromURL url: URL) -> Data? {
+  /// This is typically an expensive operation.
+  func getOrCreateBookmark(fromURL url: URL, fixStale: Bool = true) -> Data? {
     // Network URLs cannot have bookmarks
     guard url.isFileURL else { return nil }
 
     // Consult central cache to see if cached bookmark exists:
     if let bookmarkData = getBookmark(forURL: url) {
-      return bookmarkData
+      guard fixStale else {
+        return bookmarkData
+      }
+
+      // Check if bookmark is stale. Need to resolve the bookmark to do this, which is
+      // typically somewhat expensive (though less than creating it from scratch):
+      var isStale = false
+      let resolvedURL = (try? URL(resolvingBookmarkData: bookmarkData, bookmarkDataIsStale: &isStale))
+      if resolvedURL != nil, !isStale {
+        // Still valid: return it
+        return bookmarkData
+      }
+      // Else: must be stale. Fall through and regenerate it
+      log.verbose("Bookmark is stale; attempting to regenerate it")
     }
 
     // Somewhat expensive: check for file existence
@@ -166,35 +180,8 @@ class MediaMetaCache {
 
   /// Generates a MacOS bookmark from given URL if it does not exist. May be an expensive operation!
   /// Returns `true` if bookmark was created; false if not
-  func createBookmarkIfNotExist(fromURL url: URL) -> Bool {
-    // Network URLs cannot have bookmarks
-    guard url.isFileURL else { return false }
-
-    // Consult central cache to see if cached bookmark exists:
-    if getBookmark(forURL: url) != nil {
-      return false
-    }
-
-    // Somewhat expensive: check for file existence
-    guard FileManager.default.fileExists(atPath: url.path) else {
-      log.trace("Cannot create bookmark data from URL \(url.path.pii.quoted): file does not exist")
-      return false
-    }
-    do {
-      // *Very* expensive (~1.0sec during testing for local disk)
-      let bookmark = try url.bookmarkData(options: [.withSecurityScope, .securityScopeAllowOnlyReadAccess],
-                                          includingResourceValuesForKeys: nil, relativeTo: nil)
-
-      log.trace("Caching bookmark data for URL \(url.path.pii.quoted)")
-      // Update entry in central cache with the updated ID, which contains the bookmark
-      let id = PlaybackID(url, bookmark: bookmark)
-      updateCacheEntry(id)
-
-      return true
-    } catch {
-      log.error("Failed to create bookmark data from URL \(PlaybackID.path(from: url).pii.quoted): \(error)")
-      return false
-    }
+  func addBookmarkIfMissingOrStale(fromURL url: URL) -> Bool {
+    return getOrCreateBookmark(fromURL: url) != nil
   }
 
   /// Will return a new `PlaybackID`. If bookmark data is found for it, returns a `PlaybackID` with the bookmark data.
@@ -277,16 +264,18 @@ class MediaMetaCache {
   /**
    Updates the cached entry for the item with the given `id`.b
 
-   1. If item is a file & `reloadFromWatchLater` is true, then saved playback progress is updated from the item's watch-later file
-   (or set to `nil` if there is no saved progress)
-   2. If item is a file & `reloadFromFFmpeg` is true, then video duration, title, album, & artist are read from FFmpeg & saved to cache.
+   1. If item is a file & `watchLaterMD5` is non-`nil`, then saved playback progress is updated from the item's
+      watch-later file (or set to `nil` if there is no saved progress)
+   2. If item is a file & `reloadFromFFmpeg` is true, then video duration, title, album, & artist are read from FFmpeg
+      & saved to cache.
    3. If any of `mpvTitle`, `mpvAlbum`, or `mpvArtist` are specified, overwrite any previous value with these.
-   Items 1 & 2 are expensive operations so this method should be executed in a background queue if either of these are used.
+      Items 1 & 2 are expensive operations so this method should be executed in a background queue if either of these
+      are used.
    */
   @discardableResult
   func updateCachedMeta(_ id: PlaybackID,
                         mpvTitle: String? = nil, mpvAlbum: String? = nil, mpvArtist: String? = nil,
-                        pullFromWatchLater: Bool, pullFromFfmpeg: Bool = true) -> MediaMeta {
+                        watchLaterMD5: String? = nil, pullFromFfmpeg: Bool = true) -> MediaMeta {
 
     var progress: Double? = nil
     var duration: Double? = nil
@@ -298,11 +287,11 @@ class MediaMetaCache {
     var triedFFmpeg = false
 
     if id.isFile {
-      if pullFromWatchLater {
+      if let watchLaterMD5 {
         // If watch-later returns nil, send negative value to clone() to ensure it is nilled out.
         // This is important to do to ensure that toggling the history checkbox in Preferences ends up
         // hiding the progress bars in the UI.
-        progress = HistoryController.shared.playbackProgressFromWatchLater(id.mpvMD5) ?? -1
+        progress = HistoryController.shared.playbackProgressFromWatchLater(watchLaterMD5) ?? -1
       }
 
       if pullFromFfmpeg {

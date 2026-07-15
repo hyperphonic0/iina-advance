@@ -18,6 +18,12 @@ final class HistoryController {
   /// by skipping unnecessary operations.
   var historyEnabled: Bool = true
 
+#if DEBUG
+  /// As logging of all history entries can produce a huge number of log messages this feature is only included in debug builds and
+  /// must be enabled by setting this property to `true` when you need investigate history file contents.
+  private static let logAllHistoryEntries = false
+#endif
+
   private(set) var started = false
 
   let plistURL: URL
@@ -217,6 +223,8 @@ final class HistoryController {
       return false
     }
 
+    MemoryUsage.shared.logUsage("before reading history")
+
     do {
       log.verbose("Reading playback history file \(plistURL.path.pii.quoted)")
       let data = try Data(contentsOf: plistURL)
@@ -227,6 +235,23 @@ final class HistoryController {
       }
       history = historyItemList
       log.verbose("Loaded playback history (entryCount=\(historyItemList.count))")
+      MemoryUsage.shared.logUsage("after reading history")
+
+      // As logging of all history entries can produce a huge number of log messages this feature is
+      // only included in debug builds.
+#if DEBUG
+      // IINA must be built with the property logAllHistoryEntries set to true when you want the
+      // history file contents to be logged when it is read.
+      if HistoryController.logAllHistoryEntries, !history.isEmpty,
+         Logger.isEmitting(.verbose) {
+        log.verbose("Playback history:")
+        var index = 0
+        for entry in history {
+          log.verbose("History[\(index)] \(String(describing: entry))")
+          index += 1
+        }
+      }
+#endif
       return true
     } catch {
       log.error("Failed to load playback history file \(plistURL.path.pii.quoted): \(error)")
@@ -267,15 +292,25 @@ final class HistoryController {
     log.verbose("ReloadAll done: \(history.count) history entries & \(cachedRecentDocumentURLs.count) recentDocuments in \(sw.secElapsedString)")
   }
 
+      /// Add an entry to playback history.
+      /// - Note: The entry is added asynchronously by a background thread.
+      /// - Parameters:
+      ///   - id: PlaybackID of the media being played.
+      ///   - duration: Total duration of the media.
+      ///   - title: Title of the media (if available).
+      ///   - ignorePath: When `true`, only the URL's filename will be used for the sum if the URL does not contain a scheme.
   @discardableResult
-  private func addPlayback(_ id: PlaybackID, duration: Double) -> PlaybackHistory? {
+  private func addPlayback(_ id: PlaybackID, duration: Double, title: String?,
+                           _ ignorePath: Bool) -> PlaybackHistory? {
     assert(DispatchQueue.isExecutingIn(workDQ))
     guard Preference.bool(for: .recordPlaybackHistory) else { return nil }
 
-    if let existingItem = history.first(where: { $0.mpvMd5 == id.mpvMD5 }), let index = history.firstIndex(of: existingItem) {
+    let mpvMd5 = Utility.mpvWatchLaterMd5(id.staticURL, ignorePath)
+    if let existingItem = history.first(where: { $0.mpvMd5 == mpvMd5 }),
+       let index = history.firstIndex(of: existingItem) {
       history.remove(at: index)
     }
-    let newEntry = PlaybackHistory(id: id, duration: duration)
+    let newEntry = PlaybackHistory(id: id, duration: duration, title: title, mpvMd5: mpvMd5)
     history.insert(newEntry, at: 0)
     historyListDidUpdate()
     saveHistoryToFile()
@@ -381,7 +416,7 @@ final class HistoryController {
     /// Make sure `reloadAll()` was called before this
     let recentDocumentsURLs = cachedRecentDocumentURLs
     guard Preference.bool(for: .enableRecentDocumentsWorkaround),
-          #available(macOS 14, *), Preference.bool(for: .recordRecentFiles),
+          Preference.bool(for: .recordRecentFiles),
           recentDocumentsURLs.isEmpty,
           let recentDocuments = Preference.array(for: .recentDocuments),
           !recentDocuments.isEmpty else {
@@ -445,7 +480,6 @@ final class HistoryController {
       postNotification(Notification(name: .recentDocumentsDidChange))
     }
 
-    guard #available(macOS 14, *) else { return }
     var recentDocuments: [Any] = []
     for document in NSDocumentController.shared.recentDocumentURLs {
       guard let bookmark = try? document.bookmarkData() else {
@@ -465,7 +499,8 @@ final class HistoryController {
 
   // MARK: - Playback Lifecycle Events
 
-  func savePlaybackMetaAfterFileDidLoad(for id: PlaybackID, durationSec: Double, positionSec: Double?) {
+  func savePlaybackMetaAfterFileDidLoad(for id: PlaybackID, durationSec: Double, positionSec: Double?,
+                                        title: String?, _ ignorePathForMD5: Bool) {
     guard historyEnabled else { return }
     if !started {
       log.verbose("While trying to save playback after file load: history not started! Starting now")
@@ -478,7 +513,7 @@ final class HistoryController {
         return
       }
       // 1. Update main history list
-      let historyEntry = addPlayback(id, duration: durationSec)
+      let historyEntry = addPlayback(id, duration: durationSec, title: title, ignorePathForMD5)
 
       // 2. IINA's [ancient] "resume last playback" feature
       // Add this now, or else welcome window will fall out of sync with history list
@@ -737,4 +772,3 @@ final class HistoryController {
     return historyList.first(where: { $0.url == url })
   }
 }
-

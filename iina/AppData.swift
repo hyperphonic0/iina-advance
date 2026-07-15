@@ -110,7 +110,7 @@ struct StringConstants {
   static let showSecondSubtitles = NSLocalizedString("menu.sub_second_show", comment: "Show Second Subtitles")
 
   // MARK: Logger per-player categories
-  static let iinaPlayerCategoryFmt = "%@-Plr"
+  static let iinaPlayerCategoryFmt = "%@-plr"
   static let iinaMpvCategoryFmt = "%@-mpv"
   static let iinaHdrCategoryFmt = "%@-hdr"
 
@@ -258,6 +258,9 @@ struct Constants {
     static let V1_4_4 = 11
     static let V1_5 = 12
     static let V1_5_1 = 13
+    static let V1_5_2 = 14
+    static let V1_5_3 = 15
+    static let V1_5_4 = 16
   }
 
   struct Menu {
@@ -283,7 +286,7 @@ struct Constants {
   ///
   /// If set to `false`, `vid` can change to `0` while loading, and possibly the media's tracklist can be briefly
   /// inaccurate or missing. Note that the IINA default album art will be shown while `vid=0`.
-  static let requireFileLoadedForTrackReload: Bool = false
+  static let requireFileLoadedForTrackReload: Bool = true
 
   // Stopgap for https://github.com/mpv-player/mpv/issues/4000
   static let availableSpeedValues: [Double] = [0.03125, 0.0625, 0.125, 0.25, 0.5, 1, 2, 4, 8, 16, 32]
@@ -705,7 +708,6 @@ struct Images {
     case medium = 2
     case large = 3
 
-    @available(macOS 11.0, *)
     var scaleValue: NSImage.SymbolScale {
       switch self {
       case .small: return .small
@@ -718,17 +720,15 @@ struct Images {
   static func makeSymbol(named name: String, fallbackName: String? = nil, desc: String,
                          ptSize: CGFloat = 13, weight: NSFont.Weight = .ultraLight, scale: SymbolScalePolyfill = .medium,
                          usePaletteColors paletteColors: [NSColor]? = nil) -> NSImage {
-    if #available(macOS 11.0, *) {
-      if let systemImg = NSImage(systemSymbolName: name, accessibilityDescription: desc) {
-        var config = NSImage.SymbolConfiguration(pointSize: ptSize, weight: weight, scale: scale.scaleValue)
-        if #available(macOS 12.0, *), let paletteColors {
-          config = config.applying(NSImage.SymbolConfiguration(paletteColors: paletteColors))
-        }
-        if let systemImgBest = systemImg.withSymbolConfiguration(config) {
-          return systemImgBest
-        }
-        return systemImg
+    if let systemImg = NSImage(systemSymbolName: name, accessibilityDescription: desc) {
+      var config = NSImage.SymbolConfiguration(pointSize: ptSize, weight: weight, scale: scale.scaleValue)
+      if let paletteColors {
+        config = config.applying(NSImage.SymbolConfiguration(paletteColors: paletteColors))
       }
+      if let systemImgBest = systemImg.withSymbolConfiguration(config) {
+        return systemImgBest
+      }
+      return systemImg
     }
     let fallbackName = fallbackName ?? name
     Logger.log("Falling back to asset image \(fallbackName.quoted) instead of \(name.quoted)")

@@ -171,38 +171,34 @@ extension BindingTableViewController: NSTableViewDelegate {
       cell.toolTip = bindingRow.displayMessage
 
       if let imageView: NSImageView = cell.imageView {
-        if #available(macOS 11.0, *) {
-          imageView.isHidden = false
+        imageView.isHidden = false
 
-          if !bindingRow.isEnabled {
-            imageView.image = NSImage(systemSymbolName: "exclamationmark.circle", accessibilityDescription: nil)!
-            imageView.contentTintColor = NSColor.systemRed
-            return cell
-          }
+        if !bindingRow.isEnabled {
+          imageView.image = NSImage(systemSymbolName: "exclamationmark.circle", accessibilityDescription: nil)!
+          imageView.contentTintColor = NSColor.systemRed
+          return cell
+        }
 
-          switch bindingRow.origin {
-          case .iinaPlugin:
-            imageView.image = NSImage(systemSymbolName: "powerplug.fill", accessibilityDescription: nil)!
-            imageView.contentTintColor = pluginIconColor
-          case .libmpv:
-            imageView.image = NSImage(systemSymbolName: "applescript.fill", accessibilityDescription: nil)!
-            imageView.contentTintColor = libmpvIconColor
-          case .savedFilter:
-            imageView.image = NSImage(systemSymbolName: "camera.filters", accessibilityDescription: nil)!
-            imageView.contentTintColor = filterIconColor
-          case .staticMenuItem:
+        switch bindingRow.origin {
+        case .iinaPlugin:
+          imageView.image = NSImage(systemSymbolName: "powerplug.fill", accessibilityDescription: nil)!
+          imageView.contentTintColor = pluginIconColor
+        case .libmpv:
+          imageView.image = NSImage(systemSymbolName: "applescript.fill", accessibilityDescription: nil)!
+          imageView.contentTintColor = libmpvIconColor
+        case .savedFilter:
+          imageView.image = NSImage(systemSymbolName: "camera.filters", accessibilityDescription: nil)!
+          imageView.contentTintColor = filterIconColor
+        case .staticMenuItem:
+          imageView.image = NSImage(systemSymbolName: "menubar.rectangle", accessibilityDescription: nil)!
+          imageView.contentTintColor = builtinMenuItemIconColor
+        default:
+          if bindingRow.hasMenuItem {
             imageView.image = NSImage(systemSymbolName: "menubar.rectangle", accessibilityDescription: nil)!
-            imageView.contentTintColor = builtinMenuItemIconColor
-          default:
-            if bindingRow.hasMenuItem {
-              imageView.image = NSImage(systemSymbolName: "menubar.rectangle", accessibilityDescription: nil)!
-            } else {
-              imageView.image = nil
-            }
-            imageView.contentTintColor = NSColor.controlTextColor
+          } else {
+            imageView.image = nil
           }
-        } else {
-          imageView.isHidden = true
+          imageView.contentTintColor = NSColor.controlTextColor
         }
       }
 

@@ -170,7 +170,7 @@ class PWinPreviewImageBuilder {
       cgContext.fill([CGRect(x: desktopInset, y: outputImgHeight - desktopInset - menuBarHeight, width: outputImgWidth - desktopInset - desktopInset, height: menuBarHeight)])
 
       // Apple icon
-      if #available(macOS 11.0, *), let appleLogo = NSImage(systemSymbolName: "apple.logo", accessibilityDescription: nil) {
+      if let appleLogo = NSImage(systemSymbolName: "apple.logo", accessibilityDescription: nil) {
         let totalHeight = CGFloat(menuBarHeight)
         let padTotalV = totalHeight * 0.36
         let padTotalH = padTotalV * 2

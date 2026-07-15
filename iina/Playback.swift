@@ -55,7 +55,6 @@ struct Playback: CustomStringConvertible, Sendable {
 
   // Properties from PlaybackID
   var url: URL { id.url}
-  var mpvMD5: String { id.mpvMD5 }
   var path: String { id.path }
   var isNetworkResource: Bool { id.isNetworkResource }
   var isMediaOnRemoteDrive: Bool { id.isMediaOnRemoteDrive }
@@ -104,21 +103,18 @@ struct PlaybackID: Sendable, Equatable, Hashable {
   /// Equivalent to `PlaybackID.url(fromPath: mpvFilename)`.
   /// Deprecated! Use `url` instead, which will first try to resolve bookmark data.
   let staticURL: URL
-  let mpvMD5: String
   let bookmark: Data?
 
   /// If `url` is `nil`, assumed to be `stdin`.
   init(_ url: URL?, bookmark: Data? = nil) {
     let url = url ?? Constants.stdinURL
     self.staticURL = url
-    mpvMD5 = Utility.mpvWatchLaterMd5(url.path)
     self.bookmark = bookmark
   }
 
   init?(path: String, bookmark: Data? = nil) {
     guard let url = PlaybackID.url(fromPath: path) else { return nil }
     self.staticURL = url
-    mpvMD5 = Utility.mpvWatchLaterMd5(url.path)
     self.bookmark = bookmark
   }
 
@@ -139,6 +135,11 @@ struct PlaybackID: Sendable, Equatable, Hashable {
   var displayName: String { PlaybackID.displayName(from: url) }
   var needsBookmark: Bool { !isNetworkResource && bookmark == nil }
 
+  /// Utility function.
+  func mpvMD5(ignorePathForMD5: Bool) -> String {
+    Utility.mpvWatchLaterMd5(staticURL, ignorePathForMD5)
+  }
+
   /// If bookmark data is found, tries to resolve the URL from it. Otherwise just use its static URL.
   func resolveFileURL(_ log: any Logger.Subsystem) -> URL? {
     guard !isNetworkResource else {
@@ -146,8 +147,9 @@ struct PlaybackID: Sendable, Equatable, Hashable {
     }
 
     let url: URL
-    if let bookmarkData = bookmark, !bookmarkData.isEmpty, let urlFromBookmark = PlaybackID.url(fromBookmark: bookmarkData, log) {
-      url = urlFromBookmark
+    if let bookmarkData = bookmark, !bookmarkData.isEmpty,
+       let idFromBookmark = PlaybackID.resolvingBookmarkData(bookmarkData, updateCache: false, log) {
+      url = idFromBookmark.staticURL
     } else {
       url = staticURL
     }
@@ -203,18 +205,44 @@ struct PlaybackID: Sendable, Equatable, Hashable {
     }
   }
 
+  /// If able to resolve a URL from the given bookmarkData, builds and returns a `PlaybackID` for it;
+  /// otherwise returns `nil`.
+  ///
+  /// If `updateCache` is true (the default), also updates the central cache, including enqueuing any
+  /// work needed to update a stale bookmark.
+  /// The `staticURL` of the returned `PlaybackID` is guaranteed to be from the bookmark.
   /// Warning: this can be expensive! Use strategically.
-  static func url(fromBookmark bookmarkData: Data, _ log: any Logger.Subsystem) -> URL? {
+  static func resolvingBookmarkData(_ bookmarkData: Data,
+                                    updateCache: Bool = true,
+                                    _ log: any Logger.Subsystem) -> PlaybackID? {
     guard !bookmarkData.isEmpty else { return nil }
     
     var isStale = false
     do {
-      let url = try URL(resolvingBookmarkData: bookmarkData, bookmarkDataIsStale: &isStale)
+      let bookmarkURL = try URL(resolvingBookmarkData: bookmarkData, bookmarkDataIsStale: &isStale)
+
+      let idWithBookmark = PlaybackID(bookmarkURL, bookmark: bookmarkData)
+
       if isStale {
-        // TODO: update stale bookmarks where convenient
-        log.verbose("URL has gone stale: \(url.absoluteString.pii.quoted)")
+        log.verbose("Resolved bookmark has gone stale; now has URL: \(bookmarkURL.absoluteString.pii.quoted)")
       }
-      return url
+
+      if updateCache {
+        if isStale {
+          // Enqueue task to update cached item. Do this asynchronously because it may take some time.
+          PlayerCore.postLoadBGQ.async {
+            // Probably don't need to check current ticket...assuming there will not be too many stales
+            // to process.
+            if MediaMetaCache.shared.addBookmarkIfMissingOrStale(fromURL: bookmarkURL) {
+              log.verbose("Replaced stale bookmark for URL \(bookmarkURL.path.pii.quoted)")
+            }
+          }
+        } else {
+          // Merge bookmark into cache
+          MediaMetaCache.shared.updateCacheEntry(idWithBookmark)
+        }
+      }
+      return idWithBookmark
     } catch {
       log.error("Failed to resolve URL from bookmark: \(error)")
       return nil
@@ -238,19 +266,9 @@ struct PlaybackID: Sendable, Equatable, Hashable {
       // running under macOS Sonoma or later. The behavior now matches URLComponents and will
       // automatically percent encode characters. Must not apply percent encoding to the string
       // passed to the URL initializer if the new new behavior is active.
-      let pstr: String
-      if #available(macOS 14, *) {
-        pstr = path
-      } else {
-        guard let encoded = path.addingPercentEncoding(withAllowedCharacters: .urlAllowed) else {
-          Logger.log.error("Cannot add percent encoding for \(path)")
-          return nil
-        }
-        pstr = encoded
-      }
-      url = URL(string: pstr)
+      url = URL(string: path)
       if url == nil {
-        Logger.log.error("Cannot parse url for \(pstr)")
+        Logger.log.error("Cannot parse url for \(path)")
       }
     }
     return url

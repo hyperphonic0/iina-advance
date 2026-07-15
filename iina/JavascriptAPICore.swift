@@ -77,7 +77,7 @@ class JavascriptAPICore: JavascriptAPI, JavascriptAPICoreExportable {
   }
 
   func seek(_ seconds: Double, _ exact: Bool) {
-    player!.seek(relativeSecond: seconds, option: exact ? .exact : .keyframes)
+    player!.seek(relativeSecond: seconds, option: exact ? .exact : .relative)
   }
 
   func seekTo(_ seconds: Double) {
@@ -238,7 +238,7 @@ fileprivate class WindowAPI: JavascriptAPI, CoreSubAPIExportable {
     case "ontop":
       return window.isOnTop
     case "visible":
-      return window.window!.occlusionState == .visible
+      return window.window!.occlusionState.contains(.visible)
     case "sidebar":
       return window.isOpen(sidebarTabGroup: .settings) ? window.quickSettingView.currentTab.name : NSNull()
     case "screens":

@@ -78,7 +78,8 @@
   /// 1. Prevent both display sleep & screen saver from starting (`ProcessInfo.ActivityOptions.idleDisplaySleepDisabled`)
   /// 2. Prevent display sleep but allow screen saver to start (`ProcessInfo.ActivityOptions.idleSystemSleepDisabled`)
   /// 3. Do not prevent display sleep or screen saver from starting.
-  static func updateSleepPrevention() {
+  @MainActor static func updateSleepPrevention() {
+    guard AppDelegate.shared.isInteractiveLaunch else { return }
     if Preference.bool(for: .preventScreenSaver) {
       let activePlayers = PlayerManager.shared.getNonIdle()
       for player in activePlayers {

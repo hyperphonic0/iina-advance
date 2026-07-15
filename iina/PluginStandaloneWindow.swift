@@ -46,9 +46,7 @@ class PluginStandaloneWindow: NSWindow, WKNavigationDelegate, WKUIDelegate {
       config.userContentController.add(pluginInstance.apis!["standaloneWindow"] as! WKScriptMessageHandler, name: "iina")
 
       webView = WKWebView(frame: .zero, configuration: config)
-      if #available(macOS 13.3, *) {
-        webView.isInspectable = true
-      }
+      webView.isInspectable = true
       webView.navigationDelegate = self
       webView.uiDelegate = self
       webView.translatesAutoresizingMaskIntoConstraints = false

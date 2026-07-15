@@ -250,11 +250,10 @@ actor UIState {
     return !disableForThisInstance && Preference.bool(for: .enableRestoreUIState)
   }
 
-  nonisolated func disableSaveAndRestoreUntilNextLaunch() {
-    Task { @MainActor in
-      log.verbose("Disabling save & restore until next app launch")
-      disableForThisInstance = true
-    }
+  @MainActor func disableSaveAndRestoreUntilNextLaunch() {
+    guard !disableForThisInstance else { return }
+    log.verbose("Disabling save & restore until next app launch")
+    disableForThisInstance = true
   }
 
   /// Convenience method. If restoring UI state is enabled, returns the saved value; otherwise returns the default value.

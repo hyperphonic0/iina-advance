@@ -61,7 +61,8 @@ class VideoView: NSView {
   // MARK: Init
 
   init(frame: CGRect, player: PlayerCore) {
-    self.logHDR = Logger.makeSubsystem(player, fmt: StringConstants.iinaHdrCategoryFmt)
+    self.logHDR = Logger.makeSubsystem(player, fmt: StringConstants.iinaHdrCategoryFmt,
+                                       symbolName: ["circle.righthalf.filled"])
     self.player = player
     super.init(frame: frame)
     self.idString = "VideoView"
@@ -141,16 +142,7 @@ class VideoView: NSView {
   /// This appears to be a defect in the Cocoa framework. See the issue for details. As a workaround the mouse up event is caught in
   /// the view which then calls the window controller's method.
   override func mouseUp(with event: NSEvent) {
-    // Only check for Big Sur or greater, not if the preference use legacy full screen is enabled as
-    // that can be changed while running and once the window title has been removed and added back
-    // AppKit malfunctions from then on. The check for running under Big Sur or later isn't really
-    // needed as it would be fine to always call the controller. The check merely makes it clear
-    // that this is only needed due to macOS changes starting with Big Sur.
-    if #available(macOS 11, *) {
-      player.pwc.mouseUp(with: event)
-    } else {
-      super.mouseUp(with: event)
-    }
+    player.pwc.mouseUp(with: event)
   }
 
   // MARK: - Drag and drop
@@ -174,6 +166,7 @@ class VideoView: NSView {
 #endif
   }
 
+  /// Inits the video layer & the mpv render context.
   @MainActor
   func initVideoLayer() {
 #if USE_GPU_NEXT
@@ -186,6 +179,8 @@ class VideoView: NSView {
     glLayer?.initGLRendering()
     displayActive()
 #endif
+    
+    MemoryUsage.shared.logUsage("after rendering initialized")
   }
 
   /// Lock the OpenGL context associated with the mpv renderer and set it to be the current context for this thread.
@@ -358,20 +353,10 @@ class VideoView: NSView {
       let name: CFString
       switch primaries {
       case "display-p3":
-        if #available(macOS 10.15.4, *) {
-          name = CGColorSpace.displayP3_PQ
-        } else {
-          name = CGColorSpace.displayP3_PQ_EOTF
-        }
+        name = CGColorSpace.displayP3_PQ
 
       case "bt.2020":
-        if #unavailable(macOS 10.15.4) {
-          name = CGColorSpace.itur_2020_PQ_EOTF
-        } else if #unavailable(macOS 11.0) {
-          name = CGColorSpace.itur_2020_PQ
-        } else {
-          name = CGColorSpace.itur_2100_PQ
-        }
+        name = CGColorSpace.itur_2100_PQ
 
       case "bt.709":
         // SDR
@@ -440,8 +425,8 @@ class VideoView: NSView {
                 targetPeak = 400
               }
             }
-            let algorithm = Preference.ToneMappingAlgorithmOption(rawValue: Preference.integer(for: .toneMappingAlgorithm))?.mpvString
-            ?? Preference.ToneMappingAlgorithmOption.defaultValue.mpvString
+            let algorithm = String(describing: Preference.enum(for: .toneMappingAlgorithm) as
+                                   Preference.ToneMappingAlgorithmOption)
 
             logHDR.debug("Will enable tone mapping: target-peak=\(targetPeak) algorithm=\(algorithm)")
             mpv.setInt(MPVOption.GPURendererOptions.targetPeak, targetPeak)

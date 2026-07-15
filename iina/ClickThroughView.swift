@@ -50,6 +50,7 @@ class ClickThroughGlassEffectView: NSGlassEffectView {
       tintColor = .darkGray.withAlphaComponent(0.25)
     } else {
       style = .regular
+      tintColor = nil
     }
   }
 }

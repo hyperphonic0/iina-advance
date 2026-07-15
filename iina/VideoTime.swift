@@ -41,7 +41,8 @@ struct VideoTime {
   /// - Returns: A string containing the time in the format "hh:mm:ss.sss", with the number of digits in the fraction controlled by the
   ///     precision parameter.
   func stringRepresentationWithPrecision(_ precision: UInt) -> String {
-    if self.second.isInfinite {
+    // Need to check for very large numbers to avoid error when converting to Int (below)
+    if second.isInfinite || second >= Double(Int.max) {
       return "End"
     }
 
@@ -108,13 +109,13 @@ extension VideoTime: Comparable { }
 
 func <(lhs: VideoTime, rhs: VideoTime) -> Bool {
   // ignore additional digits and compare the time in milliseconds
-  return Int(lhs.second * 1000) < Int(rhs.second * 1000)
+  return (lhs.second * 1000).rounded() < (rhs.second * 1000).rounded()
 }
 
 func ==(lhs: VideoTime, rhs: VideoTime) -> Bool {
   if lhs.second.isFinite && rhs.second.isFinite {
     // ignore additional digits and compare the time in milliseconds
-    return Int(lhs.second * 1000) == Int(rhs.second * 1000)
+    return (lhs.second * 1000).rounded() == (rhs.second * 1000).rounded()
   }
   return lhs.second == rhs.second
 }

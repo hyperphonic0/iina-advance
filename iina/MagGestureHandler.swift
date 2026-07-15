@@ -15,6 +15,17 @@ private let pinchMinZoomForPan: Double = pinchMinZoom + 0.0001
 private let panSpeed: Double = 2.3
 private let zoomResetFPS = 1.0 / 60
 
+fileprivate enum ResizeOperation {
+  case none
+  case videoZoom
+  case windowScale
+}
+
+fileprivate enum PanAxis {
+  case x
+  case y
+}
+
 /// Provides Pinch to Zoom feature.
 final class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
 
@@ -28,12 +39,6 @@ final class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
   /// Only needs to be updated at start of each pinch gesture: only used for the life of the gesture.
   private var currrentResizeOperation: ResizeOperation = .none
 
-  fileprivate enum ResizeOperation {
-    case none
-    case videoZoom
-    case windowScale
-  }
-
   // Zoom variables
   private var pinchOriginInWindow: NSPoint?
   private var pinchOriginInVideo: NSPoint?
@@ -45,11 +50,6 @@ final class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
 
   /// Timer used to generate crude "zoom out" operation to reset the video-zoom when window is resized.
   private var resetTimerSubscription: AnyCancellable?
-
-  private enum PanAxis {
-    case x
-    case y
-  }
 
   @objc func handleMagnifyGesture(recognizer: NSMagnificationGestureRecognizer) {
     guard !pwc.isInInteractiveMode else {
@@ -179,6 +179,7 @@ final class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
   /// Checks if the window (described by the gien geomeetry) is still maximized on screen, and if not, resets the zoom & pan values to zero.
   /// Makes no changes if pinch-to-zoom was not used (e.g., if zoomed using mpv key commands).
   func resetZoomIfNotMaximized(_ targetGeo: PWinGeometry) {
+    guard let pwc else { return }
     // Don't reset if still magnifying
     guard !pwc.isMagnifying else { return }
     guard pwc.isZoomedViaGesture, !targetGeo.mode.isFullScreen else { return }
@@ -191,6 +192,7 @@ final class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
   }
 
   func resetZoom() {
+    guard let pwc else { return }
     guard pwc.isZoomedViaGesture else { return }
     pwc.log.verbose("Resetting pinch-to-zoom props (video-zoom, video-pan-x, video-pan-y)")
 

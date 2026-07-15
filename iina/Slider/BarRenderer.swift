@@ -515,8 +515,12 @@ final class BarRenderer {
     let hasClearBG = colorScheme.hasClearBG
     let barAppearance = hasClearBG ? NSAppearance(iinaTheme: .dark)! : windowAppearance
 
-    return barAppearance.performAsCurrentDrawingAppearance {
+    // init with placeholder values. Need to set values inside the block below to ensure correct light/dark values
+    var leftBaseColorCG: CGColor = .black
+    var rightBaseColorCG: CGColor = .black
+    barAppearance.performAsCurrentDrawingAppearance {
       let leftBaseColor: NSColor
+      let rightBaseColor: NSColor
       let userSetting: Preference.SliderBarLeftColor = Preference.enum(for: .sliderBarDoneColor)
       switch userSetting {
       case .gray:
@@ -525,17 +529,16 @@ final class BarRenderer {
         leftBaseColor = .controlAccentColor
       }
 
-      let rightBaseColor: NSColor
       switch colorScheme {
-      case .clearGradient:
-        rightBaseColor = .mainSliderBarRightClearBG
-      case .clearGlass:
+      case .clearGradient, .clearGlass:
         rightBaseColor = .mainSliderBarRightClearBG
       case .visualEffectView, .tintedGlass, .none:
         rightBaseColor = .mainSliderBarRight
       }
-      return (leftBaseColor.cgColor, rightBaseColor.cgColor)
+      leftBaseColorCG = leftBaseColor.cgColor
+      rightBaseColorCG = rightBaseColor.cgColor
     }
+    return (leftBaseColorCG, rightBaseColorCG)
   }
 
   /// Measured in points, not pixels!

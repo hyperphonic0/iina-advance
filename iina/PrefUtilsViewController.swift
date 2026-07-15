@@ -24,7 +24,7 @@ class PrefUtilsViewController: PreferenceViewController, PreferenceWindowEmbedda
   }
 
   var preferenceTabImage: NSImage {
-    return makeSymbol("wrench.and.screwdriver", fallbackImage: "pref_utils")
+    return .sf("wrench.and.screwdriver", withConfiguration: symbolConfiguration)!
   }
 
   override var sectionViews: [NSView] {
@@ -78,22 +78,14 @@ class PrefUtilsViewController: PreferenceViewController, PreferenceWindowEmbedda
       Logger.log.verbose("\(importedTypeIndex). \(identifier):")
 
       for ext in exts {
-        if #available(macOS 11.0, *) {
-          Logger.log.verbose("  \(ext):")
-          let requiredSupertype: UTType? = specialIdentifiers.contains(identifier) ? nil : .audiovisualContent
+        Logger.log.verbose("  \(ext):")
+        let requiredSupertype: UTType? = specialIdentifiers.contains(identifier) ? nil : .audiovisualContent
 
-          let subtypesForExt = UTType.types(tag: ext, tagClass: .filenameExtension, conformingTo: requiredSupertype)
+        let subtypesForExt = UTType.types(tag: ext, tagClass: .filenameExtension, conformingTo: requiredSupertype)
 
-          for uttype in subtypesForExt {
-            Logger.log.verbose("    \(uttype.identifier) ⊂ \(uttype.supertypes.map{$0.identifier.droppingPrefix("public.")})")
-            utiTargetSet.insert(uttype.identifier)
-          }
-        } else {
-          let unmanagedArray = UTTypeCreateAllIdentifiersForTag(kUTTagClassFilenameExtension, ext as CFString, nil)
-          let utiArray = unmanagedArray!.takeUnretainedValue() as NSArray as! [String]
-          for uti in utiArray {
-            utiTargetSet.insert(uti)
-          }
+        for uttype in subtypesForExt {
+          Logger.log.verbose("    \(uttype.identifier) ⊂ \(uttype.supertypes.map{$0.identifier.droppingPrefix("public.")})")
+          utiTargetSet.insert(uttype.identifier)
         }
       }
     }

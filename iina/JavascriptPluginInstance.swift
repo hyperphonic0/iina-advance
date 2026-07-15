@@ -47,7 +47,8 @@ class JavascriptPluginInstance {
     DispatchQueue(label: "com.iina_advance.plugin.\(plugin.identifier)", qos: .background)
   }()
 
-  lazy var subsystem = Logger.makeSubsystem("\(isGlobal ? "global" : "player\(player.label)") - \(plugin.name)")
+  lazy var subsystem = Logger.makeSubsystem("\(isGlobal ? "global" : "player\(player.label)") - \(plugin.name)"
+                                            , symbolName: ["puzzlepiece.extension"])
 
   var currentFile: URL? {
     currentFileStack.last
@@ -73,6 +74,7 @@ class JavascriptPluginInstance {
     if let plugin = self.plugin {
       Logger.log("Unload \(plugin.name)", level: .debug, subsystem: subsystem)
     }
+    polyfill.removeAllTimers()
     apis.values.forEach { $0.cleanUp(self) }
   }
 

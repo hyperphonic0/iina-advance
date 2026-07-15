@@ -51,18 +51,15 @@ final class MPVLogScanner {
   private unowned let player: PlayerCore
 
   /// Only used for messages coming directly from the mpv log event stream
-  let mpvLogSubsystem: any Logger.Subsystem
-  let log: any Logger.Subsystem
+  private let log: any Logger.Subsystem
 
   var mpvEventLogLevel: MPVLogLevel = .warn
 
   var changedProps = Set<String>()
 
-  init(player: PlayerCore) {
+  init(player: PlayerCore, _ log: any Logger.Subsystem) {
     self.player = player
-    mpvLogSubsystem = Logger.makeSubsystem(player, fmt: StringConstants.iinaMpvCategoryFmt)
-    log = mpvLogSubsystem
-
+    self.log = log
     updateMpvEventLogLevel()
   }
 

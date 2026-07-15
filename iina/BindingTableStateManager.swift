@@ -45,7 +45,8 @@ final class BindingTableStateManager: NSObject {
   func initialState() -> BindingTableState {
     let filterString = UIState.shared.isRestoreEnabled ? Preference.string(for: .uiPrefBindingsTableSearchString) ?? "" : ""
     let showAllBindings = Preference.bool(for: .showKeyBindingsFromAllSources)
-    return BindingTableState(AppInputConfig.current, filterString: filterString, inputConfFile: ConfTableState.manager.loadConfFile(),
+    return BindingTableState(AppInputConfig.current, filterString: filterString,
+                             inputConfFile: ConfTableState.manager.loadConfFile(),
                              showAllBindings: showAllBindings)
   }
 

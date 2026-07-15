@@ -37,7 +37,6 @@ class PlaybackInfo {
   var currentURL: URL? { currentPlayback?.url }
   var isNetworkResource: Bool { currentPlayback?.isNetworkResource ?? false }
   var isMediaOnRemoteDrive: Bool { currentPlayback?.isMediaOnRemoteDrive ?? false }
-  var mpvMd5: String? { currentPlayback?.mpvMD5 }
 
   var isFileLoaded: Bool { currentPlayback?.state.isAtLeast(.loaded) ?? false }
   var isFileLoadedAndSized: Bool {  currentPlayback?.state.isAtLeast(.loadedAndSized) ?? false }
@@ -121,8 +120,8 @@ class PlaybackInfo {
   var audioDelay: Double = 0
   var subDelay: Double = 0
   var sub2Delay: Double = 0
-  var subScale: Double = 0
-  var subPos: Double = 0
+  var subScale: Double = 1.0
+  var subPos: Double = 100
   var sub2Pos: Double = 0
   var subEncoding: String?
   var subFont: String?
@@ -158,7 +157,6 @@ class PlaybackInfo {
   var playSpeed: Double = 1.0
 
   var playlist: [PlaybackID] = []
-  var playlistPlayingPos: Int = -1  /// `MPVProperty.playlistPlayingPos`
 
   /** Selected track IDs. Use these (instead of `isSelected` of a track) to check if selected */
   var vid: Int? {
@@ -212,7 +210,12 @@ class PlaybackInfo {
       // Don't show art if currently loading
       log.verbose("shouldShowDefaultArt: loaded=\(currentPlayback.state.isAtLeast(.loaded).yn) vidSelected=\(isVideoTrackSelected.yn) vid=\(vid?.description ?? "nil")")
       if currentPlayback.state.isAtLeast(.loaded) {
-        return !isVideoTrackSelected
+        if vid == 0 {
+          return true
+        }
+        let audioStatus = currentMediaAudioStatus
+        let hasSubtitles = (isSubVisible && sid != 0) || (isSecondSubVisible && secondSid != 0)
+        return audioStatus.isAudio && (audioStatus != .isAudioWithArtShown) && !hasSubtitles
       }
     }
     return nil
@@ -247,8 +250,8 @@ class PlaybackInfo {
     if noVideoTrack {
       return .isAudioWithoutArt
     }
-    let allVideoTracksAreAlbumCover = !videoTracks.contains { !$0.isAlbumart }
-    if allVideoTracksAreAlbumCover {
+    let hasRealVideoTrack = videoTracks.contains { !$0.isAlbumart }
+    if !hasRealVideoTrack {
       if isVideoTrackSelected {
         return .isAudioWithArtShown
       } else {
@@ -262,6 +265,16 @@ class PlaybackInfo {
 
   @MainActor var chapter = 0
   @MainActor var chapters: [MPVChapter] = []
+  @MainActor var currentChapter: MPVChapter? { chapters[at: chapter] }
+  @MainActor func chapter(forPlaybackTime playbackPosSec: Double) -> MPVChapter? {
+    let pos = VideoTime(playbackPosSec)
+    for (index, chapter) in chapters.enumerated() {
+      if let nextChapterStart = chapters[at: index+1]?.startTime, pos.between(chapter.startTime, nextChapterStart) {
+        return chapter
+      }
+    }
+    return nil
+  }
 
   private var _audioTracks: [MPVTrack] = []
   private var _videoTracks: [MPVTrack] = []

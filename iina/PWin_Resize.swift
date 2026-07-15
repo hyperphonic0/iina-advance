@@ -29,7 +29,8 @@ extension PlayerWindowController {
     log.trace("WndWillStartLiveResize")
     isLiveResizingWidth = nil  // reset this
     // Shut down all animations for the duration of live resize!
-    // This way the asynchrounous unprotected updates in `windowWillResize` will (hopefully) not interfere with other animations.
+    // This way the asynchrounous unprotected updates in `windowWillResize` will (hopefully) not interfere with other
+    // animations.
     animationPipeline.enableRunning = false
     videoView.enterAsynchronousMode()
   }
@@ -49,12 +50,15 @@ extension PlayerWindowController {
   /// NSWindowDelegate: `windowWillResize`: pretty important. Called by AppKit when it wants to resize the window.
   ///
   /// # Notes for other NSWindowDelegate notifications:
-  /// * `windowDidResize`: Called after window is resized from (almost) any cause. Can be called many times during every call to
-  ///   `window.setFrame`. Do not use for anything too serious because it seems to sometimes fire during animations in progress.
+  /// * `windowDidResize`: Called after window is resized from (almost) any cause. Can be called many times during
+  ///    every call to
+  ///   `window.setFrame`. Do not use for anything too serious because it seems to sometimes fire during animations in
+  ///   progress.
   /// * `windowDidEndLiveResize`: Never use! It is unreliable. Use `windowDidResize` if anything.
   func windowWillResize(_ window: NSWindow, to requestedSize: NSSize) -> NSSize {
     guard !isAnimatingLayoutTransition, !isApplyingPWinGeo else {
-      log.verbose("[WndWillResize] isAnimatingLayoutTransition=\(isAnimatingLayoutTransition.yn) isApplyingPWinGeo=\(isApplyingPWinGeo.yn): will grant requestedSize=\(requestedSize)")
+      log.verbose("[WndWillResize] isAnimatingLayoutTransition=\(isAnimatingLayoutTransition.yn) " +
+                  "isApplyingPWinGeo=\(isApplyingPWinGeo.yn): will grant requestedSize=\(requestedSize)")
       return requestedSize
     }
     guard !isMagnifying else {
@@ -84,20 +88,23 @@ extension PlayerWindowController {
   private func resizeSubviews(of window: NSWindow, to requestedSize: NSSize) -> NSSize {
     let currentLayout = currentLayout
     let inLiveResize = window.inLiveResize
-    let lockViewportToVideoSize = currentLayout.mode.alwaysLockViewportToVideoSize || Preference.bool(for: .lockViewportToVideoSize)
-    log.verbose("[WndWillResize] \(currentLayout.mode) Curr=\(window.frame.size) Req=\(requestedSize) Live=\(inLiveResize.yn) LockViewport=\(lockViewportToVideoSize.yn)")
+    let lockViewport = currentLayout.mode.alwaysLockViewportToVideoSize || Preference.bool(for: .lockViewportToVideoSize)
+    log.verbose("[WndWillResize] \(currentLayout.mode) Curr=\(window.frame.size) Req=\(requestedSize) " +
+                "Live=\(inLiveResize.yn) LockViewport=\(lockViewport.yn)")
 
-    if lockViewportToVideoSize && inLiveResize {
+    if lockViewport && inLiveResize {
       /// Notes on the trickiness of live window resize:
-      /// 1. We need to decide whether to (A) keep the width fixed, and resize the height, or (B) keep the height fixed, and resize the width.
-      /// "A" works well when the user grabs the top or bottom sides of the window, but will not allow resizing if the user grabs the left
-      /// or right sides. Similarly, "B" works with left or right sides, but will not work with top or bottom.
-      /// 2. We can make all 4 sides allow resizing by first checking if the user is requesting a different height: if yes, use "B";
-      /// and if no, use "A".
-      /// 3. Unfortunately (2) causes resize from the corners to jump all over the place, because in that case either height or width will change
-      /// in small increments (depending on how fast the user moves the cursor) but this will result in a different choice between "A" or "B" schemes
-      /// each time, with very different answers, which causes the jumpiness. In this case either scheme will work fine, just as long as we stick
-      /// to the same scheme for the whole resize. So to fix this, we add `isLiveResizingWidth`, and once set, stick to scheme "B".
+      /// 1. We need to decide whether to (A) keep the width fixed, and resize the height, or (B) keep the height fixed,
+      /// and resize the width. "A" works well when the user grabs the top or bottom sides of the window, but will not
+      /// allow resizing if the user grabs the left or right sides. Similarly, "B" works with left or right sides, but
+      /// will not work with top or bottom.
+      /// 2. We can make all 4 sides allow resizing by first checking if the user is requesting a different height: if
+      /// yes, use "B"; and if no, use "A".
+      /// 3. Unfortunately (2) causes resize from the corners to jump all over the place, because in that case either
+      /// height or width will change in small increments (depending on how fast the user moves the cursor) but this
+      /// will result in a different choice between "A" or "B" schemes each time, with very different answers, which
+      /// causes the jumpiness. In this case either scheme will work fine, just as long as we stick to the same scheme
+      /// for the whole resize. So to fix this, we add `isLiveResizingWidth`, and once set, stick to scheme "B".
       if isLiveResizingWidth == nil {
         if window.frame.height != requestedSize.height {
           isLiveResizingWidth = false
@@ -124,7 +131,7 @@ extension PlayerWindowController {
       assert(currentGeo.mode == currentLayout.mode,
              "[WndWillResize] currentGeo.mode (\(currentGeo.mode)) != currentLayout.mode (\(currentLayout.mode))")
 
-      newGeo = currentGeo.resizingWindow(to: requestedSize, lockViewportToVideoSize: lockViewportToVideoSize,
+      newGeo = currentGeo.resizingWindow(to: requestedSize, lockViewportToVideoSize: lockViewport,
                                          inLiveResize: inLiveResize, isLiveResizingWidth: isLiveResizingWidth)
 
     case .fullScreenNormal, .fullScreenInteractive:
@@ -141,19 +148,19 @@ extension PlayerWindowController {
         return musicModeGeo.windowFrame.size
       }
 
-      // Use explicit `isViewportShown`, `playlistShown`: these are derived from the windowFrame, but when we update from
-      // current we can end up with small imprecisions which could alter their values.
-      let currentGeo = musicModeGeoForCurrentFrame().cloneMusicMode(isViewportShown: musicModeGeo.isViewportShown,
-                                                                    playlistShown: musicModeGeo.isMusicModePlaylistShown)
-      newGeo = currentGeo.resizingWindowInMusicMode(to: requestedSize,
-                                                    inLiveResize: inLiveResize, isLiveResizingWidth: isLiveResizingWidth)
+      // Use explicit `isViewportShown`, `playlistShown`: these are derived from the windowFrame, but when we update
+      // from current we can end up with small imprecisions which could alter their values.
+      let oldGeo = musicModeGeoForCurrentFrame().cloneMusicMode(isViewportShown: musicModeGeo.isViewportShown,
+                                                                playlistShown: musicModeGeo.isMusicModePlaylistShown)
+      newGeo = oldGeo.resizingWindowInMusicMode(to: requestedSize,
+                                                inLiveResize: inLiveResize, isLiveResizingWidth: isLiveResizingWidth)
     }
 
-    // Needed to prevent lagginess for floating OSC, offsets for pref `keepVideoAwayFromBars`, possibly other constraints.
+    // Needed to prevent floating OSC lagginess, offsets for pref `keepVideoAwayFromBars`, possibly other constraints.
     IINAAnimation.disableAnimation {
       /// AppKit calls `setFrame` after this method returns, and we cannot access that code to ensure it is encapsulated
-      /// within the same animation transaction as the code below. But the existing `VideoView` constraints should ensure
-      /// that everything resizes properly.
+      /// within the same animation transaction as the code below. But the existing `VideoView` constraints should
+      /// ensure that everything resizes properly.
       /// Update: need to update `VideoView` layout to ensure that cropbox in interactive mode is resized properly!
       resizeWindowSubviews(using: newGeo)
     }
@@ -163,12 +170,12 @@ extension PlayerWindowController {
     return newWindowSize
   }
 
-  /// This method is used to move & resize a `PlayerWindow`. It performs additional work needed beyond what `setFrame` provides.
-  /// Do not ever call `PlayerWindow.setFrame()` directly - call this instead!
+  /// This method is used to move & resize a `PlayerWindow`. It performs additional work needed beyond what `setFrame`
+  /// provides. Do not ever call `PlayerWindow.setFrame()` directly - call this instead!
   ///
-  /// By default, `setFrame()` has its own implicit animation, and this can create an undesirable effect when combined with other animations.
-  /// This function uses a `0` duration animation via the `animationResizeTime` callback to effectively remove the implicit
-  /// default animation.
+  /// By default, `setFrame()` has its own implicit animation, and this can create an undesirable effect when combined
+  /// with other animations. This function uses a `0` duration animation via the `animationResizeTime` callback to
+  /// effectively remove the implicit default animation.
   /// • Also resizes window subviews.
   /// • It will still animate if used inside an `NSAnimationContext` or `IINAAnimation.Task` with non-zero duration.
   func applyPWinGeometry(_ geometry: PWinGeometry,
@@ -176,7 +183,8 @@ extension PlayerWindowController {
                          updateViewportConstraints: Bool = true,
                          _ transitionCategory: TransitionCategory = .none,
                          submitUpdate: Bool = false) {
-    log.verbose("[PWin.setFrame] Entered: viewport=\(updateViewportConstraints.yn) cat=\(transitionCategory) save=\(submitUpdate.yn) \(geometry)")
+    log.verbose("[PWin.setFrame] Entered: viewport=\(updateViewportConstraints.yn) cat=\(transitionCategory) " +
+                "save=\(submitUpdate.yn) \(geometry)")
 
     resizeWindowSubviews(using: geometry, updateViewportConstraints: updateViewportConstraints, transitionCategory)
     updateOSDTopOffsetConstraints(for: geometry)
@@ -225,7 +233,8 @@ extension PlayerWindowController {
   /// Intended to be used only for resizing one or more of PlayerWindow's subviews, or to accomodate a window resize.
   /// Resizes *only* the subviews in the window, not the window frame. May update other state needed relating to resize.
   ///
-  /// This method cannot handle complex layout changes. For that, use a `LayoutTransition` (see `PWin_LayoutTxBuilder.swift`).
+  /// This method cannot handle complex layout changes. For that, use a `LayoutTransition`
+  /// (see `PWin_LayoutTxBuilder.swift`).
   private func resizeWindowSubviews(using newGeometry: PWinGeometry,
                                     updateViewportConstraints: Bool = true,
                                     _ transitionCategory: TransitionCategory = .none) {
@@ -250,7 +259,8 @@ extension PlayerWindowController {
   }
 
   // MARK: - Window Resize Denial Period
-  // Trying to wrestle control of the window size away from MacOS. Hopefully someday a proper solution will be discovered...
+  // Trying to wrestle control of the window size away from MacOS. Hopefully someday a proper solution will be
+  // discovered...
 
   func restartWindowResizeDenialPeriod(_ reason: String) {
     // Do not allow MacOS to change the window size
@@ -262,7 +272,8 @@ extension PlayerWindowController {
     guard !currentLayout.isFullScreen else { return false }
     let timeElapsed = CFAbsoluteTimeGetCurrent() - denyWindowResizePeriodStartTime
     let denyWindowResize = timeElapsed - TimeConstants.denyWindowResizeTimeout < 0
-    log.trace("Time elapsed=\(timeElapsed), timeout=\(TimeConstants.denyWindowResizeTimeout) → DenyWinResize=\(denyWindowResize.yn)")
+    log.trace("Time elapsed=\(timeElapsed), timeout=\(TimeConstants.denyWindowResizeTimeout) → " +
+              "DenyWinResize=\(denyWindowResize.yn)")
     return denyWindowResize
   }
 
@@ -276,15 +287,16 @@ extension PlayerWindowController {
     guard !currentLayout.isFullScreen else { return false }
     let timeElapsed = CFAbsoluteTimeGetCurrent() - denyWindowScrollPeriodStartTime
     let denyWindowScroll = timeElapsed - TimeConstants.denyWindowScrollTimeout < 0
-    log.trace("Time elapsed=\(timeElapsed), timeout=\(TimeConstants.denyWindowResizeTimeout) → DenyWinScroll=\(denyWindowScroll.yn)")
+    log.trace("Time elapsed=\(timeElapsed), timeout=\(TimeConstants.denyWindowResizeTimeout) → " +
+              "DenyWinScroll=\(denyWindowScroll.yn)")
     return denyWindowScroll
   }
 
   // MARK: - Other window resize methods
 
   /// Changes video scale to `targetVideoScale`, where a value of `1.0` is the video's native scale.
-  /// This actually scales the entire viewport, if pref `lockViewportToVideoSize` is enabled, but the size of the displayed video should match
-  /// the desired scale.
+  /// This actually scales the entire viewport, if pref `lockViewportToVideoSize` is enabled, but the size of the
+  /// displayed video should match the desired scale.
   @MainActor
   func setVideoScale(to targetVideoScale: Double) {
     animationPipeline.submitInstantTask{ [self] in
@@ -300,7 +312,8 @@ extension PlayerWindowController {
 
       let oldWindowedGeo = windowedGeoForCurrentFrame()
       let newGeo = oldWindowedGeo.scalingViewport(toVideoScale: targetVideoScale)
-      log.verbose("[mpv-window-scale] SetVideoScale: from targetVideoScale=\(targetVideoScale) → sending derived mpvWindowScale=\(newGeo.mpvWindowScale())")
+      log.verbose("[mpv-window-scale] SetVideoScale: from targetVideoScale=\(targetVideoScale) → " +
+                  "sending derived mpvWindowScale=\(newGeo.mpvWindowScale())")
       buildApplyPWinGeoTasks(to: newGeo, thenRun: true)
     }
   }
@@ -308,8 +321,8 @@ extension PlayerWindowController {
   /// Scales the viewport (which is equivalent to mpv's concept of a window) to the given `desiredMpvWindowScale`.
   ///
   /// This method is really only useful for responding to mpv's `window-scale` property, because this property is
-  /// meaningless to a casual user due to the way it is calculated using the viewport size; they should normally care about
-  /// the video scale instead. To change the video scale, call `setVideoScale`.
+  /// meaningless to a casual user due to the way it is calculated using the viewport size; they should normally care
+  /// about the video scale instead. To change the video scale, call `setVideoScale`.
   ///
   /// Not supported in music mode at this time. Need to resolve backing scale bugs.
   ///
@@ -338,7 +351,8 @@ extension PlayerWindowController {
       }
 
       player.mpv.windowScalesExpected.prepend(scaleFromGeo)
-      log.trace("[mpv-window-scale] SendWindowScaleToMPV: appended to list \(scaleFromGeo); windowScalesExpected.count=\(player.mpv.windowScalesExpected.count)")
+      log.trace("[mpv-window-scale] SendWindowScaleToMPV: appended to list \(scaleFromGeo); " +
+                "windowScalesExpected.count=\(player.mpv.windowScalesExpected.count)")
       player.mpv.setDouble(MPVProperty.windowScale, scaleFromGeo)
     }
   }
@@ -390,7 +404,7 @@ extension PlayerWindowController {
       let currentMpvWindowScale = inputGeo.mpvWindowScale()
 
       guard newMpvWindowScale != currentMpvWindowScale else {
-        log.verbose("[mpv-window-scale] mpvWindowScaleDidUpdate: No action needed; same as current scale (\(newMpvWindowScale))")
+        log.verbose("[mpv-window-scale] mpvWindowScaleDidUpdate: No change from current (\(newMpvWindowScale))")
         return nil
       }
 
@@ -398,7 +412,9 @@ extension PlayerWindowController {
 
       let rescaledGeo = inputGeo.scalingViewport(fromMpvWindowScale: newMpvWindowScale)
       let newComputedScale = rescaledGeo.mpvWindowScale()
-      log.verbose("[mpv-window-scale] mpvWindowScaleDidUpdate: current=\(currentMpvWindowScale) fromMPV=\(newMpvWindowScale) newComputedScale=\(newComputedScale)\(newMpvWindowScale == newComputedScale ? "" : " → mismatch! Will send newComputedScale to mpv")")
+      log.verbose("[mpv-window-scale] mpvWindowScaleDidUpdate: current=\(currentMpvWindowScale) " +
+                  "fromMPV=\(newMpvWindowScale) newComputedScale=\(newComputedScale)" +
+                  (newMpvWindowScale == newComputedScale ? "" : " → mismatch! Will send newComputedScale to mpv"))
       if newMpvWindowScale != newComputedScale {
         // Could not match desired value (e.g. window would be larger than screen). Notify mpv of updated value:
         sendWindowScaleToMPV(basedOn: rescaledGeo)
@@ -483,7 +499,7 @@ extension PlayerWindowController {
 
   // MARK: - Apply PWinGeometry (General Cases)
 
-  /// Generates tasks which, when executed, will update the layout of the player window & its internal views to match the
+  /// Generates tasks which, when executed, will update the layout of `PlayerWindow` & its internal views to match the
   /// state described by `outputGeo`. Animated. Can be used for all `PlayerWindowMode` cases.
   ///
   /// Also updates cached `windowedModeGeo` and saves updated state.
@@ -495,7 +511,8 @@ extension PlayerWindowController {
                               showDefaultArt: Bool? = nil,
                               thenRun: Bool = false) -> [IINAAnimation.Task] {
 
-    log.verbose("ApplyPWinGeo entered: duration=\(duration) showDefaultArt=\(showDefaultArt?.yn ?? "nil") run=\(thenRun.yn) save=\(save.yn) \(outputGeo)")
+    log.verbose("ApplyPWinGeo entered: duration=\(duration) showDefaultArt=\(showDefaultArt?.yn ?? "nil") " +
+                "run=\(thenRun.yn) save=\(save.yn) \(outputGeo)")
 
     var tasks: [IINAAnimation.Task] = []
 
@@ -504,7 +521,7 @@ extension PlayerWindowController {
       isApplyingPWinGeo = true            /// Try not to trigger `windowDidResize` while animating
       videoView.enterAsynchronousMode()   /// Enable smooth video redraws while animating
 
-      hideSeekPreviewImmediately()        /// Location of thumbnail may become invalid during window resize; just hide it
+      hideSeekPreviewImmediately()        /// Thumbnail location may become invalid during window resize; just hide it
 
       // Show art if videoView is already visible, or before it needs to be shown:
       if outputGeo.isViewportShown {
@@ -531,7 +548,8 @@ extension PlayerWindowController {
       case .windowedNormal, .windowedInteractive, .musicMode:
         // This is only needed to achieve "fade-in" effect when opening window:
         updateWindowBorderAndOpacity()
-        log.verbose("ApplyPWinGeo: " + (isWindowHidden ? "window is hidden; updating VP constraints but not setFrame" : "calling setFrame (duration=\(duration))"))
+        log.verbose("ApplyPWinGeo: " + (isWindowHidden ? "window is hidden; updating VP constraints but not setFrame"
+                                        : "calling setFrame (duration=\(duration))"))
         applyPWinGeometry(outputGeo, setWindowFrame: !isWindowHidden, submitUpdate: save)
       }
 

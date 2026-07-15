@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="24412" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="24765" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
     <dependencies>
-        <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="24412"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="24765"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
@@ -217,7 +216,7 @@
             </constraints>
             <point key="canvasLocation" x="-789" y="-314"/>
         </customView>
-        <customView translatesAutoresizingMaskIntoConstraints="NO" id="y44-Ej-vIC" userLabel="Prefs &gt; Subtitle &gt; Online Subtitles">
+        <customView misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="y44-Ej-vIC" userLabel="Prefs &gt; Subtitle &gt; Online Subtitles">
             <rect key="frame" x="0.0" y="0.0" width="528" height="171"/>
             <subviews>
                 <textField identifier="SectionTitleOnlineSub" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="NlE-eQ-ofV">
@@ -229,10 +228,10 @@
                     </textFieldCell>
                 </textField>
                 <stackView distribution="fillEqually" orientation="vertical" alignment="leading" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="bSz-xd-6o2">
-                    <rect key="frame" x="120" y="76" width="408" height="94"/>
+                    <rect key="frame" x="120" y="76" width="408" height="95"/>
                     <subviews>
                         <customView translatesAutoresizingMaskIntoConstraints="NO" id="S8h-wJ-vNN">
-                            <rect key="frame" x="0.0" y="64" width="400" height="30"/>
+                            <rect key="frame" x="0.0" y="64" width="400" height="31"/>
                             <subviews>
                                 <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="p4E-J3-eff">
                                     <rect key="frame" x="2" y="7" width="156" height="16"/>
@@ -243,7 +242,7 @@
                                     </textFieldCell>
                                 </textField>
                                 <popUpButton verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="UHS-ce-8t5">
-                                    <rect key="frame" x="164" y="0.0" width="160" height="28"/>
+                                    <rect key="frame" x="164" y="0.0" width="160" height="29"/>
                                     <popUpButtonCell key="cell" type="push" bezelStyle="rounded" alignment="left" controlSize="large" lineBreakMode="truncatingTail" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" id="XkP-fD-qDc">
                                         <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
                                         <font key="font" metaFont="message"/>
@@ -868,7 +867,7 @@
             </constraints>
             <point key="canvasLocation" x="-782" y="174"/>
         </customView>
-        <customView misplaced="YES" id="ATO-g6-mEy" userLabel="Prefs &gt; Subtitle &gt; ASS Subtitles" propertyAccessControl="none">
+        <customView id="ATO-g6-mEy" userLabel="Prefs &gt; Subtitle &gt; ASS Subtitles" propertyAccessControl="none">
             <rect key="frame" x="0.0" y="0.0" width="466" height="116"/>
             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
             <subviews>

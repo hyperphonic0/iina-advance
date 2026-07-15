@@ -92,7 +92,7 @@ extension PlayerWindowController {
     log.verbose("RebuildPanels: VP=\(useViewport.yn) Bottom=\(useBottomBar.yn) Top=\(useTopBar.yn) Leading=\(useLeadingSidebar.yn) Trailing=\(useTrailingSidebar.yn)")
 
     // - Add window subviews in a well-defined order (before adding constraints between them)
-    addOrRemoveViews(for: stage, stageGeo: stageGeo, log,
+    addOrRemoveViews(for: stage, stageGeo: stageGeo, stageLayout: stageLayout, log,
                      useViewport: useViewport,
                      useTopBar: useTopBar,
                      useBottomBar: useBottomBar,
@@ -124,12 +124,12 @@ extension PlayerWindowController {
       let insideTopBarHeight = stageGeo.topBarBtmOffsetFromVPTop
       log.verbose("TopBar: vpTopOffsetFromTopBarTop=\(outsideTopBarHeight) topBarBtmOffsetFromVPTop=\(insideTopBarHeight)")
 
-      p.vpTopOffsetFromTopBarTop.createOrUpdate(to: outsideTopBarHeight, log) { [self] c in
+      p.vpTopOffsetFromTopBarTop.createOrUpdate(to: outsideTopBarHeight, priorityInt: 1000, log) { [self] c in
         viewportView.topAnchor.constraint(equalTo: topBar.view.topAnchor, constant: c)
       }
 
       // Don't use required priority, as sometimes this causes constraint violations
-      p.topBarBtmOffsetFromVPTop.createOrUpdate(to: insideTopBarHeight, log) { [self] c in
+      p.topBarBtmOffsetFromVPTop.createOrUpdate(to: insideTopBarHeight, priorityInt: 1000, log) { [self] c in
         topBar.view.bottomAnchor.constraint(equalTo: viewportView.topAnchor, constant: c)
       }
 
@@ -151,7 +151,7 @@ extension PlayerWindowController {
       topBar.titleBarHeightConstraint.animateToConstant(titleHeight)
 
       // Not sure why when we make this `.required`, we get a bogus constraint violation
-      topBar.titleBarHeightConstraint.priority = .defaultHigh
+      topBar.titleBarHeightConstraint.priorityInt = 999
     }
 
     let isAnimatingViewportOpen = transition.isOpeningViewport && !stage.isFinalStage  // Music Mode: opening video
@@ -305,11 +305,14 @@ extension PlayerWindowController {
     updateWindowFrameIfNeeded(for: stage, stageGeo, in: transition, log)
   }
 
-  private func addOrRemoveViews(for stage: LayoutTransition.Stage, stageGeo: PWinGeometry, _ log: any Logger.Subsystem,
+  private func addOrRemoveViews(for stage: LayoutTransition.Stage, stageGeo: PWinGeometry,
+                                stageLayout: LayoutState,
+                                _ log: any Logger.Subsystem,
                                 useViewport: Bool,
                                 useTopBar: Bool, useBottomBar: Bool,
                                 useLeadingSidebar: Bool, useTrailingSidebar: Bool) {
     let contentView = window!.contentView!
+    let targetWindowAppearance = AppDelegate.shared.targetWindowAppearance
 
     // Add/remove viewportView if needed
     if useViewport {
@@ -329,7 +332,6 @@ extension PlayerWindowController {
         log.verbose("Adding leadingSidebarView to window contentView")
         contentView.addSubview(leadingSidebarView, positioned: .above, relativeTo: viewportView)
       }
-      leadingSidebarView.appearance = contentView.appearance
     } else {
       leadingSidebarConstraints = nil  // disables constraints
       if leadingSidebarView.superview != nil {
@@ -342,7 +344,6 @@ extension PlayerWindowController {
         log.verbose("Adding trailingSidebarView to window contentView")
         contentView.addSubview(trailingSidebarView, positioned: .above, relativeTo: viewportView)
       }
-      trailingSidebarView.appearance = contentView.appearance
     } else {
       trailingSidebarConstraints = nil  // disables constraints
       if trailingSidebarView.superview != nil {
@@ -354,9 +355,35 @@ extension PlayerWindowController {
 
     // Add/remove bottomBar.view if needed
     if useBottomBar {
-      if !contentView.containsSubview(bottomBar.view) {
-        log.verbose("Adding bottomBar.view to window contentView")
-        contentView.addSubview(bottomBar.view, positioned: .above, relativeTo: viewportView)
+      let bottomBarAppearance = stageLayout.bottomBarAppearance(targetWindowAppearance: targetWindowAppearance)
+      bottomBarAppearance.performAsCurrentDrawingAppearance {
+        if !contentView.containsSubview(bottomBar.view) {
+          log.verbose("Adding bottomBar.view to window.contentView")
+          contentView.addSubview(bottomBar.view, positioned: .above, relativeTo: viewportView)
+        }
+        log.verbose("BottomBar appearance=\(bottomBarAppearance.isDark ? "DARK" : "LIGHT")")
+        // Set this explicitly to ensure it overrides its parent style, which may not match
+        bottomBar.view.appearance = bottomBarAppearance
+        // Workaround for race condition which could cause Tinted Glass panel in Light mode to be wrongly Dark:
+        // explicitly set every single child view to the desired appearance
+        bottomBar.contentView.appearance = bottomBarAppearance
+        bottomBar.topBorder.appearance = bottomBarAppearance
+        for subview in bottomBar.view.subviews {
+          subview.appearance = bottomBarAppearance
+          for subsubview in subview.subviews {
+            subsubview.appearance = bottomBarAppearance
+          }
+        }
+        for subview in bottomBar.contentView.subviews {
+          subview.appearance = bottomBarAppearance
+          for subsubview in subview.subviews {
+            subsubview.appearance = bottomBarAppearance
+          }
+        }
+        // ContentHolderView
+        if bottomBar.contentView != bottomBar.view {
+          bottomBar.contentView.superview?.appearance = bottomBarAppearance
+        }
       }
     } else {
       if bottomBar.view.superview != nil {
@@ -367,10 +394,35 @@ extension PlayerWindowController {
 
     // Add/remove topBarView if needed
     if useTopBar {
-      if !contentView.containsSubview(topBar.view) {
-        log.verbose("Adding topBarView to window contentView")
-        contentView.addSubview(topBar.view, positioned: .above, relativeTo: viewportView)
+      let topBarAppearance = stageLayout.topBarAppearance(targetWindowAppearance: targetWindowAppearance)
+      topBarAppearance.performAsCurrentDrawingAppearance {
+        if !contentView.containsSubview(topBar.view) {
+          log.verbose("Adding topBarView to window contentView")
+          contentView.addSubview(topBar.view, positioned: .above, relativeTo: viewportView)
+        }
+        log.verbose("TopBar appearance=\(topBarAppearance.isDark ? "DARK" : "LIGHT")")
+        topBar.view.appearance = topBarAppearance
+        // Workaround for race condition which could cause Tinted Glass panel in Light mode to be wrongly Dark:
+        // explicitly set every single child view to the desired appearance
+        topBar.contentView.appearance = topBarAppearance
+        topBar.titleBarView.appearance = topBarAppearance
+        for subview in topBar.view.subviews {
+          subview.appearance = topBarAppearance
+          for subsubview in subview.subviews {
+            subsubview.appearance = topBarAppearance
+          }
+        }
+        for subview in topBar.contentView.subviews {
+          subview.appearance = topBarAppearance
+          for subsubview in subview.subviews {
+            subsubview.appearance = topBarAppearance
+          }
+        }
+        if topBar.contentView != topBar.view {
+          topBar.contentView.superview?.appearance = topBarAppearance
+        }
       }
+
     } else {
       if topBar.view.superview != nil {
         log.verbose("Removing topBarView from superview")
@@ -702,6 +754,7 @@ extension PlayerWindowController {
     possibleSubviews += [
       topBar.view,
       seekPreview.thumbnailPeekView,
+      seekPreview.chapterLabel,
       seekPreview.timeLabel,
       miniPlayerTrafficLightsBGView,
     ]

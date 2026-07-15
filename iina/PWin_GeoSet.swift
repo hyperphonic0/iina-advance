@@ -105,11 +105,7 @@ extension PlayerWindowController {
         return nil
       }
       guard !sessionState.isRestoring else {
-        // Log this. It can sometimes indicate a bug during launch
         log.verbose("Still restoring; will use cached window frame & screenID instead of latest")
-        if !Preference.bool(for: .isRestoreInProgress) {
-          log.error("Window still has sessionState==restoring, but isRestoreInProgress==NO. This is a bug!")
-        }
         return nil
       }
     }

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="24412" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="24765" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="24412"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="24765"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
@@ -17,6 +17,7 @@
                 <outlet property="lastPositionLabel" destination="NN2-yl-ccC" id="jeq-5n-4vp"/>
                 <outlet property="leftOverlayView" destination="y68-wa-gJg" id="ENS-Vh-Gti"/>
                 <outlet property="mainView" destination="Nb0-VN-ptD" id="VxT-6r-gb2"/>
+                <outlet property="openFileActionBtn" destination="ZGi-N7-Zv2" id="6Sg-Ei-twI"/>
                 <outlet property="recentFilesTableTopConstraint" destination="fUG-aR-h0p" id="uXl-xN-JgF"/>
                 <outlet property="recentFilesTableView" destination="VeK-rB-yjt" id="JGx-gh-DaC"/>
                 <outlet property="versionLabel" destination="0eM-hv-Q2Z" id="e5h-lT-TDr"/>
@@ -29,7 +30,7 @@
         <window title="Welcome" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" releasedWhenClosed="NO" visibleAtLaunch="NO" frameAutosaveName="" animationBehavior="default" titlebarAppearsTransparent="YES" titleVisibility="hidden" id="F0z-JX-Cv5">
             <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" fullSizeContentView="YES"/>
             <rect key="contentRect" x="931" y="455" width="640" height="400"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="1496" height="937"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="1728" height="1083"/>
             <view key="contentView" wantsLayer="YES" id="se5-gp-TjO" customClass="InitialWindowContentView" customModule="IINA_Advance" customModuleProvider="target">
                 <rect key="frame" x="0.0" y="0.0" width="640" height="400"/>
                 <autoresizingMask key="autoresizingMask"/>
@@ -48,6 +49,7 @@
                             </box>
                             <visualEffectView wantsLayer="YES" blendingMode="behindWindow" material="underWindowBackground" state="active" translatesAutoresizingMaskIntoConstraints="NO" id="flK-Zt-USI">
                                 <rect key="frame" x="180" y="0.0" width="460" height="400"/>
+                                <accessibility identifier="welcomeWndEffectView"/>
                             </visualEffectView>
                             <customView translatesAutoresizingMaskIntoConstraints="NO" id="qTo-HU-gie">
                                 <rect key="frame" x="0.0" y="0.0" width="640" height="400"/>

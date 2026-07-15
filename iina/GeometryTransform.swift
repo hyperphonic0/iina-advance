@@ -101,6 +101,7 @@ struct GeometryTransform: Sendable {
 
   /// Convenience method which enqueues this GeometryTransform for execution.
   func submit() {
+    log.verbose("[GTF:\(name)] Submitting self")
     pwc.animationPipeline.submitGTF(self)
   }
 
@@ -412,15 +413,8 @@ struct GeometryTransform: Sendable {
       self.outputLayout = inputLayout  // until updated
     }
 
-    /// Default album art: to avoid race conditions, use the context's state instead of player.info
-    /// If `showDefaultArt == nil`, don't change existing visibility.
-    fileprivate var shouldChangeDefaultArt: Bool? {
-      // Don't show art if currently loading
-      if currentPlayback.state.isAtLeast(.loaded) {
-        // Show art if no video track is selected (i.e., vid=0)
-        return vidTrackID == 0
-      }
-      return nil
+    fileprivate var shouldShowDefaultArt: Bool? {
+      return player.info.shouldShowDefaultArt
     }
 
     /// Applies the `pWinGeoTransform` (if it exists), and generates tasks which animate any changes caused
@@ -442,7 +436,7 @@ struct GeometryTransform: Sendable {
 
         switch gtfSessionState {
         case .restoring:
-          if currentPlayback.isNetworkResource, let showDefaultArt = shouldChangeDefaultArt {
+          if currentPlayback.isNetworkResource, let showDefaultArt = shouldShowDefaultArt {
             log.verbose("[GTF:\(name)] Restoring a streaming window: will set defaultArtVisibility to \(showDefaultArt.yn)")
             return [.instantTask {
               pwc.updateDefaultArtVisibility(to: showDefaultArt)
@@ -487,7 +481,7 @@ struct GeometryTransform: Sendable {
         }
 
         let outputGeo = resizedGeo ?? inputGeoSet.windowed.resizeMinimally(forNewVideoGeo: outputVidGeo)
-        let showDefaultArt: Bool? = shouldChangeDefaultArt
+        let showDefaultArt: Bool? = shouldShowDefaultArt
 
         log.verbose("[GTF:\(name)] Building 'apply' tasks for windowed mode: sess=\(gtfSessionState) defaultArt=\(showDefaultArt?.yn ?? "nil") dur=\(duration) → \(outputGeo)")
         return pwc.buildApplyPWinGeoTasks(to: outputGeo, duration: duration, timing: timing, showDefaultArt: showDefaultArt)
@@ -495,7 +489,7 @@ struct GeometryTransform: Sendable {
       case .fullScreenNormal:
         let newWindowedGeo = inputGeoSet.windowed.resizeMinimally(forNewVideoGeo: outputVidGeo)
         let fsGeo = outputLayout.buildFullScreenGeometry(inScreenID: newWindowedGeo.screenID, outputVidGeo)
-        let showDefaultArt: Bool? = shouldChangeDefaultArt
+        let showDefaultArt: Bool? = shouldShowDefaultArt
 
         log.verbose("[GTF:\(name)] Building 'apply' tasks for FS mode: defaultArt=\(showDefaultArt?.yn ?? "nil") dur=\(duration) \(fsGeo)")
         var tasks = pwc.buildApplyPWinGeoTasks(to: fsGeo, duration: duration, timing: timing, showDefaultArt: showDefaultArt)
@@ -543,7 +537,7 @@ struct GeometryTransform: Sendable {
                                                      to: outputLayout, outputGeo: outputMusicModeGeo, inputGeoSet)
           return pwc.buildTasks(for: transition, totalStartingDuration: closingDuration, totalEndingDuration: openingDuration)
         } else {
-          let showDefaultArt: Bool? = shouldChangeDefaultArt
+          let showDefaultArt: Bool? = shouldShowDefaultArt
           log.verbose("[GTF:\(name)] Building 'apply' tasks for musicMode: sess=\(gtfSessionState) defaultArt=\(showDefaultArt?.yn ?? "nil") dur=\(duration) → \(outputMusicModeGeo)")
           return pwc.buildApplyPWinGeoTasks(to: outputMusicModeGeo, duration: duration, showDefaultArt: showDefaultArt)
         }
@@ -727,7 +721,7 @@ struct GeometryTransform: Sendable {
 
         // At this point it is safe to assume that `musicModeGeo` will have be set
         let shouldDecideDefaultArtStatus = !outputLayout.isMusicMode || pwc.musicModeGeo.isViewportShown
-        let showDefaultArt: Bool? = shouldDecideDefaultArtStatus ? shouldChangeDefaultArt : nil
+        let showDefaultArt: Bool? = shouldDecideDefaultArtStatus ? shouldShowDefaultArt : nil
         if let showDefaultArt {
           // May need to set this while restoring a network audio stream
           pwc.updateDefaultArtVisibility(to: showDefaultArt)
@@ -965,8 +959,7 @@ extension PlayerWindowController {
       mode = .windowedNormal  // default
     }
 
-    // Set to default layout, but use existing aspect ratio & video size for now, because we don't have that info yet for the new video
-    ctx.outputLayout = LayoutState.fromPrefs(andMode: mode, fillingInFrom: lastWindowedLayoutState)
+    ctx.outputLayout = LayoutState.fromPrefs(andMode: mode)
 
     let outputGeoSet = buildGeoSetForNewWindow(ctx)
     return buildTransitionTasksToInitialLayout(ctx, outputGeoSet: outputGeoSet)

@@ -352,27 +352,20 @@ extension PlayerWindowController {
 
     fadeableViews.clearFadeableSets()
 
-    let oldAppearance = contentView.effectiveAppearance
-    /// Do not set `window.appearance`! It causes race conditions which lead to wrong colors of top panel (which we sometimes want to override).
-    /// Set `window.contentView.appearance` instead.
-    let theme: Preference.Theme = Preference.enum(for: .themeMaterial)
-    // Can be nil, which means dynamic system appearance as set by MacOS (via NSApp)
-    let targetWindowAppearance: NSAppearance = NSAppearance(iinaTheme: theme) ?? window.effectiveAppearance
-    let topBarAppearance = outputLayout.topBarColorScheme.hasClearBG ? NSAppearance(iinaTheme: .dark)! : targetWindowAppearance
-    log.verbose("TopBarAppearance: \(topBarAppearance.isDark ? "DARK" : "LIGHT")")
+    let oldAppearance = window.effectiveAppearance
+    let targetWindowAppearance = AppDelegate.shared.targetWindowAppearance
+    let appearanceDidChange = oldAppearance != targetWindowAppearance
 
     // Do this here so that (1) BarRenderer regenerates close enough to mid-animation (so bar thickness changes pleasantly),
     // & (2) window.appearance is updated before updating styling of any window views!
     if let screen = window.screen {
-      applyThemeMaterial(using: transition.outputLayout, targetWindowAppearance, window, screen)
-      window.display()  // Call this to avoid race condition setting top bar view to "tinted glass" with non-system appearance
+      applyThemeMaterial(using: transition.outputLayout, window, screen)
     } else {
       // In some rare cases, window might be off screen its frame size is zero (the latter can happen when exiting music mode with no
       // playlist & no video), in which case window.screen will be nil. Just log & continue. In principle, applyThemeMaterial will still
       // be called via windowDidChangeScreen.
       log.verbose("Skipped applyThemeMaterial due to missing window or screen")
     }
-    let appearanceDidChange = oldAppearance != contentView.effectiveAppearance
 
     switch transition.outputLayout.mode {
     case .fullScreenInteractive, .windowedInteractive:
@@ -414,7 +407,7 @@ extension PlayerWindowController {
       videoView.enterAsynchronousMode()
 
       // Show default album art if no video track selected
-      if let currentPlayback = player.info.currentPlayback, currentPlayback.state.isAtLeast(.loaded), !player.info.isVideoTrackSelected {
+      if player.info.shouldShowDefaultArt == true {
         updateDefaultArtVisibility(to: true)
       }
       pip.showOrHidePipOverlayView()
@@ -439,11 +432,14 @@ extension PlayerWindowController {
 
     // Unclear why bottomBar.view sometimes fails to update its appearance along with the other views.
     // Workaround: force redraw when appearanceDidChange
-    let needsBottomBarUpdate = transition.isWindowInitialLayout || transition.isBottomBarPlacementOrStyleChanging || (contentView.effectiveAppearance != bottomBar.view.effectiveAppearance)
-    if needsBottomBarUpdate {
-      bottomBar.rebuildBottomBarView(colorScheme: transition.outputLayout.oscColorScheme, log)
-      // Just add the new view now. It will have its Z order corrected in `rebuildPanelConstraints`.
-      window.contentView!.addSubview(bottomBar.view)
+    let needsBottomBarRebuild = transition.isWindowInitialLayout || appearanceDidChange
+    || transition.isBottomBarPlacementOrStyleChanging || transition.isBottomBarOpening
+    if needsBottomBarRebuild {
+      let bottomBarAppearance = outputLayout.bottomBarAppearance(targetWindowAppearance: targetWindowAppearance)
+      bottomBarAppearance.performAsCurrentDrawingAppearance { [self] in
+        bottomBar.rebuildBottomBarView(colorScheme: transition.outputLayout.oscColorScheme, log)
+      }
+      /// It will be added to window.contentView & its Z order corrected in `rebuildPanelConstraints`.
     }
 
     /// Show dividing line only for `.outsideViewport` bottom bar. Don't show in music mode as it doesn't look good
@@ -459,16 +455,43 @@ extension PlayerWindowController {
 
     // - Top Bar
 
-    topBarAppearance.performAsCurrentDrawingAppearance {
-      topBar.rebuildTopBarViewIfNeeded(targetLayout: outputLayout, targetAppearance: topBarAppearance, superview: contentView, log)
-      if topBar.view.superview == nil {
-        contentView.addSubview(topBar.view)
+    let topBarAppearance = outputLayout.topBarAppearance(targetWindowAppearance: targetWindowAppearance)
+    topBarAppearance.performAsCurrentDrawingAppearance { [self] in
+      let needsTopBarRebuild = transition.isWindowInitialLayout || appearanceDidChange
+      || (transition.inputLayout.topBarColorScheme != outputLayout.topBarColorScheme)
+      // Unlike the other panels, do not set the topBar's appearance explicitly.
+      // It will inherit from window.contentView's appearance, which must be set to the desired topBar
+      // appearance to ensure that the native title bar's appearance is set correctly.
+      topBar.rebuildTopBarViewIfNeeded(targetLayout: outputLayout, force: needsTopBarRebuild, log)
+
+      let topBarColorScheme = outputLayout.topBarColorScheme
+      topBar.bottomBorder.isHidden = topBarColorScheme != .visualEffectView
+
+      // Colors for native controls. Do this after applying theme!
+      if outputLayout.leadingSidebarToggleButton.isShowable {
+        leadingSidebarToggleButton.setColors(for: topBarColorScheme, .titleBarButton)
+        leadingSidebarToggleButton.needsDisplay = true
       }
+      if outputLayout.trailingSidebarToggleButton.isShowable {
+        trailingSidebarToggleButton.setColors(for: topBarColorScheme, .titleBarButton)
+        trailingSidebarToggleButton.needsDisplay = true
+      }
+      onTopButton.setColors(for: topBarColorScheme, .titleBarButton)
+      onTopButton.needsDisplay = true
+
+      if let titleTextField {
+        titleTextField.addShadow(topBarColorScheme, .titleText)
+        titleTextField.needsDisplay = true
+      }
+
+      // Colors for custom title bar controls
+      customTitleBar?.setColors(topBarColorScheme: topBarColorScheme)
     }
 
-    if !transition.isWindowInitialLayout {
-      rebuildPanelConstraints(transition, stage: .midTransitionHiddenUpdates)
-    }
+    log.verbose("TopBarAppearance: target=\(topBarAppearance.isDark ? "DARK" : "LIGHT") "
+                + "actual=\(topBar.view.effectiveAppearance.isDark ? "DARK" : "LIGHT")")
+
+    rebuildPanelConstraints(transition, stage: .midTransitionHiddenUpdates)
 
     // - - Title bar views
 
@@ -489,31 +512,33 @@ extension PlayerWindowController {
     let onTopButtonVisibility = transition.outputLayout.computeOnTopButtonVisibility(isOnTop: isOnTop)
 
     if outputLayout.titleBar.isShowable, transition.outputLayout.isLegacyStyle {
-      let legacyTitleBar: CustomTitleBarViewController
-      // Custom title bar
-      if let customTitleBar {
-        legacyTitleBar = customTitleBar
-      } else {
-        legacyTitleBar = CustomTitleBarViewController(transition.outputLayout, self)
-        customTitleBar = legacyTitleBar
+      topBarAppearance.performAsCurrentDrawingAppearance { [self] in
+        let legacyTitleBar: CustomTitleBarViewController
+        // Custom title bar
+        if let customTitleBar {
+          legacyTitleBar = customTitleBar
+        } else {
+          legacyTitleBar = CustomTitleBarViewController(transition.outputLayout, self)
+          customTitleBar = legacyTitleBar
 
-        // Prep views to fade in later
-        legacyTitleBar.view.alphaValue = 0
-        for btn in legacyTitleBar.trafficLightButtons {
-          btn.alphaValue = 0
-          btn.isHidden = true
+          // Prep views to fade in later
+          legacyTitleBar.view.alphaValue = 0
+          for btn in legacyTitleBar.trafficLightButtons {
+            btn.alphaValue = 0
+            btn.isHidden = true
+          }
         }
-      }
 
-      if transition.outputLayout.mode == .musicMode {
-        legacyTitleBar.addViewTo(superview: contentView)
-      } else {
-        legacyTitleBar.addViewTo(superview: topBar.titleBarView)
+        if transition.outputLayout.mode == .musicMode {
+          legacyTitleBar.addViewTo(superview: contentView)
+        } else {
+          legacyTitleBar.addViewTo(superview: topBar.titleBarView)
+        }
+        fadeableViews.applyOnlyIfHidden(outputLayout.leadingSidebarToggleButton, to: legacyTitleBar.leadingSidebarToggleButton)
+        fadeableViews.applyOnlyIfHidden(outputLayout.trailingSidebarToggleButton, to: legacyTitleBar.trailingSidebarToggleButton)
+        fadeableViews.applyOnlyIfHidden(onTopButtonVisibility, to: legacyTitleBar.onTopButton)
+        fadeableViews.applyOnlyIfHidden(outputLayout.titleIconAndText, to: legacyTitleBar.titleIconAndTextStackView)
       }
-      fadeableViews.applyOnlyIfHidden(outputLayout.leadingSidebarToggleButton, to: legacyTitleBar.leadingSidebarToggleButton)
-      fadeableViews.applyOnlyIfHidden(outputLayout.trailingSidebarToggleButton, to: legacyTitleBar.trailingSidebarToggleButton)
-      fadeableViews.applyOnlyIfHidden(onTopButtonVisibility, to: legacyTitleBar.onTopButton)
-      fadeableViews.applyOnlyIfHidden(outputLayout.titleIconAndText, to: legacyTitleBar.titleIconAndTextStackView)
     }
 
     fadeableViews.applyOnlyIfHidden(outputLayout.leadingSidebarToggleButton, to: leadingSidebarToggleButton)
@@ -553,8 +578,6 @@ extension PlayerWindowController {
         muteButton.target = self
         muteButton.action = #selector(muteButtonAction(_:))
       }
-
-      seekPreview.timeLabel.font = NSFont.systemFont(ofSize: 9)
 
       // Update music mode UI
       updateTitle()
@@ -597,6 +620,7 @@ extension PlayerWindowController {
     // [Re-]add OSC:
     if outputLayout.enableOSC {
       assert(!outputLayout.isMusicMode)
+      let oscAppearance = outputLayout.oscBarAppearance(targetWindowAppearance: targetWindowAppearance)
       let newGeo = outputLayout.controlBarGeo
       log.verbose("Setting up OSC: pos=\(outputLayout.oscPosition) musicMode=\(outputLayout.isMusicMode.yn) playIconSize=\(newGeo.playIconSize) playIconSpacing=\(newGeo.playIconSpacing)")
 
@@ -605,7 +629,6 @@ extension PlayerWindowController {
       switch outputLayout.oscPosition {
       case .top:
         currentControlBar = topBar.controlBarTop
-
 
         let oscContentView: NSView
         if newGeo.isTwoRowBarOSC {
@@ -617,6 +640,7 @@ extension PlayerWindowController {
           log.verbose("Adding subviews to oscOneRowView for top bar")
           oscOneRowView.updateSubviews(from: self, newGeo)
         }
+        oscContentView.appearance = oscAppearance
 
         if !topBar.controlBarTop.subviews.contains(oscContentView) {
           log.verbose("Adding \(oscContentView.idString) to topBarView")
@@ -640,6 +664,7 @@ extension PlayerWindowController {
           log.verbose("Adding subviews to oscOneRowView for bottom bar")
           oscOneRowView.updateSubviews(from: self, newGeo)
         }
+        oscContentView.appearance = oscAppearance
 
         if !bottomBar.contentView.subviews.contains(oscContentView) {
           log.verbose("Adding \(oscContentView.idString) to bottomBar.view")
@@ -656,6 +681,9 @@ extension PlayerWindowController {
         addFloatingControlBarToViewportView()
         controlBarFloating.updatePreferredBarWidth()
 
+        let oscAppearance = outputLayout.oscColorScheme.hasClearBG ? NSAppearance(iinaTheme: .dark)! : targetWindowAppearance
+        controlBarFloating.view.appearance = oscAppearance
+
         let floatingUpperView = controlBarFloating.topRowView
         if !floatingUpperView.views.contains(fragToolbarView) {
           floatingUpperView.addView(fragToolbarView, in: .trailing)
@@ -664,12 +692,14 @@ extension PlayerWindowController {
         }
       }
 
-      seekPreview.updateTimeLabelFontSize(to: newGeo.seekPreviewTimeLabelFontSize)
+      seekPreview.updateLabelFont(using: outputLayout)
 
     } else if outputLayout.isMusicMode {
 
       // Music mode always has a control bar
       currentControlBar = miniPlayer.musicModeControlBarView
+
+      seekPreview.updateLabelFont(using: outputLayout)
 
     } else {  // No OSC & not music mode
       currentControlBar = nil
@@ -715,7 +745,6 @@ extension PlayerWindowController {
       playSliderCell.knobHeight = sliderKnobHeight
       playSliderCell.abLoopA.updateKnobImage(to: .loopKnob)
       playSliderCell.abLoopB.updateKnobImage(to: .loopKnob)
-      playSlider.needsDisplay = true
 
       let volumeSliderCell = volumeSliderCell
       volumeSliderCell.knobWidth = sliderKnobWidth
@@ -762,8 +791,14 @@ extension PlayerWindowController {
 
     // - Interactive mode
 
-    if transition.isEnteringInteractiveMode || (transition.isWindowInitialLayout && transition.outputLayout.isInteractiveMode) {
-      // Even if entering IM, may have a prev crop due to a bug elsewhere. Remove if found
+    if transition.outputLayout.isInteractiveMode {
+      let prevSelectedRect: NSRect?
+      if let cropController = self.cropSettingsView {
+        prevSelectedRect = cropController.cropBoxView.selectedRect
+      } else {
+        prevSelectedRect = nil
+      }
+
       removeCropControls()
 
       // Need videoView to have superview before adding shadow
@@ -787,17 +822,21 @@ extension PlayerWindowController {
 
       /// `selectedRect` should be subrect of`actualSize`
       let selectedRect: NSRect
-      switch currentLayout.interactiveMode {
-      case .crop:
-        if let prevCropFilter = player.info.videoFiltersDisabled[Constants.FilterLabel.crop] {
-          selectedRect = prevCropFilter.cropRect(origVideoSize: videoSizeRaw, flipY: true)
-          log.verbose("Setting crop box selectedRect from prevFilter: \(selectedRect)")
-        } else {
-          selectedRect = NSRect(origin: .zero, size: videoSizeRaw)
-          log.verbose("Setting crop box selectedRect to default whole videoSize: \(selectedRect)")
+      if let prevSelectedRect {
+        selectedRect = prevSelectedRect
+      } else {
+        switch currentLayout.interactiveMode {
+        case .crop:
+          if let prevCropFilter = player.info.videoFiltersDisabled[Constants.FilterLabel.crop] {
+            selectedRect = prevCropFilter.cropRect(origVideoSize: videoSizeRaw, flipY: true)
+            log.verbose("Setting crop box selectedRect from prevFilter: \(selectedRect)")
+          } else {
+            selectedRect = NSRect(origin: .zero, size: videoSizeRaw)
+            log.verbose("Setting crop box selectedRect to default whole videoSize: \(selectedRect)")
+          }
+        case .freeSelecting, .none:
+          selectedRect = .zero
         }
-      case .freeSelecting, .none:
-        selectedRect = .zero
       }
       cropController.cropBoxView.selectedRect = selectedRect
 
@@ -820,47 +859,6 @@ extension PlayerWindowController {
     // So that panels toggling between "inside" and "outside" don't change until they need to (but FS is OK)
     if !transition.isTogglingFullScreen {
       updatePanelBlendingModes(to: outputLayout)
-    }
-
-    // Do this here so that (1) BarRenderer regenerates close enough to mid-animation (so bar thickness changes pleasantly),
-    // & (2) window.appearance is updated before updating styling of any window views!
-    if let screen = window.screen {
-      applyThemeMaterial(using: transition.outputLayout, targetWindowAppearance, window, screen)
-    } else {
-      // In some rare cases, window might be off screen its frame size is zero (the latter can happen when exiting music mode with no
-      // playlist & no video), in which case window.screen will be nil. Just log & continue. In principle, applyThemeMaterial will still
-      // be called via windowDidChangeScreen.
-      log.verbose("Skipped applyThemeMaterial due to missing window or screen")
-    }
-
-    topBarAppearance.performAsCurrentDrawingAppearance { [self] in
-      let topBarColorScheme = outputLayout.topBarColorScheme
-      log.verbose("Updating topBarView appearance to \(topBarColorScheme.description), isDark=\(topBarAppearance.isDark.yesno)")
-      topBar.bottomBorder.isHidden = topBarColorScheme != .visualEffectView
-      topBar.view.appearance = topBarAppearance
-      topBar.contentView.appearance = topBarAppearance
-      topBar.view.needsDisplay = true
-      topBar.contentView.needsDisplay = true
-
-      // Colors for native controls. Do this after applying theme!
-      if outputLayout.leadingSidebarToggleButton.isShowable {
-        leadingSidebarToggleButton.setColors(for: topBarColorScheme, .titleBarButton)
-        leadingSidebarToggleButton.needsDisplay = true
-      }
-      if outputLayout.trailingSidebarToggleButton.isShowable {
-        trailingSidebarToggleButton.setColors(for: topBarColorScheme, .titleBarButton)
-        trailingSidebarToggleButton.needsDisplay = true
-      }
-      onTopButton.setColors(for: topBarColorScheme, .titleBarButton)
-      onTopButton.needsDisplay = true
-
-      if let titleTextField {
-        titleTextField.addShadow(topBarColorScheme, .titleText)
-        titleTextField.needsDisplay = true
-      }
-
-      // Colors for custom title bar controls
-      customTitleBar?.setColors(topBarColorScheme: topBarColorScheme)
     }
 
     // Other misc views
@@ -954,6 +952,9 @@ extension PlayerWindowController {
         updateSpeedLabelFont(for: transition)
       }
 
+      // Why does this fail to show up sometimes when opening new window??
+      playSliderAndTimeLabelsView.needsDisplay = true
+      playSlider.needsDisplay = true
     }
 
     log.verbose("Done")
@@ -1375,9 +1376,7 @@ extension PlayerWindowController {
 
     fadeableViews.applyVisibility(iconAndTitleText, titleTextField, documentIconButton)
 
-    if #available(macOS 11.0, *) {
-      window.titlebarSeparatorStyle = .automatic  // or .line, .none, .shadow
-    }
+    window.titlebarSeparatorStyle = .automatic  // or .line, .none, .shadow
   }
 
   private func addTitleBarAccessoryViews() {
@@ -1401,9 +1400,7 @@ extension PlayerWindowController {
       accessory.view = leadingTitleBarAccessoryView
       accessory.fullScreenMinHeight = Constants.standardTitleBarHeight
       accessory.layoutAttribute = .leading
-      if #available(macOS 11.0, *) {
-        accessory.automaticallyAdjustsSize = false
-      }
+      accessory.automaticallyAdjustsSize = false
     }
 
     if trailingTitlebarAccesoryViewController == nil {
@@ -1413,9 +1410,7 @@ extension PlayerWindowController {
       accessory.view = trailingTitleBarAccessoryView
       accessory.fullScreenMinHeight = Constants.standardTitleBarHeight
       accessory.layoutAttribute = .trailing
-      if #available(macOS 11.0, *) {
-        accessory.automaticallyAdjustsSize = false
-      }
+      accessory.automaticallyAdjustsSize = false
     }
 
     if window.titlebarAccessoryViewControllers.count == 1 {
@@ -1474,6 +1469,10 @@ extension PlayerWindowController {
     speedLabel.font = .messageFont(ofSize: speedLabelFontSize)
   }
 
+  func highlight(_ button: OSCToolbarButton, _ buttonType: Preference.ToolBarButton, _ isHighlighted: Bool) {
+    button.image = isHighlighted ? buttonType.alternateImage() : buttonType.image()
+  }
+
   /// Recreates the toolbar with the latest icons with the latest sizes & padding from prefs
   private func rebuildOSCToolbar(_ transition: LayoutTransition, _ stage: LayoutTransition.Stage, hasColorChange: Bool) {
     let oldGeo = transition.inputLayout.controlBarGeo
@@ -1487,7 +1486,7 @@ extension PlayerWindowController {
     let zeroOut = isOpeningBarOSCFromZero && !transition.isWindowInitialLayout
     let iconSize: CGFloat = zeroOut ? 0 : newGeo.toolIconSize
     let iconSpacing: CGFloat = zeroOut ? 0 : newGeo.toolIconSpacing
-    if isOpeningBarOSCFromZero || !oldGeo.toolbarItemsAreSame(as: newGeo) {
+    if transition.outputLayout.hasControlBar {
       fragToolbarView.views.forEach { fragToolbarView.removeView($0) }
 
       if newButtonTypes.count > 0 {
@@ -1500,6 +1499,22 @@ extension PlayerWindowController {
           button.action = #selector(self.toolBarButtonAction(_:))
           fragToolbarView.addView(button, in: .trailing)
           fragToolbarView.setVisibilityPriority(.detachOnlyIfNecessary, for: button)
+
+          // Highlight buttons with modes
+          switch buttonType {
+          case .pip:
+            highlight(button, buttonType, transition.outputLayout.isInPiP)
+          case .fullScreen:
+            highlight(button, buttonType, transition.outputLayout.isFullScreen)
+          case .settings:
+            highlight(button, buttonType, transition.outputLayout.isVisible(sidebarTabGroup: .settings))
+          case .plugins:
+            highlight(button, buttonType, transition.outputLayout.isVisible(sidebarTabGroup: .plugins))
+          case .playlist:
+            highlight(button, buttonType, transition.outputLayout.isVisible(sidebarTabGroup: .playlist))
+          default:
+            break
+          }
         }
         needsButtonsUpdate = false
       }

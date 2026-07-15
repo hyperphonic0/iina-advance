@@ -247,7 +247,7 @@ class CustomTitleBarViewController: NSViewController {
 
     view.configureSubtreeForCoreAnimation()
 
-    pwc.log.verbose("CustomTitleBar viewDidLoad done: isDark=\(view.effectiveAppearance.isDark.yesno)")
+    pwc.log.verbose("CustomTitleBar viewDidLoad done: appearance=\(view.effectiveAppearance.isDark ? "DARK" : "LIGHT")")
     pwc.updateTitle()
   }
 
@@ -357,14 +357,6 @@ final class CustomTitleBar {
     button.setContentCompressionResistancePriority(.required, for: .vertical)
 
     button.imageScaling = .scaleProportionallyUpOrDown
-
-    if #unavailable (macOS 11.0) {
-      // Needed for older versions of MacOS which use the legacy icons, which do not expand on their own
-      let iconHeight = Constants.standardTitleBarHeight - 10 // 18
-      let iconWidth = image.deriveWidth(fromHeight: iconHeight)
-      button.heightAnchor.constraint(equalToConstant: iconHeight).isActive = true
-      button.widthAnchor.constraint(equalToConstant: iconWidth).isActive = true
-    }
 
     button.actionSymbolEffectFunc = actionSymbolEffectFunc
   }

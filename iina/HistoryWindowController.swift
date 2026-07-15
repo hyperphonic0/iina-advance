@@ -170,10 +170,8 @@ final class HistoryWindowController: WindowController, NSOutlineViewDelegate, NS
       accessory.layoutAttribute = .trailing
       window.addTitlebarAccessoryViewController(accessory)
 
-      if #available(macOS 11.0, *) {
-        window.titlebarSeparatorStyle = .automatic  // or .line, .none, .shadow
-        accessory.automaticallyAdjustsSize = false
-      }
+      window.titlebarSeparatorStyle = .automatic  // or .line, .none, .shadow
+      accessory.automaticallyAdjustsSize = false
     }
 
     // Override the automatic key-view loop to ensure correct order
@@ -925,7 +923,7 @@ class HistoryProgressCellView: NSTableCellView {
 
 fileprivate class LoadingPlaceholder: PlaybackHistory {
   init() {
-    super.init(id: PlaybackID(URL(fileURLWithPath: "/dev/null")), duration: 0)
+    super.init(id: PlaybackID(URL(fileURLWithPath: "/dev/null")), duration: 0, title: nil, mpvMd5: "")
   }
 
   required init?(coder aDecoder: NSCoder) {

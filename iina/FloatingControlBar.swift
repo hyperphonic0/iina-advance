@@ -453,47 +453,11 @@ extension PlayerWindowController {
   }
 
   func adjustFloatingControllerOrigin(for targetGeometry: PWinGeometry? = nil) {
-    guard let window = window else { return }
     guard controlBarFloating.view.superview != nil else { return }
 
     let parentGeo = targetGeometry ?? windowedModeGeo
     guard parentGeo.isViewportShown else { return }
     controlBarFloating.moveToLocationRatio(parentGeo: parentGeo)
-
-    // Detach the views in topRowView manually on macOS 11 only; as it will cause freeze
-    if #available(macOS 11.0, *) {
-      if #unavailable(macOS 12.0) {
-        guard let maxWidth = [fragVolumeView, fragToolbarView].compactMap({ $0?.frame.width }).max() else {
-          return
-        }
-
-        // window - 10 - controlBarFloating
-        // controlBarFloating - 12 - topRowView
-        let margin: CGFloat = (10 + 12) * 2
-        let hide = (window.frame.width
-                    - fragPlaybackBtnsView.frame.width
-                    - maxWidth*2
-                    - margin) < 0
-
-        let upper = controlBarFloating.topRowView
-        let views = upper.views
-        if hide {
-          if views.contains(fragVolumeView) {
-            upper.removeView(fragVolumeView)
-          }
-          if views.contains(fragToolbarView) {
-            upper.removeView(fragToolbarView)
-          }
-        } else {
-          if !views.contains(fragVolumeView) {
-            upper.addView(fragVolumeView, in: .leading)
-          }
-          if !views.contains(fragToolbarView) {
-            upper.addView(fragToolbarView, in: .trailing)
-          }
-        }
-      }
-    }
   }
 
 }

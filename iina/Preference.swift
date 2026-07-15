@@ -14,7 +14,7 @@ protocol HasDisplayString {
   var displayString: String { get }
 }
 
-protocol InitializingFromKey: CaseIterable {
+protocol InitializingFromKey: CaseIterable, CustomStringConvertible {
   static var defaultValue: Self { get }
   init?(key: Preference.Key)
 }
@@ -46,6 +46,8 @@ struct Preference {
 
     static let actionAfterLaunch = Key("actionAfterLaunch")
     static let alwaysOpenInNewWindow = Key("alwaysOpenInNewWindow")
+    // TODO: consider implementing in IINA Advance with more intuitive wording
+    static let groupSimultaneousOpensInPlaylist = Key("groupSimultaneousOpensInPlaylist")
     /// • This setting only applies when `alwaysOpenInNewWindow` is `true`.
     /// • By default, when manually opening (e.g. double-clicking from the Finder, or dragging onto the IINA icon)
     ///   a file that's already loaded in an IINA window, IINA conforms the the standard MacOS behavior: a new window
@@ -295,6 +297,7 @@ struct Preference {
     static let thumbnailSizeOption = Key("thumbnailSizeOption")
     /// Only for `ThumbnailSizeOption.fixed`. Length of the longer dimension of thumbnail in screen points.
     /// May be scaled down if needed to fit inside window.
+    /// In upstream IINA, this field is called `thumbnailWidth`.
     static let thumbnailFixedLength = Key("thumbnailFixedLength")
     /// Only for `ThumbnailSizeOption.scaleWithViewport`. Quality of generated thumbnail as % of raw video size, 1 - 100.
     /// Will be scaled up/down to satisfy `thumbnailDisplayedSizePercentage`; may be scaled down if needed to fit inside window.
@@ -460,9 +463,6 @@ struct Preference {
     static let touchbarShowRemainingTime = Key("touchbarShowRemainingTime")
 
     static let followGlobalSeekTypeWhenAdjustSlider = Key("followGlobalSeekTypeWhenAdjustSlider")
-
-    static let enablePlaylistLoop = Key("enablePlaylistLoop")
-    static let enableFileLoop = Key("enableFileLoop")
 
     /// If true, scan playlist filenames with identical starting strings.  replace them with `…` button
     static let shortenFileGroupsInPlaylist = Key("shortenFileGroupsInPlaylist")
@@ -647,7 +647,7 @@ struct Preference {
 
   // MARK: - Enums
 
-  enum ActionAfterLaunch: Int, InitializingFromKey, CustomStringConvertible, CaseIterable {
+  enum ActionAfterLaunch: Int, InitializingFromKey {
     case welcomeWindow = 0
     case openPanel
     case none
@@ -673,7 +673,7 @@ struct Preference {
     }
   }
 
-  enum ActionWhenNoOpenWindow: Int, InitializingFromKey, CustomStringConvertible, CaseIterable {
+  enum ActionWhenNoOpenWindow: Int, InitializingFromKey {
     case sameActionAsLaunch = 0
     case quit
     case none
@@ -696,7 +696,7 @@ struct Preference {
     }
   }
 
-  enum ArrowButtonAction: Int, InitializingFromKey, CustomStringConvertible, CaseIterable {
+  enum ArrowButtonAction: Int, InitializingFromKey {
     case speed = 0
     case playlist = 1
     case seek = 2
@@ -718,7 +718,7 @@ struct Preference {
     }
   }
 
-  enum WindowOpenCloseAnimation: Int, InitializingFromKey, CaseIterable {
+  enum WindowOpenCloseAnimation: Int, InitializingFromKey {
     case none = 0
     case useDefault = 1
     case zoomIn = 2
@@ -728,17 +728,22 @@ struct Preference {
     init?(key: Key) {
       self.init(rawValue: Preference.integer(for: key))
     }
-  }
 
+    var description: String {
+      switch self {
+      case .none: "none"
+      case .useDefault: "useDefault"
+      case .zoomIn: "zoomIn"
+      }
+    }
+  }
 
   enum Theme: Int, InitializingFromKey {
     case dark = 0
-    /// Obsolete
-    case ultraDark // 1
-    case light // 2
-    /// Obsolete
-    case mediumLight // 3
-    case system // 4
+    // case ultraDark // 1
+    case light = 2
+    // case mediumLight // 3
+    case system = 4
 
     static let defaultValue = Theme.dark
 
@@ -748,6 +753,14 @@ struct Preference {
         return nil
       }
       self.init(rawValue: Preference.integer(for: key))
+    }
+
+    var description: String {
+      switch self {
+      case .dark: "dark"
+      case .light: "light"
+      case .system: "system"
+      }
     }
   }
 
@@ -760,6 +773,14 @@ struct Preference {
 
     init?(key: Key) {
       self.init(rawValue: Preference.integer(for: key))
+    }
+
+    var description: String {
+      switch self {
+      case .none: "none"
+      case .dark: "dark"
+      case .glow: "glow"
+      }
     }
   }
 
@@ -788,9 +809,21 @@ struct Preference {
         return false
       }
     }
+
+    var description: String {
+      switch self {
+      case .plain: "plain"
+      case .outlineSharpCorners: "outlineSharpCorners"
+      case .outlineRoundedCorners: "outlineRoundedCorners"
+      case .shadowSharpCorners: "shadowSharpCorners"
+      case .shadowRoundedCorners: "shadowRoundedCorners"
+      case .outlinePlusShadowSharpCorners: "outlinePlusShadowSharpCorners"
+      case .outlinePlusShadowRoundedCorners: "outlinePlusShadowRoundedCorners"
+      }
+    }
   }
 
-  enum ThumbnailSizeOption: Int, InitializingFromKey, CaseIterable {
+  enum ThumbnailSizeOption: Int, InitializingFromKey {
     case fixedSize = 1
     /// Percentage of displayed video size
     case scaleWithViewport
@@ -799,6 +832,13 @@ struct Preference {
 
     init?(key: Key) {
       self.init(rawValue: Preference.integer(for: key))
+    }
+
+    var description: String {
+      switch self {
+      case .fixedSize: "fixedSize"
+      case .scaleWithViewport: "scaleWithViewport"
+      }
     }
   }
 
@@ -811,9 +851,16 @@ struct Preference {
     init?(key: Key) {
       self.init(rawValue: Preference.integer(for: key))
     }
+
+    var description: String {
+      switch self {
+      case .topLeading: "topLeading"
+      case .topTrailing: "topTrailing"
+      }
+    }
   }
 
-  enum SidebarLocation: Int, InitializingFromKey, CustomStringConvertible {
+  enum SidebarLocation: Int, InitializingFromKey {
     case leadingSidebar = 1
     case trailingSidebar
 
@@ -829,7 +876,7 @@ struct Preference {
 
   }
 
-  enum PanelPlacement: Int, InitializingFromKey, CustomStringConvertible {
+  enum PanelPlacement: Int, InitializingFromKey {
     case insideViewport = 1
     case outsideViewport
 
@@ -851,7 +898,7 @@ struct Preference {
     }
   }
 
-  enum PanelColorScheme: Int, InitializingFromKey, CustomStringConvertible {
+  enum PanelColorScheme: Int, InitializingFromKey {
     /// Only valid for `globalColorScheme`. Indicates that each panel can have an independent color scheme.
     case none = 0
     /// Use Apple's `NSVisualEffectView`. This was the default prior to v1.6
@@ -919,9 +966,16 @@ struct Preference {
     init?(key: Key) {
       self.init(rawValue: Preference.integer(for: key))
     }
+
+    var description: String {
+      switch self {
+      case .windowHover: "windowHover"
+      case .topBarHover: "topBarHover"
+      }
+    }
   }
 
-  enum OSCPosition: Int, InitializingFromKey, CustomStringConvertible {
+  enum OSCPosition: Int, InitializingFromKey {
     case floating = 0
     case top
     case bottom
@@ -950,10 +1004,17 @@ struct Preference {
     init?(key: Key) {
       self.init(rawValue: Preference.integer(for: key))
     }
+
+    var description: String {
+      switch self {
+      case .controlAccentColor: "controlAccentColor"
+      case .gray: "gray"
+      }
+    }
   }
 
   enum SeekOption: Int, InitializingFromKey {
-    case keyframes = 0
+    case relative = 0
     case exact
     case auto
 
@@ -961,6 +1022,14 @@ struct Preference {
 
     init?(key: Key) {
       self.init(rawValue: Preference.integer(for: key))
+    }
+
+    var description: String {
+      switch self {
+      case .relative: "relative"
+      case .exact: "exact"
+      case .auto: "auto"
+      }
     }
   }
 
@@ -979,20 +1048,42 @@ struct Preference {
     init?(key: Key) {
       self.init(rawValue: Preference.integer(for: key))
     }
+
+    var description: String {
+      switch self {
+      case .none: "none"
+      case .fullscreen: "fullscreen"
+      case .pause: "pause"
+      case .hideOSC: "hideOSC"
+      case .togglePIP: "togglePIP"
+      case .abLoop: "abLoop"
+      case .resetSpeed: "resetSpeed"
+      case .contextMenu: "contextMenu"
+      }
+    }
   }
 
   enum ScrollAction: Int, InitializingFromKey {
     /// Ideally, `none` would be `0`, but we need to support legacy behavior
     case volume = 0
-    case seek
-    case none
-    case passToMpv
-    case playbackSpeed
+    case seek = 1
+    case none = 2
+    // case passToMpv = 3
+    case playbackSpeed = 4
 
     static let defaultValue = ScrollAction.volume
 
     init?(key: Key) {
       self.init(rawValue: Preference.integer(for: key))
+    }
+
+    var description: String {
+      switch self {
+      case .volume: "volume"
+      case .seek: "seek"
+      case .none: "none"
+      case .playbackSpeed: "playbackSpeed"
+      }
     }
   }
 
@@ -1008,6 +1099,15 @@ struct Preference {
     init?(key: Key) {
       self.init(rawValue: Preference.integer(for: key))
     }
+
+    var description: String {
+      switch self {
+      case .windowSize: "windowSize"
+      case .fullScreen: "fullScreen"
+      case .none: "none"
+      case .windowSizeOrFullScreen: "windowSizeOrFullScreen"
+      }
+    }
   }
 
   enum RotateAction: Int, InitializingFromKey {
@@ -1018,6 +1118,13 @@ struct Preference {
 
     init?(key: Key) {
       self.init(rawValue: Preference.integer(for: key))
+    }
+
+    var description: String {
+      switch self {
+      case .none: "none"
+      case .rotateVideoByQuarters: "rotateVideoByQuarters"
+      }
     }
   }
 
@@ -1039,9 +1146,17 @@ struct Preference {
     func shouldLoadSubsMatchedByIINA() -> Bool {
       return self == .iina
     }
+
+    var description: String {
+      switch self {
+      case .disabled: "disabled"
+      case .mpvFuzzy: "mpvFuzzy"
+      case .iina: "iina"
+      }
+    }
   }
 
-  enum AutoLoadAction: Int, InitializingFromKey {
+  enum AutoLoadAction: Int {
     case no = 0
     case exact
     case fuzzy
@@ -1061,6 +1176,15 @@ struct Preference {
         case .fuzzy: return "fuzzy"
         case .all: return "all"
         }
+      }
+    }
+
+    var description: String {
+      switch self {
+      case .no: "no"
+      case .exact: "exact"
+      case .fuzzy: "fuzzy"
+      case .all: "all"
       }
     }
   }
@@ -1083,7 +1207,7 @@ struct Preference {
       self.init(rawValue: Preference.integer(for: key))
     }
 
-    var string: String {
+    var description: String {
       get {
         switch self {
         case .yes: return "yes"
@@ -1096,28 +1220,38 @@ struct Preference {
     }
   }
 
-  enum SubAlign: Int, InitializingFromKey {
-    case top = 0  // left
+  enum SubAlignX: Int, InitializingFromKey {
+    case left = 0
     case center
-    case bottom  // right
+    case right
 
-    static let defaultValue = SubAlign.center
+    static let defaultValue = SubAlignX.center
 
     init?(key: Key) {
       self.init(rawValue: Preference.integer(for: key))
     }
 
-    var stringForX: String {
-      get {
-        switch self {
-        case .top: return "left"
-        case .center: return "center"
-        case .bottom: return "right"
-        }
+    var description: String {
+      switch self {
+      case .left: return "left"
+      case .center: return "center"
+      case .right: return "right"
       }
     }
+  }
 
-    var stringForY: String {
+  enum SubAlignY: Int, InitializingFromKey {
+    case top = 0
+    case center
+    case bottom
+
+    static let defaultValue = SubAlignY.bottom
+
+    init?(key: Key) {
+      self.init(rawValue: Preference.integer(for: key))
+    }
+
+    var description: String {
       get {
         switch self {
         case .top: return "top"
@@ -1140,14 +1274,12 @@ struct Preference {
       self.init(rawValue: Preference.integer(for: key))
     }
 
-    var string: String {
-      get {
-        switch self {
-        case .lavf: return "lavf"
-        case .tcp: return "tcp"
-        case .udp: return "udp"
-        case .http: return "http"
-        }
+    var description: String {
+      switch self {
+      case .lavf: return "lavf"
+      case .tcp: return "tcp"
+      case .udp: return "udp"
+      case .http: return "http"
       }
     }
   }
@@ -1165,15 +1297,13 @@ struct Preference {
       self.init(rawValue: Preference.integer(for: key))
     }
 
-    var string: String {
-      get {
-        switch self {
-        case .png: return "png"
-        case .jpg: return "jpg"
-        case .jpeg: return "jpeg"
-        case .webp: return "webp"
-        case .jxl: return "jxl"
-        }
+    var description: String {
+      switch self {
+      case .png: return "png"
+      case .jpg: return "jpg"
+      case .jpeg: return "jpeg"
+      case .webp: return "webp"
+      case .jxl: return "jxl"
       }
     }
   }
@@ -1189,16 +1319,16 @@ struct Preference {
       self.init(rawValue: Preference.integer(for: key))
     }
 
-    var mpvString: String {
+    var localizedDescription: String {
+      return NSLocalizedString("hwdec." + description, comment: description)
+    }
+
+    var description: String {
       switch self {
       case .disabled: return "no"
       case .auto: return "auto"
       case .autoCopy: return "auto-copy"
       }
-    }
-
-    var localizedDescription: String {
-      return NSLocalizedString("hwdec." + mpvString, comment: mpvString)
     }
   }
 
@@ -1218,7 +1348,7 @@ struct Preference {
       self.init(rawValue: Preference.integer(for: key))
     }
 
-    var mpvString: String {
+    var description: String {
       switch self {
       case .auto: return "auto"
       case .clip: return "clip"
@@ -1241,6 +1371,13 @@ struct Preference {
     init?(key: Key) {
       self.init(rawValue: Preference.integer(for: key))
     }
+
+    var description: String {
+      switch self {
+      case .simpleVideoSizeMultiple: "simpleVideoSizeMultiple"
+      case .mpvGeometry: "mpvGeometry"
+      }
+    }
   }
 
   enum ResizeWindowTiming: Int, InitializingFromKey {
@@ -1252,6 +1389,14 @@ struct Preference {
 
     init?(key: Key) {
       self.init(rawValue: Preference.integer(for: key))
+    }
+
+    var description: String {
+      switch self {
+      case .always: "always"
+      case .onlyWhenOpen: "onlyWhenOpen"
+      case .never: "never"
+      }
     }
   }
 
@@ -1277,9 +1422,11 @@ struct Preference {
       case .videoSize20: return 2
       }
     }
+
+    var description: String { String(ratio) }
   }
 
-  enum WindowBehaviorWhenPip: Int, InitializingFromKey, CustomStringConvertible {
+  enum WindowBehaviorWhenPip: Int, InitializingFromKey {
     case doNothing = 0
     case hide
     case minimize
@@ -1311,22 +1458,33 @@ struct Preference {
     case subTrack
     case screenshot
     case plugins
+    
+    private func makeSymbol(_ names: [String], _ fallbackImage: NSImage.Name) -> NSImage {
+      let configuration = NSImage.SymbolConfiguration(pointSize: 14, weight: .medium)
+      return NSImage.sf(names, withConfiguration: configuration)!
+    }
 
     func image() -> NSImage {
-      func makeSymbol(_ names: [String], _ fallbackImage: NSImage.Name) -> NSImage {
-        guard #available(macOS 14.0, *) else { return NSImage(named: fallbackImage)! }
-        let configuration = NSImage.SymbolConfiguration(pointSize: 14, weight: .medium)
-        return NSImage.findSFSymbol(names, withConfiguration: configuration)
-      }
       switch self {
       case .settings: return makeSymbol(["gearshape"], NSImage.actionTemplateName)
       case .playlist: return makeSymbol(["list.bullet.rectangle", "list.bullet"], "playlist")
-      case .pip: return makeSymbol(["pip.swap"], "pip")
+      case .pip: return makeSymbol(["pip.enter"], "pip")
       case .fullScreen: return makeSymbol(["arrow.up.backward.and.arrow.down.forward.rectangle", "arrow.up.left.and.arrow.down.right"], "fullscreen")
-      case .musicMode: return makeSymbol(["music.microphone", "music.mic"], "toggle-album-art")
+      case .musicMode: return makeSymbol(["music.microphone"], "toggle-album-art")
       case .subTrack: return makeSymbol(["captions.bubble.fill"], "sub-track")
       case .screenshot: return makeSymbol(["camera.shutter.button"], "screenshot")
       case .plugins: return makeSymbol(["puzzlepiece.extension"], "plugin")
+      }
+    }
+
+    func alternateImage() -> NSImage? {
+      switch self {
+      case .settings: return makeSymbol(["gearshape.fill"], NSImage.actionTemplateName)
+      case .playlist: return makeSymbol(["list.bullet.rectangle.fill", "list.bullet"], "playlist")
+      case .pip: return makeSymbol(["pip.exit"], "pip")
+      case .fullScreen: return makeSymbol(["arrow.down.forward.and.arrow.up.backward.rectangle", "arrow.down.right.and.arrow.up.left"], "fullscreen")
+      case .plugins: return makeSymbol(["puzzlepiece.extension.fill"], "plugin")
+      default: return nil
       }
     }
 
@@ -1377,6 +1535,13 @@ struct Preference {
     init?(key: Key) {
       self.init(rawValue: Preference.integer(for: key))
     }
+
+    var description: String {
+      switch self {
+      case .lastPlayedDay: return "lastPlayedDay"
+      case .parentFolder : return "parentFolder"
+      }
+    }
   }
 
   enum HistorySearchType: Int, InitializingFromKey {
@@ -1387,6 +1552,13 @@ struct Preference {
 
     init?(key: Key) {
       self.init(rawValue: Preference.integer(for: key))
+    }
+
+    var description: String {
+      switch self {
+      case .fullPath: return "fullPath"
+      case .filename : return "filename"
+      }
     }
   }
 
@@ -1401,13 +1573,11 @@ struct Preference {
       self.init(rawValue: Preference.integer(for: key))
     }
 
-    var mpvString: String {
-      get {
-        switch self {
-        case .no: return "no"
-        case .track : return "track"
-        case .album: return "album"
-        }
+    var description: String {
+      switch self {
+      case .no: return "no"
+      case .track : return "track"
+      case .album: return "album"
       }
     }
   }
@@ -1424,23 +1594,34 @@ struct Preference {
     }
 
     var localizedDescription: String {
-      return NSLocalizedString("gaplessAudio." + mpvString, comment: mpvString)
+      return NSLocalizedString("gaplessAudio." + description, comment: description)
     }
 
-    var mpvString: String {
-      get {
-        switch self {
-        case .disabled: return "no"
-        case .weak : return "weak"
-        case .strong: return "yes"
-        }
+    var description: String {
+      switch self {
+      case .disabled: return "no"
+      case .weak : return "weak"
+      case .strong: return "yes"
       }
     }
   }
 
-  enum DefaultRepeatMode: Int {
+  enum DefaultRepeatMode: Int, InitializingFromKey {
+    static var defaultValue = DefaultRepeatMode.playlist
+
     case playlist = 0
     case file
+
+    init?(key: Key) {
+      self.init(rawValue: Preference.integer(for: key))
+    }
+
+    var description: String {
+      switch self {
+      case .playlist: return "playlist"
+      case .file : return "file"
+      }
+    }
   }
 
   // MARK: - Defaults
@@ -1449,6 +1630,7 @@ struct Preference {
     .receiveBetaUpdate: false,
     .actionAfterLaunch: ActionAfterLaunch.welcomeWindow.rawValue,
     .alwaysOpenInNewWindow: true,
+    .groupSimultaneousOpensInPlaylist: false,
     .allowDuplicatePlayers: false,
     .enableCmdN: true,
     .globalColorScheme: PanelColorScheme.tintedGlass.rawValue,
@@ -1603,7 +1785,7 @@ struct Preference {
     .enableHdrSupport: false,
     .enableToneMapping: false,
     .toneMappingTargetPeak: 0,
-    .toneMappingAlgorithm: "auto",
+    .toneMappingAlgorithm: ToneMappingAlgorithmOption.defaultValue.rawValue,
     .audioDriverEnableAVFoundation: false,
     .audioThreads: 0,
     .audioLanguage: "",
@@ -1615,8 +1797,6 @@ struct Preference {
     .audioDeviceDesc: "Autoselect device",
     .enableInitialVolume: false,
     .initialVolume: 100,
-    .enablePlaylistLoop: false,
-    .enableFileLoop: false,
     .shortenFileGroupsInPlaylist: true,
     .replayGain: ReplayGainOption.no.rawValue,
     .replayGainPreamp: 0,
@@ -1642,8 +1822,8 @@ struct Preference {
     .subBorderColorString: NSColor.black.usingColorSpace(.deviceRGB)!.mpvColorString,
     .subShadowSize: Float(0),
     .subShadowColorString: NSColor.clear.usingColorSpace(.deviceRGB)!.mpvColorString,
-    .subAlignX: SubAlign.center.rawValue,
-    .subAlignY: SubAlign.bottom.rawValue,
+    .subAlignX: SubAlignX.center.rawValue,
+    .subAlignY: SubAlignY.bottom.rawValue,
     .subMarginX: Float(25),
     .subMarginY: Float(22),
     .subPos: Float(100),
@@ -1770,25 +1950,15 @@ struct Preference {
 
   static private var ud: UserDefaults { UserDefaults.standard }
 
-  static func object(for key: Key) -> Any? {
-    return ud.object(forKey: key.rawValue)
-  }
+  static func object(for key: Key) -> Any? { ud.object(forKey: key.rawValue) }
 
-  static func array(for key: Key) -> [Any]? {
-    return ud.array(forKey: key.rawValue)
-  }
+  static func array(for key: Key) -> [Any]? { ud.array(forKey: key.rawValue) }
 
-  static func url(for key: Key) -> URL? {
-    return ud.url(forKey: key.rawValue)
-  }
+  static func url(for key: Key) -> URL? { ud.url(forKey: key.rawValue) }
 
-  static func dictionary(for key: Key) -> [String : Any]? {
-    return ud.dictionary(forKey: key.rawValue)
-  }
+  static func dictionary(for key: Key) -> [String : Any]? { ud.dictionary(forKey: key.rawValue) }
 
-  static func string(for key: Key) -> String? {
-    return ud.string(forKey: key.rawValue)
-  }
+  static func string(for key: Key) -> String? { ud.string(forKey: key.rawValue) }
 
   static func csvStringArray(for key: Key) -> [String]? {
     if let csv = ud.string(forKey: key.rawValue) {
@@ -1797,33 +1967,19 @@ struct Preference {
     return nil
   }
 
-  static func stringArray(for key: Key) -> [String]? {
-    return ud.stringArray(forKey: key.rawValue)
-  }
+  static func stringArray(for key: Key) -> [String]? { ud.stringArray(forKey: key.rawValue) }
 
-  static func data(for key: Key) -> Data? {
-    return ud.data(forKey: key.rawValue)
-  }
+  static func data(for key: Key) -> Data? { ud.data(forKey: key.rawValue) }
 
-  static func bool(for key: Key) -> Bool {
-    return ud.bool(forKey: key.rawValue)
-  }
+  static func bool(for key: Key) -> Bool { ud.bool(forKey: key.rawValue) }
 
-  static func integer(for key: Key) -> Int {
-    return ud.integer(forKey: key.rawValue)
-  }
+  static func integer(for key: Key) -> Int { ud.integer(forKey: key.rawValue) }
 
-  static func float(for key: Key) -> Float {
-    return ud.float(forKey: key.rawValue)
-  }
+  static func float(for key: Key) -> Float { ud.float(forKey: key.rawValue) }
 
-  static func double(for key: Key) -> Double {
-    return ud.double(forKey: key.rawValue)
-  }
+  static func double(for key: Key) -> Double { ud.double(forKey: key.rawValue) }
 
-  static func value(for key: Key) -> Any? {
-    return ud.value(forKey: key.rawValue)
-  }
+  static func value(for key: Key) -> Any? { ud.value(forKey: key.rawValue) }
 
   static func typedValue<T>(for key: Key) -> T {
     if let val = Preference.value(for: key) as? T {
@@ -1839,36 +1995,22 @@ struct Preference {
     fatalError("Unexpected type or missing default for preference key \(key.rawValue.quoted)")
   }
 
-  static func set(_ value: Bool, for key: Key) {
-    ud.set(value, forKey: key.rawValue)
-  }
+  static func set(_ value: Bool, for key: Key) { ud.set(value, forKey: key.rawValue) }
 
-  static func set(_ value: Int, for key: Key) {
-    ud.set(value, forKey: key.rawValue)
-  }
+  static func set(_ value: Int, for key: Key) { ud.set(value, forKey: key.rawValue) }
 
-  static func set(_ value: String, for key: Key) {
-    ud.set(value, forKey: key.rawValue)
-  }
+  static func set(_ value: String, for key: Key) { ud.set(value, forKey: key.rawValue) }
 
-  static func set(_ value: Float, for key: Key) {
-    ud.set(value, forKey: key.rawValue)
-  }
+  static func set(_ value: Float, for key: Key) { ud.set(value, forKey: key.rawValue) }
 
-  static func set(_ value: Double, for key: Key) {
-    ud.set(value, forKey: key.rawValue)
-  }
+  static func set(_ value: Double, for key: Key) { ud.set(value, forKey: key.rawValue) }
 
-  static func set(_ value: URL, for key: Key) {
-    ud.set(value, forKey: key.rawValue)
-  }
+  static func set(_ value: URL, for key: Key) { ud.set(value, forKey: key.rawValue) }
 
-  static func set(_ value: Any?, for key: Key) {
-    ud.set(value, forKey: key.rawValue)
-  }
+  static func set(_ value: Any?, for key: Key) { ud.set(value, forKey: key.rawValue) }
 
   static func `enum`<T: InitializingFromKey>(for key: Key) -> T {
-    return T.init(key: key) ?? T.defaultValue
+    T.init(key: key) ?? T.defaultValue
   }
 
   @MainActor
@@ -1895,4 +2037,6 @@ struct Preference {
     let extra = (ticks %% 2) == 1 ? 5 : 1
     return pow(10.0, Double(pow10)) * Double(extra)
   }
+
+  private static let subsystem = Logger.makeSubsystem("settings", symbolName: ["pencil.and.list.clipboard"])
 }

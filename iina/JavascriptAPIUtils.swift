@@ -27,7 +27,7 @@ fileprivate extension Process {
 @objc protocol JavascriptAPIUtilsExportable: JSExport {
   func fileInPath(_ file: String) -> Bool
   func resolvePath(_ path: String) -> String?
-  func exec(_ file: String, _ args: [String], _ cwd: JSValue?, _ stdoutHook_: JSValue?, _ stderrHook_: JSValue?) -> JSValue?
+  func exec(_ file: String, _ args_: Any, _ cwd: JSValue?, _ stdoutHook_: JSValue?, _ stderrHook_: JSValue?) -> JSValue?
   func ask(_ title: String) -> Bool
   func prompt(_ title: String) -> String?
   func chooseFile(_ title: String, _ options: [String: Any]) -> Any
@@ -93,8 +93,13 @@ class JavascriptAPIUtils: JavascriptAPI, JavascriptAPIUtilsExportable {
     return parsePath(path).path
   }
 
-  func exec(_ file: String, _ args: [String], _ cwd: JSValue?, _ stdoutHook_: JSValue?, _ stderrHook_: JSValue?) -> JSValue? {
+  func exec(_ file: String, _ args_: Any, _ cwd: JSValue?, _ stdoutHook_: JSValue?, _ stderrHook_: JSValue?) -> JSValue? {
     guard permitted(to: .accessFileSystem) else {
+      return nil
+    }
+    
+    guard let args = args_ as? [String] else {
+      throwError(withMessage: "The exec args parameter must be a string array")
       return nil
     }
 
@@ -103,12 +108,7 @@ class JavascriptAPIUtils: JavascriptAPI, JavascriptAPIUtilsExportable {
       var args = args
       if !file.contains("/") {
         if let url = searchBinary(file, in: Utility.binariesURL) ?? searchBinary(file, in: Utility.exeDirURL) {
-          // a binary included in IINA's bundle?
-          if #available(macOS 13.0, *) {
-            path = url.path(percentEncoded: false)
-          } else {
-            path = url.path
-          }
+          path = url.path(percentEncoded: false)
         } else {
           // assume it's a system command
           if useBash {

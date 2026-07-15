@@ -198,13 +198,7 @@ struct ControlBarGeometry: Sendable, CustomStringConvertible {
     case .seek:
       arrowIconHeight = (playIconSize * stepIconScaleFactor).rounded()
     case .speed, .playlist:
-      if #available(macOS 11.0, *) {
-        // Using built-in MacOS symbols
-        arrowIconHeight = (playIconSize * systemArrowSymbolScaleFactor).rounded()
-      } else {
-        // Legacy custom icons are scaled already:
-        arrowIconHeight = playIconSize
-      }
+      arrowIconHeight = (playIconSize * systemArrowSymbolScaleFactor).rounded()
     }
     let leftArrowImage = ControlBarGeometry.leftArrowImage(given: arrowButtonAction)
     self.arrowIconWidth = leftArrowImage.deriveWidth(fromHeight: arrowIconHeight)
@@ -385,11 +379,20 @@ struct ControlBarGeometry: Sendable, CustomStringConvertible {
 
   /// Font size for Seek Preview time label (shown while hovering over PlaySlider and/or seeking).
   var seekPreviewTimeLabelFontSize: CGFloat {
-    if mode == .musicMode {
-      return 11.0
-    }
     let normalSize = 11.0
-    return (sliderScale * 1.1 * normalSize).rounded().clamped(to:11...24)
+    if mode == .musicMode {
+      return normalSize
+    }
+    return (sliderScale * 1.1 * normalSize).rounded().clamped(to: normalSize...24)
+  }
+
+  /// Font size for Seek Preview time label (shown while hovering over PlaySlider and/or seeking).
+  var seekPreviewChapterLabelFontSize: CGFloat {
+    let normalSize = 10.0
+    if mode == .musicMode {
+      return normalSize
+    }
+    return (sliderScale * normalSize).rounded().clamped(to: normalSize...24)
   }
 
   var speedLabelFontSize: CGFloat {

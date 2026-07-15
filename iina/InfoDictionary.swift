@@ -82,14 +82,13 @@ struct InfoDictionary: @unchecked Sendable {
         } else {
           major = asFourChars.prefix(2)
         }
-        let minor: String.SubSequence
-        if asFourChars.last == "0" {
-          let index = asFourChars.index(asFourChars.endIndex, offsetBy: -2)
-          minor = asFourChars[index...index]
+        let minor = asFourChars[asFourChars.index(asFourChars.endIndex, offsetBy: -2)]
+        let patch = asFourChars[asFourChars.index(asFourChars.endIndex, offsetBy: -1)]
+        if patch == "0" {
+          buildXcode = "\(major).\(minor).\(patch)"
         } else {
-          minor = asFourChars.suffix(2)
+          buildXcode = "\(major).\(minor)"
         }
-        buildXcode = "\(major).\(minor)"
       } else {
         buildXcode = asFourChars
       }

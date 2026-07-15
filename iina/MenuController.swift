@@ -141,6 +141,8 @@ class MenuController: NSObject, NSMenuDelegate {
   @IBOutlet weak var inspector: NSMenuItem!
   @IBOutlet weak var miniPlayer: NSMenuItem!
 
+  @IBOutlet weak var debugDump: NSMenuItem!
+
   /// If `true` then all menu items are disabled.
   private var isDisabled = false
 
@@ -258,7 +260,8 @@ class MenuController: NSObject, NSMenuDelegate {
     let cropMenuItemTitles = [StringConstants.none] + Aspect.aspectsInMenu + [StringConstants.custom]
     // same as aspectList above.
     let cropIdentifiers = [StringConstants.noneCropIdentifier] + Aspect.aspectsInMenu + [StringConstants.customCropIdentifier]
-    bind(menu: cropMenu, withOptions: cropMenuItemTitles, objects: cropIdentifiers, objectMap: nil, action: #selector(PlayerWindowController.menuChangeCrop(_:))) {
+    let changeCropAction = #selector(PlayerWindowController.menuChangeCrop(_:))
+    bind(menu: cropMenu, withOptions: cropMenuItemTitles, objects: cropIdentifiers, objectMap: nil, action: changeCropAction) {
       return PlayerManager.shared.activePlayer?.pwc.geo.video.selectedCropLabel == $0.representedObject as? String
     }
     // Separate "Custom..." from other crop sizes.
@@ -266,7 +269,8 @@ class MenuController: NSObject, NSMenuDelegate {
 
     // -- rotation
     let rotationTitles = Constants.rotations.map { "\($0)\(StringConstants.degree)" }
-    bind(menu: rotationMenu, withOptions: rotationTitles, objects: Constants.rotations, objectMap: nil, action: #selector(PlayerWindowController.menuChangeRotation(_:))) {
+    let rotationAction = #selector(PlayerWindowController.menuChangeRotation(_:))
+    bind(menu: rotationMenu, withOptions: rotationTitles, objects: Constants.rotations, objectMap: nil, action: rotationAction) {
       PlayerManager.shared.activePlayer?.pwc.geo.video.userRotation == $0.representedObject as? Int
     }
 
@@ -358,6 +362,7 @@ class MenuController: NSObject, NSMenuDelegate {
 
     if AppDelegate.iinaPluginSystemEnabled {
       pluginMenu.delegate = self
+      pluginMenu.autoenablesItems = false
     } else {
       pluginMenuItem.isHidden = true
     }
@@ -368,6 +373,11 @@ class MenuController: NSObject, NSMenuDelegate {
 
     inspector.action = #selector(AppDelegate.shared.toggleInspectorWindow(_:))
     miniPlayer.action = #selector(PlayerWindowController.menuSwitchToMiniPlayer(_:))
+
+    // Debug
+
+    debugDump.isAlternate = true
+    debugDump.keyEquivalentModifierMask = .option
   }
 
   func refreshCmdNStatus() {
@@ -412,11 +422,10 @@ class MenuController: NSObject, NSMenuDelegate {
     }
     for (index, chapter) in chapters.enumerated() {
       let menuTitle = "\(padder(chapter.startTimeString)) – \(chapter.title)"
-      let nextChapterTime = chapters[at: index+1]?.startTime ?? Double.infinity
-      let playbackPosSec = info.playbackTime.positionSec
-      let isPlaying = playbackPosSec == nil ? false : VideoTime(playbackPosSec!).between(chapter.startTime, nextChapterTime)
-      let menuItem = NSMenuItem(title: menuTitle, action: #selector(PlayerWindowController.menuChapterSwitch(_:)), keyEquivalent: "")
+      let chapterSwitchAction = #selector(PlayerWindowController.menuChapterSwitch(_:))
+      let menuItem = NSMenuItem(title: menuTitle, action: chapterSwitchAction, keyEquivalent: "")
       menuItem.tag = index
+      let isPlaying = index == info.chapter
       menuItem.state = isPlaying ? .on : .off
       let font = NSFont.monospacedDigitSystemFont(ofSize: 0, weight: .regular)
       menuItem.attributedTitle = NSAttributedString(string: menuTitle, attributes: [.font: font])
@@ -567,20 +576,29 @@ class MenuController: NSObject, NSMenuDelegate {
     Logger.log.trace("Updating Plugin menu")
     pluginMenu.removeAllItems()
 
-    pluginMenu.addItem(withTitle: StringConstants.managePlugins, action: #selector(AppDelegate.showPluginPreferences(_:)), keyEquivalent: "")
-
     let activePlayer = PlayerManager.shared.activePlayer
-    if let isDisplayingPluginsPanel = activePlayer?.pwc.isTabGroupVisible(.plugins) {
-      let itemTitle = isDisplayingPluginsPanel ? StringConstants.hidePluginsPanel : StringConstants.showPluginsPanel
-      let itemAction = #selector(PlayerWindowController.showPluginsPanel(_:))
-      pluginMenu.addItem(withTitle: itemTitle, action: itemAction, keyEquivalent: "")
+    let managePluginsItem = NSMenuItem(title: StringConstants.managePlugins,
+                                       action: #selector(AppDelegate.showPluginPreferences(_:)),
+                                       keyEquivalent: "")
+    let developerToolTitle = NSLocalizedString("menu.developer_tool", comment: "Developer Tool")
+    let developerTool = NSMenuItem(title: developerToolTitle, action: nil, keyEquivalent: "")
+    let developerToolSubmenu = NSMenu()
+    developerTool.submenu = developerToolSubmenu
+    let reloadTitle = NSLocalizedString("menu.reload_plugins", comment: "Reload All Plugins")
+    let reloadPluginsItem = NSMenuItem(title: reloadTitle, action: #selector(AppDelegate.reloadAllPlugins(_:)),
+                                       keyEquivalent: "")
 
-      pluginMenu.addItem(.separator())
+    pluginMenu.addItem(managePluginsItem)
+
+    if let pwc = activePlayer?.pwc {
+      let isDisplayingPluginsPanel = pwc.isTabGroupVisible(.plugins)
+      let title = isDisplayingPluginsPanel ? StringConstants.hidePluginsPanel : StringConstants.showPluginsPanel
+      let showPanelItem = NSMenuItem(title: title, action: #selector(pwc.showPluginsPanel(_:)), keyEquivalent: "")
+
+      pluginMenu.addItem(showPanelItem)
     }
-
-    let developerTool = NSMenuItem()
-    developerTool.title = NSLocalizedString("menu.developer_tool", comment: "Developer Tool")
-    developerTool.submenu = NSMenu()
+    pluginMenu.addItem(.separator())
+    var justAddedSeparator = true
 
     var mappingItemPairs: [(KeyMapping, NSMenuItem)] = []
 
@@ -593,11 +611,8 @@ class MenuController: NSObject, NSMenuDelegate {
       let menuItems = (instance.plugin.globalInstance?.menuItems ?? []) + instance.menuItems
       if menuItems.isEmpty { continue }
 
-      if #available(macOS 14.0, *) {
-        pluginMenu.addItem(.sectionHeader(title: instance.plugin.name))
-      } else {
-        pluginMenu.addItem(withTitle: instance.plugin.name, enabled: false)
-      }
+      pluginMenu.addItem(.sectionHeader(title: instance.plugin.name))
+      justAddedSeparator = false
 
       for item in menuItems {
         if counter == 5 {
@@ -612,25 +627,21 @@ class MenuController: NSObject, NSMenuDelegate {
         counter += 1
       }
 
-      if #available(macOS 12.0, *) {
-        let devToolItem = NSMenuItem()
-        devToolItem.title = instance.plugin.name
-        developerTool.submenu?.addItem(
-          menuItem(forPluginInstance: instance, tag: JavasctiptDevTool.JSMenuItemInstance))
-        if let globalInst = instance.plugin.globalInstance {
-          developerTool.submenu?.addItem(
-            menuItem(forPluginInstance: globalInst, tag: JavasctiptDevTool.JSMenuItemInstance))
-        }
+      let devToolItem = NSMenuItem()
+      devToolItem.title = instance.plugin.name
+      developerToolSubmenu.addItem(
+        menuItem(forPluginInstance: instance, tag: JavasctiptDevTool.JSMenuItemInstance))
+      if let globalInst = instance.plugin.globalInstance {
+        developerToolSubmenu.addItem(
+          menuItem(forPluginInstance: globalInst, tag: JavasctiptDevTool.JSMenuItemInstance))
       }
+    }
 
+    if !justAddedSeparator {
       pluginMenu.addItem(.separator())
     }
-
-    if #available(macOS 12.0, *) {
-      pluginMenu.addItem(developerTool)
-    }
-    pluginMenu.addItem(withTitle: NSLocalizedString("menu.reload_plugins", comment: "Reload All Plugins"),
-                       action: #selector(PlayerWindowController.reloadAllPlugins(_:)), keyEquivalent: "")
+    pluginMenu.addItem(developerTool)
+    pluginMenu.addItem(reloadPluginsItem)
 
     sectionMappingItemPairs[MPVInputSection.Shared.PLUGINS_SECTION_NAME] = mappingItemPairs
   }
@@ -664,7 +675,8 @@ class MenuController: NSObject, NSMenuDelegate {
       // Store the item with its pair - the PlayerInputContext will set the binding & deal with conflicts
       let actionDescription = "\(plugin.plugin.name) → \(menuItem.title)"
       // #MenuItemKeyBinding
-      let keyMapping = KeyMapping(rawKey: rawKey, rawAction: nil, isIINACommand: true, comment: actionDescription, sourceName: plugin.plugin.name)
+      let keyMapping = KeyMapping(rawKey: rawKey, rawAction: nil, isIINACommand: true,
+                                  comment: actionDescription, sourceName: plugin.plugin.name)
       mappingItemPairs.append((keyMapping, menuItem))
     }
     if !item.items.isEmpty {
@@ -786,6 +798,7 @@ class MenuController: NSObject, NSMenuDelegate {
     case savedAudioFiltersMenu:
       updateSavedFiltersMenu(type: MPVProperty.af)
     case pluginMenu:
+      PlayerManager.shared.activePlayer?.events.emit(.menuUpdate)
       updatePluginMenu()
     default: break
     }
@@ -851,7 +864,9 @@ class MenuController: NSObject, NSMenuDelegate {
   /// Instead of trying to keep track of them manually, just recurse through all the menus and find all the menu item
   /// bindings which haven't already been accounted for.
   func refreshStaticMenuItemBindings() {
-    let actionBlacklist = sectionMappingItemPairs.filter({ $0.key != MPVInputSection.Shared.STATIC_MENU_ITEMS_SECTION_NAME }).flatMap({$0.value}).compactMap({ $0.1.action })
+    let actionBlacklist = sectionMappingItemPairs.filter({ $0.key != MPVInputSection.Shared.STATIC_MENU_ITEMS_SECTION_NAME })
+      .flatMap({$0.value})
+      .compactMap({ $0.1.action })
     var staticMenuItemBindings: [KeyMapping] = []
 
     for rootMenu in NSApp.mainMenu!.items {
@@ -875,7 +890,8 @@ class MenuController: NSObject, NSMenuDelegate {
       }
     }
 
-    AppInputConfig.replaceMappings(forSharedSectionName: MPVInputSection.Shared.STATIC_MENU_ITEMS_SECTION_NAME, with: staticMenuItemBindings, onlyIfDifferent: true)
+    AppInputConfig.replaceMappings(forSharedSectionName: MPVInputSection.Shared.STATIC_MENU_ITEMS_SECTION_NAME,
+                                   with: staticMenuItemBindings, onlyIfDifferent: true)
   }
 
   private func forMenuItemAndAllDescendents(_ menuItem: NSMenuItem, do callback: (NSMenuItem) -> Void) {

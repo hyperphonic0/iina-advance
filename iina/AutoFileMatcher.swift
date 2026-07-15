@@ -41,7 +41,7 @@ class AutoFileMatcher {
   init(player: PlayerCore, ticket: Int) {
     self.player = player
     self.ticket = ticket
-    log = Logger.makeSubsystem("fmatcher\(player.label)")
+    log = Logger.makeSubsystem("fmatcher\(player.label)", symbolName: ["square.stack.3d.up"])
   }
 
   /// checkTicket

@@ -18,8 +18,6 @@ final class PlayerCore: NSObject {
     /// To determine idle state, check whether `info.currentPlayback` is `nil`.
     case started
 
-    // TODO: add states for playing, paused
-
     /// Whether stopping of this player has been initiated.
     case stopping
 
@@ -307,6 +305,23 @@ final class PlayerCore: NSObject {
     }
   }
 
+  /// Whether to only use the URL's filename when calculating the mpv
+  /// [Watch Later](https://mpv.io/manual/stable/#watch-later) MD5 sum.
+  ///
+  /// This supports the mpv
+  /// [ignore-path-in-watch-later-config](https://mpv.io/manual/stable/#options-ignore-path-in-watch-later-config)
+  /// option. As this option is only used by advanced users there is intentionally no support in IINA's UI for this option. This is also an
+  /// option that you would set and not change as changing it means existing watch later files will no longer be found. For this reason
+  /// IINA does not support dynamic changes to this option. The value of this option is obtained and cached. Setting this option
+  /// requires IINA to be restarted.
+  lazy var ignorePathInWatchLaterConfig: Bool = {
+    let ignorePath = mpv.getFlag(MPVOption.WatchLater.ignorePathInWatchLaterConfig)
+    if ignorePath {
+      log.debug("Will use filename instead of path when calculating watch later MD5 sum")
+    }
+    return ignorePath
+  }()
+
   // MARK: - Init
 
   /// Base constructor (private).
@@ -453,57 +468,37 @@ final class PlayerCore: NSObject {
     mpv.setString(MPVOption.Subtitles.secondarySid, "auto")
     // `hwdec` is handled in `mpvSetInitialOptions`
     mpv.resetToDefault(MPVOption.Video.deinterlace)
-    info.deinterlace = mpv.getFlag(MPVOption.Video.deinterlace)
 
     mpv.resetToDefault(MPVOption.Video.videoZoom)
 
     mpv.resetToDefault(MPVOption.Equalizer.brightness)
-    info.brightness = mpv.getInt(MPVOption.Equalizer.brightness)
     mpv.resetToDefault(MPVOption.Equalizer.contrast)
-    info.contrast = mpv.getInt(MPVOption.Equalizer.contrast)
     mpv.resetToDefault(MPVOption.Equalizer.saturation)
-    info.saturation = mpv.getInt(MPVOption.Equalizer.saturation)
     mpv.resetToDefault(MPVOption.Equalizer.gamma)
-    info.gamma = mpv.getInt(MPVOption.Equalizer.gamma)
     mpv.resetToDefault(MPVOption.Equalizer.hue)
-    info.hue = mpv.getInt(MPVOption.Equalizer.hue)
 
     mpv.resetToDefault(MPVOption.Video.videoAspectOverride)
     mpv.resetToDefault(MPVOption.Video.videoRotate)
 
-    info.isSubVisible = true
     mpv.resetToDefault(MPVOption.Subtitles.subVisibility)
-    info.isSecondSubVisible = true
     mpv.resetToDefault(MPVOption.Subtitles.secondarySubVisibility)
-    info.subDelay = 0
     mpv.resetToDefault(MPVOption.Subtitles.subDelay)
-    info.sub2Delay = 0
     mpv.resetToDefault(MPVOption.Subtitles.secondarySubDelay)
-    info.subPos = 0
     mpv.resetToDefault(MPVOption.Subtitles.subPos)
-    info.sub2Pos = 0
     mpv.resetToDefault(MPVOption.Subtitles.secondarySubPos)
-    info.subScale = 0
     mpv.resetToDefault(MPVOption.Subtitles.subScale)
 
     // PlaybackInfo cached values for these will be read in at window open:
     mpv.resetToDefault(MPVOption.PlaybackControl.loopPlaylist)
     mpv.resetToDefault(MPVOption.PlaybackControl.loopFile)
 
-    info.playSpeed = 1.0
     mpv.resetToDefault(MPVOption.PlaybackControl.speed)
 
     mpv.resetToDefault(MPVOption.Audio.volume)
-    info.volume = mpv.getDouble(MPVOption.Audio.volume)
-    // `info.maxVolume` will be reset in `mpvSetInitialOptions`
     mpv.resetToDefault(MPVOption.Audio.mute)
-    info.isMuted = mpv.getFlag(MPVOption.Audio.mute)
     mpv.resetToDefault(MPVOption.Audio.audioDelay)
-    info.audioDelay = mpv.getDouble(MPVOption.Audio.audioDelay)
     mpv.resetToDefault(MPVOption.PlaybackControl.abLoopA)
-    info.abLoopA = mpv.getDouble(MPVOption.PlaybackControl.abLoopA)
     mpv.resetToDefault(MPVOption.PlaybackControl.abLoopB)
-    info.abLoopB = mpv.getDouble(MPVOption.PlaybackControl.abLoopB)
 
     info.videoFiltersDisabled = [:]
     removeAllVideoFilters(notify: false)
@@ -518,7 +513,72 @@ final class PlayerCore: NSObject {
     mpv.mpvSetOptions(from: userOptions)
   }
 
+  /// Update cached values in bulk (for use when opening player window.
+  ///
+  /// Some of the controls in Quick Settings, et al, may try to submit these values when their values are initially set.
+  /// Pull all of these from mpv to ensure proper source of data sync.
+  private func syncPlaybackInfoCacheFromMpv() {
+    // Playback
+
+    info.vid = mpv.getInt(MPVOption.TrackSelection.vid)
+    info.aid = mpv.getInt(MPVOption.TrackSelection.aid)
+    if info.vid == 0 && info.aid == 0 {
+      log.warn("Looks like neither video nor audio track selected: media may fail to play!")
+    }
+    info.sid = mpv.getInt(MPVOption.TrackSelection.sid)
+    info.secondSid = mpv.getInt(MPVOption.Subtitles.secondarySid)
+
+    if let loopFile = mpv.getString(MPVOption.PlaybackControl.loopFile) {
+      info.loopFile = loopFile
+    }
+    if let loopPlaylist = mpv.getString(MPVOption.PlaybackControl.loopPlaylist) {
+      info.loopPlaylist = loopPlaylist
+    }
+
+    syncAbLoop()
+
+
+    info.playSpeed = mpv.getDouble(MPVOption.PlaybackControl.speed)
+
+    // Subtitles
+
+    info.subScale = mpv.getDouble(MPVOption.Subtitles.subScale)
+    info.subPos = mpv.getDouble(MPVOption.Subtitles.subPos)
+    info.sub2Pos = mpv.getDouble(MPVOption.Subtitles.secondarySubPos)
+    info.subDelay = mpv.getDouble(MPVOption.Subtitles.subDelay)
+    info.sub2Delay = mpv.getDouble(MPVOption.Subtitles.secondarySubDelay)
+    info.subFontSize = mpv.getInt(MPVOption.Subtitles.subFontSize)
+    info.isSubVisible = mpv.getFlag(MPVOption.Subtitles.subVisibility)
+    info.isSecondSubVisible = mpv.getFlag(MPVOption.Subtitles.secondarySubVisibility)
+
+    // Video
+
+    info.brightness = mpv.getInt(MPVOption.Equalizer.brightness)
+    info.contrast = mpv.getInt(MPVOption.Equalizer.contrast)
+    info.saturation = mpv.getInt(MPVOption.Equalizer.saturation)
+    info.gamma = mpv.getInt(MPVOption.Equalizer.gamma)
+    info.hue = mpv.getInt(MPVOption.Equalizer.hue)
+
+    if let hwdec = mpv.getString(MPVOption.Video.hwdec) {
+      info.hwdec = hwdec
+    }
+    info.deinterlace = mpv.getFlag(MPVOption.Video.deinterlace)
+
+    // Audio
+
+    info.volume = mpv.getDouble(MPVOption.Audio.volume)
+    info.volumeMax = mpv.getInt(MPVOption.Audio.volumeMax)
+    // `info.maxVolume` will be reset in `mpvSetInitialOptions`
+    info.isMuted = mpv.getFlag(MPVOption.Audio.mute)
+    info.audioDelay = mpv.getDouble(MPVOption.Audio.audioDelay)
+  }
   // MARK: - Opening Media
+
+  @MainActor
+  @discardableResult
+  func openURL(_ url: URL) -> Int? {
+    return openURLs([url])
+  }
 
   /**
    Open a list of urls. If there are more than one urls, add the remaining ones to
@@ -538,6 +598,16 @@ final class PlayerCore: NSObject {
     let urls = Utility.resolveURLs(urls)
     let ids = urls.map{ MediaMetaCache.shared.getBestPlaybackID(forURL: $0) }
     return openPlaybackIDs(ids)
+  }
+
+  /// Returns number of playable URLs opened. If `0`, no player window was opened.
+  @MainActor
+  @discardableResult
+  func openURLString(_ str: String) -> Int {
+    if let id = PlaybackID(path: str) {
+      return openPlaybackIDs([id])
+    }
+    return 0
   }
 
   @MainActor
@@ -568,27 +638,12 @@ final class PlayerCore: NSObject {
     }
 
     // If pwc is nil, it is not restoring
-    info.shouldAutoLoadFiles = AppDelegate.shared.isInteractiveLaunch && (pwc == nil || !pwc.sessionState.isRestoring) && playableFiles.count == 1
+    info.shouldAutoLoadFiles = AppDelegate.shared.isInteractiveLaunch && playableFiles.count == 1
+    &&  (pwc == nil || !pwc.sessionState.isRestoring)
 
     // open the first file
     openPlayerWindow(ids)
     return playableFiles.count
-  }
-
-  @MainActor
-  @discardableResult
-  func openURL(_ url: URL) -> Int? {
-    return openURLs([url])
-  }
-
-  /// Returns number of playable URLs opened. If `0`, no player window was opened.
-  @MainActor
-  @discardableResult
-  func openURLString(_ str: String) -> Int {
-    if let id = PlaybackID(path: str) {
-      return openPlaybackIDs([id])
-    }
-    return 0
   }
 
   /// Loads the first URL into the player, and adds any remaining URLs to playlist.
@@ -677,7 +732,13 @@ final class PlayerCore: NSObject {
           // Send load file command
           mpv.command(.loadfile, args: [path])
 
+          let playlistPlaybackIDs: [PlaybackID]
+          let playlistPos: Int?
+
           if case .restoring(let priorState) = sessionState {
+
+
+            
             priorState.restoreMpvProperties(to: self)
 
             /// Player was already paused in `PlayerSaveState.restoreTo()`.
@@ -686,63 +747,48 @@ final class PlayerCore: NSObject {
             } else if let wasPaused = priorState.bool(for: .paused) {
               pendingResumeWhenShowingWindow = !wasPaused
             } else {
-              pendingResumeWhenShowingWindow = !Preference.bool(for: .pauseWhenOpen)
+              pendingResumeWhenShowingWindow = !shouldPauseOnFileOpen()
+              log.warn("Could not determine pause state to restore; falling back using prefs: willResume=\(pendingResumeWhenShowingWindow.yn)")
             }
 
-            let playlistPlaybackIDs = priorState.buildPlaylistIDs(volRemounts: volRemountURLs)
-            if !playlistPlaybackIDs.isEmpty {
-              let playlistPos: Int? = priorState.int(for: .playlistPos)
-              log.debug("Restoring \(playlistPlaybackIDs.count) items into playlist, indexOfCurrentItem=\(playlistPos?.description ?? "nil")")
-              addAllToPlaylist(playbackIDsIncludingCurrent: playlistPlaybackIDs, indexOfCurrentItem: playlistPos)
+            playlistPlaybackIDs = priorState.restorePlaylistIDs(volRemounts: volRemountURLs)
+            playlistPos = priorState.int(for: .playlistPos)
+
+          } else {  // Not restoring
+
+            playlistPlaybackIDs = ids
+            playlistPos = 0
+
+            if isInteractivePlayer {
+              // Pause until window opens, to avoid blips or other loading unpleasantness.
+              mpv.setFlag(MPVOption.PlaybackControl.pause, true)
+
+              let shouldStayPaused = shouldPauseOnFileOpen()
+              pendingResumeWhenShowingWindow = !shouldStayPaused
+              log.debug("Paused playback until window is done opening; will resume when shown=\(pendingResumeWhenShowingWindow.yn)")
+            } else {
+              log.verbose("Player is non-interactive; skipping playback pause prior to window open")
+              pendingResumeWhenShowingWindow = false
             }
 
-            return
+            if Preference.bool(for: .autoRepeat) {
+              let loopMode = Preference.DefaultRepeatMode(rawValue: Preference.integer(for: .defaultRepeatMode))
+              setLoopMode(loopMode == .file ? .file : .playlist)
+            }
 
-          } else if isInteractivePlayer {
-            log.debug("Pausing playback until window is done opening")
-            // Pause until window opens, to avoid blips or other loading unpleasantness.
-            mpv.setFlag(MPVOption.PlaybackControl.pause, true)
-
-            let shouldStayPaused = getPauseFromUserOptions() ?? Preference.bool(for: .pauseWhenOpen)
-            log.debug("Setting pendingResumeWhenShowingWindow = \(pendingResumeWhenShowingWindow.yn)")
-            pendingResumeWhenShowingWindow = !shouldStayPaused
-
-          } else {
-            log.verbose("Player is non-interactive; skipping playback pause prior to window open")
-            pendingResumeWhenShowingWindow = false
           }
 
-          // Not restoring
-
-          if ids.count > 1 {
-            log.verbose("Adding \(ids.count - 1) files to playlist. Autoload=\(info.shouldAutoLoadFiles.yn)")
-            addAllToPlaylist(playbackIDsIncludingCurrent: ids, indexOfCurrentItem: 0)
+          if playlistPlaybackIDs.count > 1 {
+            log.verbose("Adding \(playlistPlaybackIDs.count - 1) files to playlist. PlaylistPos="
+                        + String(describing: playlistPos) + " Autoload=\(info.shouldAutoLoadFiles.yn)")
+            addAllToPlaylist(playbackIDsIncludingCurrent: playlistPlaybackIDs, indexOfCurrentItem: playlistPos)
           } else {
             // Only one entry in playlist, but still need to pull it from mpv
             log.verbose("Only 1 entry in playlist & not restoring; doing initial reload of playlist")
             _reloadPlaylist()
           }
 
-          // TODO: move this stuff into mpv init
-
-          if Preference.bool(for: .enablePlaylistLoop) {
-            mpv.setString(MPVOption.PlaybackControl.loopPlaylist, "inf")
-          }
-          if Preference.bool(for: .enableFileLoop) {
-            mpv.setString(MPVOption.PlaybackControl.loopFile, "inf")
-          }
-
-          if Preference.bool(for: .autoRepeat) {
-            let loopMode = Preference.DefaultRepeatMode(rawValue: Preference.integer(for: .defaultRepeatMode))
-            setLoopMode(loopMode == .file ? .file : .playlist)
-          }
-
-          if let loopFile = mpv.getString(MPVOption.PlaybackControl.loopFile) {
-            info.loopFile = loopFile
-          }
-          if let loopPlaylist = mpv.getString(MPVOption.PlaybackControl.loopPlaylist) {
-            info.loopPlaylist = loopPlaylist
-          }
+          syncPlaybackInfoCacheFromMpv()
         }
       }
     }
@@ -773,17 +819,8 @@ final class PlayerCore: NSObject {
     if isInteractivePlayer {
       videoView.initVideoLayer()
     }
-    startMPV()
-#else
-    startMPV()
-    if isInteractivePlayer {
-      videoView.initVideoLayer()
-    }
 #endif
-  }
 
-  @MainActor
-  private func startMPV() {
     // set path for youtube-dl
     let oldPath = String(cString: getenv("PATH")!)
     var path = Utility.exeDirURL.path + ":" + oldPath
@@ -799,6 +836,7 @@ final class PlayerCore: NSObject {
       log.debug("Set env http_proxy to \(proxy.pii)")
     }
 
+    // Start mpv
     mpv.mpvInit()
     events.emit(.mpvInitialized)
 
@@ -989,6 +1027,10 @@ final class PlayerCore: NSObject {
     log.verbose("Updating mpv keepaspect-window synchronously: done")
   }
 
+  func shouldPauseOnFileOpen() -> Bool {
+    getPauseFromUserOptions() ?? Preference.bool(for: .pauseWhenOpen)
+  }
+
   func togglePause() {
     mpv.queue.async { [self] in
       _togglePause()
@@ -1127,8 +1169,14 @@ final class PlayerCore: NSObject {
         // Do not enqueue after window is closed (and info.currentPlayback is nil)
         sendOSD(.stop)
         DispatchQueue.main.async { [self] in
+          displayedPlaylist = []  // reset to match info.playlist
           videoView.stopDisplayLink()
         }
+      }
+
+      if !mpv.getFlag(MPVOption.PlaybackControl.pause) {
+        log.debug("Pausing playback before sending stop command")
+        mpv.setFlag(MPVOption.PlaybackControl.pause, true, level: .verbose)
       }
 
       // Do not send a stop command to mpv if it is already stopped. This happens when quitting is
@@ -1181,7 +1229,7 @@ final class PlayerCore: NSObject {
     let kind = absolute ? "absolute" : "relative"
 
     switch option {
-    case .keyframes:
+    case .relative:
       mpv.command(.seek, args: ["\(time)", "\(kind)+keyframes"], checkError: false)
 
     case .exact:
@@ -1376,6 +1424,7 @@ final class PlayerCore: NSObject {
     }
 
     DispatchQueue.main.async { [self] in
+      guard let pwc else { return }
       let screenshotViewController = ScreenshootOSDView()
       // Shrink to some fraction of the currently displayed video
       let relativeSize = pwc.videoView.frame.size * 0.3
@@ -1406,6 +1455,7 @@ final class PlayerCore: NSObject {
         return
       }
 
+      guard let pwc else { return }
       let screenshotViewController = ScreenshootOSDView()
       // Shrink to some fraction of the currently displayed video
       let relativeSize = pwc.videoView.frame.size * 0.3
@@ -1438,7 +1488,7 @@ final class PlayerCore: NSObject {
   /// Synchronize IINA with the state of the [mpv](https://mpv.io/manual/stable/) A-B loop command.
   func syncAbLoop() {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
-    guard isActive else { return }
+    guard isInteractivePlayer, isActive else { return }
 
     // Obtain the values of the ab-loop-a and ab-loop-b options representing the A & B loop points.
     let a = mpv.getDouble(MPVOption.PlaybackControl.abLoopA)
@@ -1628,6 +1678,7 @@ final class PlayerCore: NSObject {
   func speedDidChange(to speed: CGFloat) {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
     info.playSpeed = speed
+    guard isInteractivePlayer else { return }
     sendOSD(.speed(speed))
     saveState()  // record the new speed
     let paused = info._isPaused
@@ -1662,6 +1713,7 @@ final class PlayerCore: NSObject {
   @MainActor
   func setVideoAspectOverride(_ aspectString: String) {
     guard !isRestoring else { return }
+    guard let pwc else { return }
 
     let aspectLabel: String = Aspect.bestLabelFor(aspectString)
     guard pwc.geo.video.userAspectLabel != aspectLabel else { return }
@@ -1794,7 +1846,8 @@ final class PlayerCore: NSObject {
   }
 
   func toggleHardwareDecoding(_ enable: Bool) {
-    let value = Preference.HardwareDecoderOption(rawValue: Preference.integer(for: .hardwareDecoder))?.mpvString ?? "auto"
+    let value = String(describing: Preference.enum(for: .hardwareDecoder) as
+                       Preference.HardwareDecoderOption)
     mpv.queue.async { [self] in
       guard isActive else { return }
       mpv.setString(MPVOption.Video.hwdec, enable ? value : "no")
@@ -1802,7 +1855,7 @@ final class PlayerCore: NSObject {
   }
 
   func getVideoZoom() -> Double {
-    let logZoom = pwc.player.mpv.getDouble(MPVOption.Video.videoZoom)
+    let logZoom = mpv.getDouble(MPVOption.Video.videoZoom)
     // mpv uses a logrithmic scale. Convert to linear scale:
     let linearZoom = pow(2.0, logZoom)
     return linearZoom
@@ -2045,15 +2098,11 @@ final class PlayerCore: NSObject {
       log.error("FileStarted: failed to create media from path \(path.pii.quoted)")
       return
     }
-    if let existingPlayback = info.currentPlayback, existingPlayback.url == playbackFromPath.url {
-      guard existingPlayback.state.isNotYet(.started) else {
-        log.warn("FileStarted: found existing playback for \(existingPlayback.url.absoluteString.pii.quoted), but state is unexpected; aborting (expected: 'notYetStarted', found: \(existingPlayback.state.rawValue))")
-        return
-      }
-    }
 
     log.verbose("FileStarted: playbackPath=\(path.pii.quoted), PL#=\(String(playbackFromPath.playlistPos))")
     info.currentPlayback = playbackFromPath
+
+    MemoryUsage.shared.logUsage("after file started")
 
     // Stop watchers from prev media (if any)
     stopWatchingSubFile()
@@ -2086,6 +2135,7 @@ final class PlayerCore: NSObject {
 
     sendOSD(.fileStart(playbackFromPath.displayName, ""))
 
+    log.verbose("FileStarted: done")
     events.emit(.fileStarted)
   }
 
@@ -2219,19 +2269,25 @@ final class PlayerCore: NSObject {
       latestTicket += 1
       return latestTicket
     }
+    let currentPlaylist = info.playlist
     PlayerCore.postLoadBGQ.asyncAfter(deadline: DispatchTime.now() + TimeConstants.autoLoadDelay) { [self] in
-      fileLoaded_doPostLoadBGQWork(for: currentPlayback, currentTicket: currentTicket,
+      fileLoaded_doPostLoadBGQWork(for: currentPlayback, currentPlaylist: currentPlaylist,
+                                   currentTicket: currentTicket,
                                    shouldAutoLoadFiles: shouldAutoLoadFiles,
                                    priorStateIfRestoring: priorStateIfRestoring)
     }
 
     // History thread: update history given new playback URL. If restoring a prev playback, do not add again
     if let playbackID = info.currentPlayback?.id, !isRestoring {
+      let mediaTitle = mpv.getString(MPVProperty.mediaTitle)
+      let ignorePathForMD5 = mpv.getFlag(MPVOption.WatchLater.ignorePathInWatchLaterConfig)
       // Pass nil as positionSec for now, to reflect mpv watch-later state. The watch-later info is deleted when a file is
       // opened. Later if we implement our own position tracking, we can do something more intuitive.
       HistoryController.shared.savePlaybackMetaAfterFileDidLoad(for: playbackID,
                                                                 durationSec: info.playbackTime.durationSec ?? 0.0,
-                                                                positionSec: nil)
+                                                                positionSec: nil,
+                                                                title: mediaTitle,
+                                                                ignorePathForMD5)
     }
   }
 
@@ -2253,6 +2309,26 @@ final class PlayerCore: NSObject {
         postNotification(.iinaPlayerStopped)
       }
     }
+    MemoryUsage.shared.logUsage("after file ended")
+  }
+
+  /// The mpv [audio-device-list](https://mpv.io/manual/stable/#command-interface-audio-device-list)
+  /// property changed.
+  /// - Important: The mpv [audio-device](https://mpv.io/manual/stable/#command-interface-audio-device)
+  ///     property value is not guaranteed to reflect the audio device that is actually in use. When a selected device is removed the
+  ///     value of this property continues to reflect the device that is no longer present even though `libmpv` has switched to
+  ///     another audio device. This will cause the IINA `Audio Device` menu to malfunction. To handle the problematic behavior
+  ///     of the `audio-device` property, whenever the device list changes this method checks if the device returned by
+  ///     `audio-device` is present in the new list of audio devices. If the audio device cannot be found the `audio-device`
+  ///     property is set to `auto` so that both IINA and mpv are in agreement on the selected audio device. For more information
+  ///     see issue [#6034](https://github.com/iina/iina/issues/6034).
+  func audioDeviceListChanged() {
+    guard isActive else { return }
+    let devices = getAudioDevices()
+    let device = mpv.getString(MPVProperty.audioDevice)
+    guard !devices.contains(where: {$0.name == device}) else { return }
+    log.debug("Selected audio device is no longer present, setting selected device to auto")
+    setAudioDevice("auto")
   }
 
   func chapterChanged() {
@@ -2421,6 +2497,7 @@ final class PlayerCore: NSObject {
 
   /// Auto load via background queue
   private func fileLoaded_doPostLoadBGQWork(for currentPlayback: Playback,
+                                            currentPlaylist: [PlaybackID],
                                             currentTicket: Int,
                                             shouldAutoLoadFiles: Bool,
                                             priorStateIfRestoring: PlayerSaveState?) {
@@ -2483,16 +2560,15 @@ final class PlayerCore: NSObject {
     // Create bookmarks for playlist items (if not already done).
     // This can be expensive - perhaps ~1sec per item!
     let swGenBMs = Utility.Stopwatch()
-    let playlist = info.playlist
-    let playlisttItemsMissingBookmarks = playlist.filter{ !$0.isNetworkResource && $0.bookmark == nil }
+    let playlisttItemsMissingBookmarks = currentPlaylist.filter{ !$0.isNetworkResource && $0.bookmark == nil }
     var progress = 0
     for item in playlisttItemsMissingBookmarks {
       guard currentTicket == postLoadBGQTicket else { return }
-      if MediaMetaCache.shared.createBookmarkIfNotExist(fromURL: item.url) {
+      if MediaMetaCache.shared.addBookmarkIfMissingOrStale(fromURL: item.url) {
         progress += 1
       }
     }
-    log.verbose("Filled in \(progress) / \(playlisttItemsMissingBookmarks.count) missing bookmarks for playlist (\(playlist.count) total) in "
+    log.verbose("Filled in \(progress) / \(playlisttItemsMissingBookmarks.count) missing bookmarks for playlist (\(currentPlaylist.count) total) in "
                 + swGenBMs.secElapsedString)
 
     mpv.queue.async { [self] in
@@ -2562,7 +2638,9 @@ final class PlayerCore: NSObject {
       DispatchQueue.main.async { [self] in
         Utility.quickFontPickerWindow(selecting: subFont) { [self] result in
           Task { @MainActor in
-            setSubFont(result)
+            if let result {
+              setSubFont(result)
+            }
           }
         }
       }
@@ -3063,11 +3141,10 @@ final class PlayerCore: NSObject {
   // MARK: - Track Meta
 
   func getMediaTitle(withExtension: Bool = true) -> String {
-    assert(DispatchQueue.isExecutingIn(mpv.queue))
     if let mediaTitle = mpv.getString(MPVProperty.mediaTitle) {
       if !mediaTitle.isEmpty, let path = mpv.getString(MPVProperty.path), let id = PlaybackID(path: path) {
         MediaMetaCache.shared.updateCachedMeta(id, mpvTitle: mediaTitle,
-                                               pullFromWatchLater: false, pullFromFfmpeg: false)
+                                               watchLaterMD5: nil, pullFromFfmpeg: false)
       }
       return mediaTitle
     }
@@ -3095,7 +3172,7 @@ final class PlayerCore: NSObject {
       )
       if let path = mpv.getString(MPVProperty.path), let id = PlaybackID(path: path) {
         MediaMetaCache.shared.updateCachedMeta(id, mpvTitle: meta.0, mpvAlbum: meta.1, mpvArtist: meta.2,
-                                               pullFromWatchLater: false, pullFromFfmpeg: false)
+                                               watchLaterMD5: nil, pullFromFfmpeg: false)
       }
       return meta
     }
@@ -3180,7 +3257,7 @@ final class PlayerCore: NSObject {
     }
 
     info.replaceTracks(audio: audioTracks, video: videoTracks, sub: subTracks)
-    log.debug("Reloaded tracklist from mpv: \(videoTracks.count) video, \(audioTracks.count) audio, \(subTracks.count) subtitle")
+    log.debug("Reloaded tracklist from mpv: \(videoTracks.count) vid, \(audioTracks.count) aud, \(subTracks.count) sub")
 
     // Need to reload these explicitly. Sometimes when mpv sends `track-list`, it omits `vid`, `aid`, etc.
     vidChanged()
@@ -3188,7 +3265,8 @@ final class PlayerCore: NSObject {
     sidChanged()
     secondarySidChanged()
 
-    log.verbose("Posting iinaTracklistChanged vid=\(String(info.vid)) aid=\(String(info.aid)) sid=\(String(info.sid)) ssid=\(String(info.secondSid))")
+    log.verbose("Posting iinaTracklistChanged vid=\(String(info.vid)) aid=\(String(info.aid)) " +
+                "sid=\(String(info.sid)) ssid=\(String(info.secondSid))")
     postNotification(.iinaTracklistChanged)
     return true
   }
@@ -3265,7 +3343,8 @@ final class PlayerCore: NSObject {
       } else {
         returnValue = nil  // abort
       }
-      log.verbose("[GTF:\(ctx.name)] Changing sessionState for vid change, vidNew=\(ctx.vidTrackID) pendingAction=\(pendingAction): \(prevSessionState) → \(returnValue?.description ?? "nil")")
+      log.verbose("[GTF:\(ctx.name)] Changing sessionState for vid change, vidNew=\(ctx.vidTrackID) " +
+                  "pendingAction=\(pendingAction): \(prevSessionState) → \(returnValue?.description ?? "nil")")
       return returnValue
     }
 
@@ -3277,15 +3356,17 @@ final class PlayerCore: NSObject {
 
       var outputVidGeo = ctx.syncVideoParamsFromMpv(startingWith: inputVidGeo)
       if outputVidGeo == nil && hasPendingAction {
-        log.verbose("[GTF:\(ctx.name)] syncVideoParams returned nil but pending miniplayer show video. Assuming no video tracks; will show default art")
+        log.verbose("[GTF:\(ctx.name)] syncVideoParams returned nil but pending miniplayer show video. " +
+                    "Assuming no video tracks; will show defaultAlbumArt")
         outputVidGeo = inputVidGeo
-        // (kludge): ideally we'd want to include this in our window transform, but need refactor to get there from here. This should work ok.
+        // (kludge): ideally we'd want to include this in window transform, but need refactor to get there from here.
+        // This should work ok.
         pwc.animationPipeline.submitInstantTask {
           pwc.updateDefaultArtVisibility(to: true)
         }
       }
 
-      // Show OSD in music mode (if configured) when actually changing tracks, but not while toggling videoView visibility
+      // Show OSD in music mode (if configured) when changing tracks, but not while toggling videoView visibility
       if !silent, (!isInMiniPlayer || (pwc.miniPlayer.isViewportShown && !hasPendingAction)) {
         sendOSD(.track(info.track(.video, id: vid) ?? .noneVideoTrack))
       }
@@ -3390,7 +3471,8 @@ final class PlayerCore: NSObject {
           miniPlayerShowVideoTimer.restart()
         }
       }
-      log.verbose("Enabling video track: changing vid from \(vidNow) → \(vidToSet) vidTrackCount=\(vidTrackCount) pnedingAction=\(action)")
+      log.verbose("Enabling video track: changing vid from \(vidNow) → \(vidToSet) " +
+                  "vidTrackCount=\(vidTrackCount) pnedingAction=\(action)")
       let hasVidTrack = vidTrackCount > 0
       guard hasVidTrack else {
         info.vidDisabled = nil  // clear saved track

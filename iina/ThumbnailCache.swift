@@ -9,7 +9,7 @@
 import Cocoa
 import CustomExecutorsKit
 
-fileprivate let thumbCacheSubsystem = Logger.makeSubsystem("thumbcache")
+fileprivate let thumbCacheSubsystem = Logger.makeSubsystem("thumbcache", symbolName: ["photo.stack"])
 
 @globalActor
 actor ThumbnailCache {
@@ -182,12 +182,10 @@ actor ThumbnailCache {
       file.write(jpegData)
     }
 
-    if #available(macOS 10.15, *) {
-      do {
-        try file.close()
-      } catch {
-        log.error("Failed to close file: \(path.pii.quoted)")
-      }
+    do {
+      try file.close()
+    } catch {
+      log.error("Failed to close file: \(path.pii.quoted)")
     }
 
     needsRefresh = true
@@ -245,6 +243,11 @@ actor ThumbnailCache {
 
     log.debug("Finished reading thumbnail cache: read \(result.count) thumbs in \(sw) ms")
     return result
+  }
+
+  func clearThumbnailCache() async {
+    try? FileManager.default.removeItem(atPath: Utility.thumbnailCacheURL.path)
+    Utility.createDirIfNotExist(url: Utility.thumbnailCacheURL)
   }
 
   private func deleteCacheFile(at pathURL: URL) {

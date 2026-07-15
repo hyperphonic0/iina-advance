@@ -206,12 +206,7 @@ struct PlayerSaveState: CustomStringConvertible {
       return "PlayerSaveState(url=<ERROR>)"
     }
 
-    let urlPath: String
-    if #available(macOS 13.0, *) {
-      urlPath = staticURL.path(percentEncoded: false)
-    } else {
-      urlPath = staticURL.path
-    }
+    let urlPath: String = staticURL.path(percentEncoded: false)
 
     let filteredProps = properties.filter({ prop in
       switch prop.key {
@@ -292,6 +287,7 @@ struct PlayerSaveState: CustomStringConvertible {
   var staticURL: URL? { url(for: .url) }
 
   /// This attempts to resolve the latest URL from bookmark data if possible, but may fall back to `staticURL`.
+  /// For use in restoring.
   @MainActor
   fileprivate func resolveURL(volRemounts: [String: Bool]) -> URL? {
     let staticURL = staticURL
@@ -334,9 +330,9 @@ struct PlayerSaveState: CustomStringConvertible {
     }
     if volRemountURL.isEmpty || (volRemounts[volRemountURL] == true) {
       log.verbose("Restoring player url from bookmark…")
-      if let bookmarkURL = PlaybackID.url(fromBookmark: bookmarkData, log) {
-        log.verbose("Restored player url from bookmark: \(bookmarkURL.absoluteString.pii.quoted)")
-        return bookmarkURL
+      if let idFromBookmark = PlaybackID.resolvingBookmarkData(bookmarkData, updateCache: false, log) {
+        log.verbose("Restored player url from bookmark: \(idFromBookmark.staticURL.absoluteString.pii.quoted)")
+        return idFromBookmark.staticURL
       }
     }
     return staticURL
@@ -397,7 +393,8 @@ struct PlayerSaveState: CustomStringConvertible {
   // MARK: - Save State / Serialize to prefs strings
 
   /// Builds a list of PlaybackID objects for the saved playlist, preferring secure bookmarks when available.
-  func buildPlaylistIDs(volRemounts: [String: Bool]) -> [PlaybackID] {
+  /// This should only be called while restoring from a prior launch.
+  func restorePlaylistIDs(volRemounts: [String: Bool]) -> [PlaybackID] {
     var ids: [PlaybackID] = []
 
     // If we have all 3 arrays and they are aligned, use them in lockstep to preserve order
@@ -407,12 +404,12 @@ struct PlayerSaveState: CustomStringConvertible {
       for item in playlistBookmarkData {
         // Attempt to create a PlaybackID from the bookmark first, if it is available
         let staticURL = URL(fileURLWithPath: item.path)
-        if item.volRemountURL.isEmpty || (volRemounts[item.volRemountURL] == true), let bookmarkURL = PlaybackID.url(fromBookmark: item.bookmark, log) {
-          let idWithBookmark = PlaybackID(bookmarkURL, bookmark: item.bookmark)
-          // Merge bookmark into cache
-          MediaMetaCache.shared.updateCacheEntry(idWithBookmark)
+        if item.volRemountURL.isEmpty || (volRemounts[item.volRemountURL] == true),
+           let idWithBookmark = PlaybackID.resolvingBookmarkData(item.bookmark, updateCache: true, log) {
           ids.append(idWithBookmark)
           resolvedCount += 1
+          // If the bookmark resolved, the returned PlaybackID's staticURL is guaranteed to be the most up-to-date URL.
+          let bookmarkURL = idWithBookmark.staticURL
           // Support empty storedPath. as of v1.5 this should never happen, but it is envisioned that future versions
           // may store an empty path for items which have bookmark data. Try to be forward compatible:
           if !item.path.isEmpty, PlaybackID.path(from: bookmarkURL) != item.path {
@@ -804,13 +801,17 @@ struct PlayerSaveState: CustomStringConvertible {
     pwc.osd.lastPlaybackPosition = playbackPositionSec
     pwc.osd.lastPlaybackDuration = playbackDurationSec
 
-    // IINA restore supercedes mpv watch-later.
-    // Need to delete the watch-later file before mpv loads it or else things get very buggy
-    let mpvMD5 = Utility.mpvWatchLaterMd5(url.path)
-    let watchLaterFileURL = Utility.watchLaterURL.appendingPathComponent(mpvMD5).path
-    if FileManager.default.fileExists(atPath: watchLaterFileURL) {
-      player.log.debug("Found mpv watch-later file. Deleting it because we are using IINA restore...")
-      try? FileManager.default.removeItem(atPath: watchLaterFileURL)
+    if player.mpv.getFlag(MPVOption.WatchLater.resumePlayback) {
+      let ignorePathForMD5 = player.mpv.getFlag(MPVOption.WatchLater.ignorePathInWatchLaterConfig)
+      // IINA restore supercedes mpv watch-later.
+      // Need to delete the watch-later file before mpv loads it or else things get very buggy
+      let mpvMD5 = Utility.mpvWatchLaterMd5(url, ignorePathForMD5)
+      let watchLaterFileURL = Utility.watchLaterURL.appendingPathComponent(mpvMD5).path
+      if FileManager.default.fileExists(atPath: watchLaterFileURL) {
+        player.log.debug("Found mpv watch-later file (ignorePathForMD5=\(ignorePathForMD5.yn)). "
+                         + "Deleting it because we are using IINA restore...")
+        try? FileManager.default.removeItem(atPath: watchLaterFileURL)
+      }
     }
 
     if let overrideAutoMusicMode = bool(for: .overrideAutoMusicMode) {
@@ -829,6 +830,8 @@ struct PlayerSaveState: CustomStringConvertible {
   func restoreMpvProperties(to player: PlayerCore) {
     let mpv: MPVController = player.mpv
     let log = player.log
+
+    log.verbose("Restoring mpv options & props…")
 
     if let playbackPositionSec = string(for: .playPosition) {
       log.verbose("Restoring playback position: \(playbackPositionSec)")
@@ -967,6 +970,11 @@ struct PlayerSaveState: CustomStringConvertible {
     mpv.setInt(MPVOption.TrackSelection.vid, vid)
     let aid = int(for: .aid) ?? 0
     mpv.setInt(MPVOption.TrackSelection.aid, aid)
+    // FIXME: need to add support for external subtitles
+    let sid = int(for: .sid) ?? 0
+    mpv.setInt(MPVOption.TrackSelection.sid, sid)
+    let s2id = int(for: .s2id) ?? 0
+    mpv.setInt(MPVOption.Subtitles.secondarySid, s2id)
 
     if let audioFilters = string(for: .audioFilters) {
       mpv.setString(MPVProperty.af, audioFilters)
@@ -975,6 +983,8 @@ struct PlayerSaveState: CustomStringConvertible {
       // This includes crop
       mpv.setString(MPVProperty.vf, videoFilters)
     }
+
+    log.verbose("Restoring mpv options & props: done")
   }
 
 }  /// end `struct PlayerSaveState`
@@ -1008,10 +1018,7 @@ struct ScreenMeta {
   }
 
   var screenID: String {
-    if #available(macOS 10.15, *) {
-      return "\(displayID):\(name)"
-    }
-    return "\(displayID)"
+    "\(displayID):\(name)"
   }
 
   func matches(_ otherScreen: NSScreen) -> Bool {
