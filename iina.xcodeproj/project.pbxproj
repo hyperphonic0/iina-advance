@@ -236,6 +236,7 @@
 		D14BC6992FAD31990059E900 /* libjxl.0.11.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D14BC6082FAD31990059E900 /* libjxl.0.11.dylib */; };
 		D14BC69A2FAD31990059E900 /* libogg.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D14BC6152FAD31990059E900 /* libogg.0.dylib */; };
 		D14BC69B2FAD31990059E900 /* libtheoraenc.2.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D14BC6322FAD31990059E900 /* libtheoraenc.2.dylib */; };
+		D14BC69C2FAD31990059E900 /* libSvtAv1Enc.3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D14BC62D2FAD31990059E900 /* libSvtAv1Enc.3.dylib */; };
 		D14BC69D2FAD31990059E900 /* libdav1d.7.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D14BC5F02FAD31990059E900 /* libdav1d.7.dylib */; };
 		D14BC69E2FAD31990059E900 /* libpng16.16.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D14BC61F2FAD31990059E900 /* libpng16.16.dylib */; };
 		D14BC69F2FAD31990059E900 /* librubberband.3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D14BC6212FAD31990059E900 /* librubberband.3.dylib */; };
@@ -416,6 +417,7 @@
 		D1F2B0992CFEFA4200F995B3 /* StartupHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F2B0982CFEFA3C00F995B3 /* StartupHandler.swift */; };
 		D1F2B09B2CFF07D500F995B3 /* AppDetailsLogging.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F2B09A2CFF07CC00F995B3 /* AppDetailsLogging.swift */; };
 		D1F2B09D2CFF272100F995B3 /* MediaPlayerIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F2B09C2CFF271900F995B3 /* MediaPlayerIntegration.swift */; };
+		D1F4D6C830157D2500E3B42D /* libSvtAv1Enc.3.dylib in Copy Dylibs */ = {isa = PBXBuildFile; fileRef = D14BC62D2FAD31990059E900 /* libSvtAv1Enc.3.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		D1F64E902B2A655C0030E07E /* PWin_Resize.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F64E8F2B2A655C0030E07E /* PWin_Resize.swift */; };
 		D1F9C6722EF7B99500AD1432 /* MPVOptPair.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F9C6712EF7B99000AD1432 /* MPVOptPair.swift */; };
 		D1FA42E328E4323E00DF49DD /* InputSectionStack.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1FA42E228E4323E00DF49DD /* InputSectionStack.swift */; };
@@ -605,6 +607,7 @@
 				D14BC6E32FAD31D40059E900 /* libtheoraenc.2.dylib in Copy Dylibs */,
 				D14BC6DA2FAD31C50059E900 /* libvorbisfile.3.dylib in Copy Dylibs */,
 				D14BC7352FAD324F0059E900 /* libavfilter.11.dylib in Copy Dylibs */,
+				D1F4D6C830157D2500E3B42D /* libSvtAv1Enc.3.dylib in Copy Dylibs */,
 				D14BC71E2FAD32300059E900 /* libfontconfig.1.dylib in Copy Dylibs */,
 				D14BC6D72FAD31C00059E900 /* libwebpmux.3.dylib in Copy Dylibs */,
 				D14BC6FC2FAD31FD0059E900 /* libopenjp2.7.dylib in Copy Dylibs */,
@@ -1860,6 +1863,7 @@
 		D14BC6262FAD31990059E900 /* libsnappy.1.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libsnappy.1.dylib; path = deps/lib/libsnappy.1.dylib; sourceTree = "<absolute>"; };
 		D14BC6282FAD31990059E900 /* libsoxr.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libsoxr.0.dylib; path = deps/lib/libsoxr.0.dylib; sourceTree = "<absolute>"; };
 		D14BC6292FAD31990059E900 /* libspeex.1.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libspeex.1.dylib; path = deps/lib/libspeex.1.dylib; sourceTree = "<absolute>"; };
+		D14BC62D2FAD31990059E900 /* libSvtAv1Enc.3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libSvtAv1Enc.3.dylib; path = deps/lib/libSvtAv1Enc.3.dylib; sourceTree = "<absolute>"; };
 		D14BC62E2FAD31990059E900 /* libswresample.6.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libswresample.6.dylib; path = deps/lib/libswresample.6.dylib; sourceTree = "<absolute>"; };
 		D14BC62F2FAD31990059E900 /* libswscale.9.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libswscale.9.dylib; path = deps/lib/libswscale.9.dylib; sourceTree = "<absolute>"; };
 		D14BC6302FAD31990059E900 /* libtasn1.6.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libtasn1.6.dylib; path = deps/lib/libtasn1.6.dylib; sourceTree = "<absolute>"; };
@@ -2070,7 +2074,6 @@
 		D1FD2DD728521AD500CF7B35 /* MPVLogScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MPVLogScanner.swift; sourceTree = "<group>"; };
 		D1FD2DDB28533EE700CF7B35 /* InputSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputSection.swift; sourceTree = "<group>"; };
 		D1FD62AD2CBF6F8100FFCF21 /* NotificationHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationHandler.swift; sourceTree = "<group>"; };
-		D1FE0E392EC997EC00DC94D3 /* flake.nix */ = {isa = PBXFileReference; lastKnownFileType = text; path = flake.nix; sourceTree = "<group>"; };
 		D1FF15742A7E072200C0CE86 /* PlayerManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerManager.swift; sourceTree = "<group>"; };
 		D1FF15762A7E35F300C0CE86 /* WindowAutosaveName.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowAutosaveName.swift; sourceTree = "<group>"; };
 		D1FF15782A7FA6A300C0CE86 /* PlayerSaveState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerSaveState.swift; sourceTree = "<group>"; };
@@ -2421,6 +2424,7 @@
 				D14BC6992FAD31990059E900 /* libjxl.0.11.dylib in Frameworks */,
 				D14BC69A2FAD31990059E900 /* libogg.0.dylib in Frameworks */,
 				D14BC69B2FAD31990059E900 /* libtheoraenc.2.dylib in Frameworks */,
+				D14BC69C2FAD31990059E900 /* libSvtAv1Enc.3.dylib in Frameworks */,
 				D14BC69D2FAD31990059E900 /* libdav1d.7.dylib in Frameworks */,
 				D14BC69E2FAD31990059E900 /* libpng16.16.dylib in Frameworks */,
 				D14BC69F2FAD31990059E900 /* librubberband.3.dylib in Frameworks */,
@@ -2679,6 +2683,7 @@
 				D14BC6262FAD31990059E900 /* libsnappy.1.dylib */,
 				D14BC6282FAD31990059E900 /* libsoxr.0.dylib */,
 				D14BC6292FAD31990059E900 /* libspeex.1.dylib */,
+				D14BC62D2FAD31990059E900 /* libSvtAv1Enc.3.dylib */,
 				D14BC62E2FAD31990059E900 /* libswresample.6.dylib */,
 				D14BC62F2FAD31990059E900 /* libswscale.9.dylib */,
 				D14BC6302FAD31990059E900 /* libtasn1.6.dylib */,
@@ -3101,7 +3106,6 @@
 				8461BA641E42344D008BB852 /* Executables */,
 				848290731D95978100C3C76C /* Frameworks */,
 				D1C8309A2F7CC48E00C4C938 /* README.md */,
-				D1FE0E392EC997EC00DC94D3 /* flake.nix */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";

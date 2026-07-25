@@ -35,13 +35,9 @@
         libTool = pkgs.stdenv.mkDerivation {
           pname = "iina-lib-tool";
           version = "1.0";
-          propagatedBuildInputs = [
-            (pkgs.python3.withPackages (pythonPackages: with pythonPackages; [
-              packaging
-            ]))
-          ];
+          propagatedBuildInputs = [ pkgs.python3 ];
           dontUnpack = true;
-          installPhase = "install -Dm755 ${./other/lib_tool.py} $out/bin/iina-lib-tool";
+          installPhase = "install -Dm755 ${./lib_tool.py} $out/bin/iina-lib-tool";
         };
 
         # Pull system's xcode in
@@ -50,31 +46,75 @@
           ln -sf /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild "$out/bin/xcodebuild"
         '';
 
+        libhwy = pkgs.libhwy.overrideAttrs (old: {
+          cmakeFlags = (old.cmakeFlags or [ ]) ++ [ "-DBUILD_SHARED_LIBS=ON" ];
+        });
+
+        # Upgrade to the version supplied by nixpkgs 26.05.
+        libjxl = pkgs.libjxl.overrideAttrs (
+          finalAttrs: previousAttrs: {
+            version = "0.11.2";
+            src = pkgs.fetchFromGitHub {
+              owner = "libjxl";
+              repo = "libjxl";
+              tag = "v${finalAttrs.version}";
+              hash = "sha256-L4/BY68ZBCpebQxryR7D1CxrsneYvw8B8EvW2mkF7bA=";
+              # There are various submodules in `third_party/`.
+              fetchSubmodules = true;
+            };
+          }
+        );
+
+        # Upgrade to the version supplied by nixpkgs 26.05.
+        svt-av1 = pkgs.svt-av1.overrideAttrs (
+          finalAttrs: previousAttrs: {
+            version = "3.1.2";
+            src = pkgs.fetchFromGitLab {
+              owner = "AOMediaCodec";
+              repo = "SVT-AV1";
+              rev = "v${finalAttrs.version}";
+              hash = "sha256-/CpcxdyC4qf9wdzzySMYw17FbjYpasT+QVykXSlx28U=";
+            };
+          }
+        );
+
         ffmpeg = (pkgs.ffmpeg-headless.override {
+          # Upgrade to FFmpeg 8.1.2 as nixpkgs 25.11 provides FFmpeg 8.0.
+          # version = "8.1.2";
+          # hash = "sha256-wJ3c8VVo/tK84K7bKYs/UWcln4mSO+tf/w5NLNjKhiI=";
+
           withDebug = false;    # Build using debug options
           withStripping = true; # Strip symbols from the resulting binaries to reduce size
           withSmallDeps  = true;
 
+          withAss = true; # (Advanced) SubStation Alpha subtitle rendering
+          withBluray = true;
+          withDav1d = true; # AV1 decoder (focused on speed and correctness)
+          withFontconfig = true;
+          withFreetype = true;
+          withHarfbuzz = true;
+
           withSoxr = true;
           soxr = pkgs.soxr;
+
+          withSvtav1 = true; # SVT-AV1 encoder, used for screenshots in AVIF format
+          inherit svt-av1;
 
           withRubberband = true;
           rubberband = pkgs.rubberband;
 
           withJxl = true;
-          libjxl = pkgs.libjxl;
+          inherit libjxl;
 
           withGnutls = true;
-          withOpenjpeg = true;   # JPEG 2000 de/encoder
 
-          # May want to enable some of these in the near future
+          withOpenjpeg = true;   # JPEG 2000 de/encoder
           withTheora = true;     # Theora video codec
           withVorbis = true;     # Vorbis audio codec
 
-          withPlacebo = false;
           withX264 = false;      # H.264 video encoder, not super useful for IINA (& adds >4 MB to app size)
           withX265 = false;      # H.265 video encoder, not super useful for IINA (& adds >31 MB to app size)
-          withAom = false;       # AV1 video encoder, not very useful for IINA
+          withAom = false;       # AV1 video encoder, IINA prefers SVT-AV1 (better performance)
           withBs2b = false;      # Bass to Binaural audio filter (uncommon)
           withCaca = false;      # ASCII art video output, not useful for IINA
           withDvdnav = false;
@@ -83,10 +123,10 @@
           withOpenapv = false;   # APV video encoder, not very useful for IINA
           withOpenmpt = false;   # Tracker music files decoder (various formats), not included in IINA historically
           withOpus = false;      # Opus audio codec, not included in IINA historically
+          withPlacebo = false;
           withRist = true;       # RIST protocol support
           withSrt = false;       # Secure Reliable Transport (SRT) protocol, not useful for IINA
           withSsh = false;       # SFTP protocol support
-          withSvtav1 = false;    # SVT-AV1 encoder, adds >12 MB to app size
           withVidStab = false;   # Video stabilization filter, requires Linux
           withVmaf = false;      # Video quality measurement tool, not useful for IINA
           withVulkan = false;    # IINA can't use gpu-next yet
@@ -121,7 +161,7 @@
 
         # Override mpv with desired features support
         mpv = pkgs.mpv-unwrapped.override {
-          ffmpeg = ffmpeg;
+          inherit ffmpeg;
           lua = pkgs.luajit;
 
           archiveSupport = true;
@@ -187,10 +227,6 @@
           }
         ];
 
-        libhwy = pkgs.libhwy.overrideAttrs (old: {
-          cmakeFlags = (old.cmakeFlags or [ ]) ++ [ "-DBUILD_SHARED_LIBS=ON" ];
-        });
-
         # Collect lib deps as per readme.md
         depsLib = pkgs.linkFarm "iina-deps-lib" (
           pkgs.lib.flatten (
@@ -204,6 +240,8 @@
               }) (builtins.attrNames (builtins.readDir libdir))
             ) [
               ffmpeg
+              libhwy
+              libjxl # JPEG-XL support
               mpv
               (pkgs.libhwy.overrideAttrs (old: {
                 cmakeFlags = (old.cmakeFlags or [ ]) ++ [ "-DBUILD_SHARED_LIBS=ON" ];
@@ -239,7 +277,6 @@
               pkgs.lz4            # LZ4 compression. Used by libarchive
               pkgs.mujs           # JavaScript engine. Needed for mpv's JS support
               pkgs.nettle         # GnuTLS dependency (cryptographic algorithms)
-              pkgs.p11-kit        # Tools for managing PKCS#11 modules (crypto keys / tokens)
               pkgs.pcre2          # (Per-compatible) Regular expression pattern matching
               pkgs.rubberband     # Enables FFmpeg to perform audio tempo & pitch modifications
               pkgs.shaderc        # Referenced by libplacebo, even though it requires Vulkan which IINA doesn't use
@@ -251,6 +288,7 @@
               pkgs.zstd           # Needed by libarchive
 
               # Indirect libs
+              pkgs.libcxx # C standard library
               pkgs.libdovi        # Dolby Vision, needed by libplacebo
               pkgs.libvorbis      # Vorbis audio codec
               pkgs.openjpeg       # JPEG 2000 de/encoder
@@ -265,11 +303,11 @@
 
           # Only include SwiftPM-related files as input
           src = pkgs.lib.cleanSourceWith {
-            src = ./.;
+            src = ./../..;
             filter =
               path: type:
               let
-                relPath = pkgs.lib.removePrefix (toString ./. + "/") (toString path);
+                relPath = pkgs.lib.removePrefix (toString ./../.. + "/") (toString path);
               in
               pkgs.lib.hasSuffix "Package.resolved" relPath
               || pkgs.lib.hasSuffix "Package.swift" relPath
@@ -295,11 +333,18 @@
             export TOOLCHAINS=XcodeDefault
             export SDKROOT=macosx
 
+            if [ "$systemName" == "aarch64-darwin" ]; then
+              export XCODE_BUILD_DESTINATION='platform=macOS,arch=arm64'
+            else
+              export XCODE_BUILD_DESTINATION='platform=macOS,arch=x86_64'
+            fi
+
             mkdir -p .spm .spm-cache build
 
             xcodebuild \
               -workspace iina.xcodeproj/project.xcworkspace \
               -scheme iina \
+              -destination "$XCODE_BUILD_DESTINATION" \
               -resolvePackageDependencies \
               -derivedDataPath "$PWD/build" \
               -clonedSourcePackagesDirPath "$PWD/.spm" \
@@ -325,7 +370,7 @@
             pname = "iina";
             version = "${self.shortRev or self.dirtyShortRev}";
 
-            src = pkgs.nix-gitignore.gitignoreSource [ "flake.nix" "flake.lock" ] ./.;
+            src = pkgs.nix-gitignore.gitignoreSource [ "flake.nix" "flake.lock" ] ./../..;
 
             strictDeps = true;
 
@@ -357,6 +402,12 @@
 
               APPLE_BIN="$DEVELOPER_DIR/Toolchains/XcodeDefault.xctoolchain/usr/bin"
               export PATH="$APPLE_BIN:$DEVELOPER_DIR/usr/bin:/usr/bin:/bin"
+
+              if [ "$systemName" == "aarch64-darwin" ]; then
+                export XCODE_BUILD_DESTINATION='platform=macOS,arch=arm64'
+              else
+                export XCODE_BUILD_DESTINATION='platform=macOS,arch=x86_64'
+              fi
 
               unset CC CXX LD AR RANLIB NM STRIP OBJCOPY \
                 CFLAGS CXXFLAGS LDFLAGS SDKROOT CPATH C_INCLUDE_PATH CPLUS_INCLUDE_PATH LIBRARY_PATH \
@@ -395,6 +446,7 @@
               xcodebuild \
                 -workspace iina.xcodeproj/project.xcworkspace \
                 -scheme iina \
+                -destination "$XCODE_BUILD_DESTINATION" \
                 -configuration Release \
                 -sdk macosx \
                 -skipPackagePluginValidation \
