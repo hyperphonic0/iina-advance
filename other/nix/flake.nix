@@ -1,7 +1,7 @@
 {
   description = "IINA Advance – An even-more-modern fork of the modern video player for macOS.";
 
-  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
+  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
 
   outputs =
     { self, nixpkgs }:
@@ -33,9 +33,9 @@
               set -euo pipefail
               app="$1"
 
-              find "$app" -type d -exec chmod u+rwx {} \;
-              find "$app" -type f -exec chmod u+rw  {} \;
-              find "$app/Contents/MacOS" -type f -perm -111 -exec chmod u+rw {} \;
+              find "$app" -type d -print0 | xargs -0 chmod u+rwx
+              find "$app" -type f -print0 | xargs -0 chmod u+rw
+              find "$app/Contents/MacOS" -type f -perm -111 -print0 | xargs -0 chmod u+rw
 
               /usr/bin/codesign --force --deep --sign - "$app"
             '';
@@ -55,44 +55,14 @@
             ln -sf /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild "$out/bin/xcodebuild"
           '';
 
+          ### Package Overrides ###
+
           libhwy = pkgs.libhwy.overrideAttrs (old: {
             cmakeFlags = (old.cmakeFlags or [ ]) ++ [ "-DBUILD_SHARED_LIBS=ON" ];
           });
 
-          # Upgrade to the version supplied by nixpkgs 26.05.
-          libjxl = pkgs.libjxl.overrideAttrs (
-            finalAttrs: previousAttrs: {
-              version = "0.11.2";
-              src = pkgs.fetchFromGitHub {
-                owner = "libjxl";
-                repo = "libjxl";
-                tag = "v${finalAttrs.version}";
-                hash = "sha256-L4/BY68ZBCpebQxryR7D1CxrsneYvw8B8EvW2mkF7bA=";
-                # There are various submodules in `third_party/`.
-                fetchSubmodules = true;
-              };
-            }
-          );
-
-          # Upgrade to the version supplied by nixpkgs 26.05.
-          svt-av1 = pkgs.svt-av1.overrideAttrs (
-            finalAttrs: previousAttrs: {
-              version = "3.1.2";
-              src = pkgs.fetchFromGitLab {
-                owner = "AOMediaCodec";
-                repo = "SVT-AV1";
-                rev = "v${finalAttrs.version}";
-                hash = "sha256-/CpcxdyC4qf9wdzzySMYw17FbjYpasT+QVykXSlx28U=";
-              };
-            }
-          );
-
           ffmpeg =
             (pkgs.ffmpeg-headless.override {
-              # Upgrade to FFmpeg 8.1.2 as nixpkgs 25.11 provides FFmpeg 8.0.
-              # version = "8.1.2";
-              # hash = "sha256-wJ3c8VVo/tK84K7bKYs/UWcln4mSO+tf/w5NLNjKhiI=";
-
               withDebug = false; # Build using debug options
               withStripping = true; # Strip symbols from the resulting binaries to reduce size
               withSmallDeps = true;
@@ -103,22 +73,12 @@
               withFontconfig = true;
               withFreetype = true;
               withHarfbuzz = true;
-
-              withSoxr = true;
-              soxr = pkgs.soxr;
-
-              withSvtav1 = true; # SVT-AV1 encoder, used for screenshots in AVIF format
-              inherit svt-av1;
-
-              withRubberband = true;
-              rubberband = pkgs.rubberband;
-
               withJxl = true;
-              inherit libjxl;
-
               withGnutls = true;
-
               withOpenjpeg = true; # JPEG 2000 de/encoder
+              withRubberband = true;
+              withSoxr = true;
+              withSvtav1 = true; # SVT-AV1 encoder, used for screenshots in AVIF format
               withTheora = true; # Theora video codec
               withVorbis = true; # Vorbis audio codec
 
@@ -133,7 +93,7 @@
               withOpenapv = false; # APV video encoder, not very useful for IINA
               withOpenmpt = false; # Tracker music files decoder (various formats), not included in IINA historically
               withOpus = false; # Opus audio codec, not included in IINA historically
-              withPlacebo = false;
+              withPlacebo = true;
               withRist = true; # RIST protocol support
               withSrt = false; # Secure Reliable Transport (SRT) protocol, not useful for IINA
               withSsh = false; # SFTP protocol support
@@ -204,17 +164,8 @@
             }).overrideAttrs
               (
                 finalAttrs: previousAttrs: {
-                  # Upgrade to mpv 0.41.0 as nixpkgs 25.05 provides mpv 0.40.0.
-                  version = "v0.41.0";
-                  src = pkgs.fetchFromGitHub {
-                    owner = "mpv-player";
-                    repo = "mpv";
-                    tag = "v${"finalAttrs:version"}";
-                    hash = "sha256-gJWqfvPE6xOKlgj2MzZgXiyOKxksJlY/tL6T/BeG19c=";
-                  };
-                  # The mpv package in nixpkgs 25.05 passes a sdl2 option to meson that is not present in
-                  # mpv 0.41.0. Disable the building of man pages to speed up the build.
-                  mesonFlags = builtins.filter (x: x != "-Dsdl2=disabled") previousAttrs.mesonFlags ++ [
+                  # Disable the building of man pages to speed up the build.
+                  mesonFlags = previousAttrs.mesonFlags ++ [
                     "-Dmanpage-build=disabled"
                   ];
                   # Disabling building of man pages requires the package outputs be adjusted accordingly.
@@ -294,11 +245,7 @@
                 [
                   ffmpeg
                   libhwy
-                  libjxl # JPEG-XL support
                   mpv
-                  (pkgs.libhwy.overrideAttrs (old: {
-                    cmakeFlags = (old.cmakeFlags or [ ]) ++ [ "-DBUILD_SHARED_LIBS=ON" ];
-                  }))
                   pkgs.brotli # Brotli compression. Used for ass, fontconfig, bluray, & more
                   pkgs.dav1d # AV1 video decoder
                   pkgs.fontconfig # Font configuration library
@@ -310,6 +257,13 @@
                   pkgs.gnutls # TLS support, needed for network streams
                   pkgs.graphite2 # Compiles Graphite-enabled fonts. Used by harfbuzz
                   pkgs.harfbuzz # Text shaping engine. Used by avdevice, avfilter, ass
+                  pkgs.haskellPackages.character-ps
+                  pkgs.haskellPackages.indexed-traversable
+                  pkgs.haskellPackages.integer-conversion
+                  pkgs.haskellPackages.network-uri
+                  pkgs.haskellPackages.semialign
+                  pkgs.haskellPackages.text-iso8601
+                  pkgs.haskellPackages.witherable
                   pkgs.lcms2 # Little CMS color management lib. Required by placebo, jxl
                   pkgs.libarchive # Archive support
                   pkgs.libass # ASS subtitle renderer
@@ -371,6 +325,7 @@
 
             nativeBuildInputs = [
               xcode
+              pkgs.findutils
             ];
 
             buildPhase = ''
@@ -381,7 +336,7 @@
               export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
 
               APPLE_BIN="$DEVELOPER_DIR/Toolchains/XcodeDefault.xctoolchain/usr/bin"
-              export PATH="$APPLE_BIN:$DEVELOPER_DIR/usr/bin:/usr/bin:/bin"
+              export PATH="${pkgs.findutils}/bin:$APPLE_BIN:$DEVELOPER_DIR/usr/bin:/usr/bin:/bin:$PATH"
 
               export TOOLCHAINS=XcodeDefault
               export SDKROOT=macosx
@@ -428,13 +383,11 @@
 
               nativeBuildInputs = [
                 pkgs.coreutils
+                pkgs.findutils
                 xcode
                 libTool
                 pkgs.rsync
                 pkgs.gnused
-              ];
-
-              buildInputs = [
                 spmDeps
               ];
 
@@ -453,7 +406,9 @@
                 export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
 
                 APPLE_BIN="$DEVELOPER_DIR/Toolchains/XcodeDefault.xctoolchain/usr/bin"
-                export PATH="$APPLE_BIN:$DEVELOPER_DIR/usr/bin:/usr/bin:/bin"
+                # For nixos-26.05+: need to explicitly use the GNU findutils version of find, as the system find (from macOS) does not support -print0
+                # and will fail with "find: -print0: unknown primary or operator" in fixup phase
+                export PATH="${pkgs.findutils}/bin:$APPLE_BIN:$DEVELOPER_DIR/usr/bin:/usr/bin:/bin:$PATH"
 
                 if [ "$systemName" == "aarch64-darwin" ]; then
                   export XCODE_BUILD_DESTINATION='platform=macOS,arch=arm64'
@@ -521,7 +476,7 @@
               '';
 
               preFixup = ''
-                export PATH=${pkgs.coreutils}/bin:$PATH
+                export PATH=${pkgs.coreutils}/bin:${pkgs.findutils}/bin:$PATH
               '';
 
               postFixup = ''
@@ -543,9 +498,6 @@
                 # Overwrite Git info from build (which were set to placeholders because Xcode script could not determine them at build time)
                 /usr/libexec/PlistBuddy -c "Set :com.iina-advance.build.commit        $git_rev"            "$plist"
                 /usr/libexec/PlistBuddy -c "Set :com.iina-advance.build.branch        $git_branch"         "$plist"
-
-                # echo "[${systemName}] 🔏 Re-signing ${appName}.app..."
-                # ${resign}/bin/iina-resign "$app"
               '';
             }; # END iina
 
@@ -558,6 +510,7 @@
                 libTool
                 pkgs.rsync
                 pkgs.coreutils
+                pkgs.findutils
               ];
 
               buildCommand = ''
@@ -566,7 +519,7 @@
 
                 export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
                 APPLE_BIN="$DEVELOPER_DIR/Toolchains/XcodeDefault.xctoolchain/usr/bin"
-                export PATH="$APPLE_BIN:$DEVELOPER_DIR/usr/bin:/usr/bin:/bin"
+                export PATH="$APPLE_BIN:$DEVELOPER_DIR/usr/bin:/usr/bin:/bin:$PATH"
 
                 echo "📦 Combining universal ${appName}.app"
 
@@ -593,7 +546,7 @@
               '';
 
               preFixup = ''
-                export PATH=${pkgs.coreutils}/bin:$PATH
+                export PATH=${pkgs.coreutils}/bin:${pkgs.findutils}/bin:$PATH
               '';
             }; # END iina-universal
 
