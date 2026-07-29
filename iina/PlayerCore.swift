@@ -2451,10 +2451,12 @@ final class PlayerCore: NSObject {
   }
 
   func refreshEdrMode() {
+#if !USE_GPU_NEXT
     guard let pwc, pwc.loaded else { return }
     pwc.animationPipeline.submitInstantTask { [self] in
       videoView.refreshEdrMode()
     }
+#endif
   }
 
   /// *Enqueues*

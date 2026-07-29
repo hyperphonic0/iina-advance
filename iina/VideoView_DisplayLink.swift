@@ -24,6 +24,7 @@ extension VideoView {
           }
         }
 
+#if !USE_GPU_NEXT
         guard let glLayer else { return }
         if glLayer.isAsynchronous, let asynchronousModeStartTime = glLayer.asynchronousModeStartTime {
           if CFAbsoluteTimeGetCurrent() - asynchronousModeStartTime > TimeConstants.asynchronousModeTimeout {
@@ -33,6 +34,7 @@ extension VideoView {
             glLayer.isAsynchronous = false
           }
         }
+#endif
       }
     }
 
@@ -69,10 +71,12 @@ extension VideoView {
     guard !CVDisplayLinkIsRunning(link) else { return }
     updateDisplayLink()
 
+#if !USE_GPU_NEXT
     if let glLayer {
       checkResult(CVDisplayLinkSetOutputCallback(link, displayLinkCallback, mutableRawPointerOf(obj: glLayer)),
                   "CVDisplayLinkSetOutputCallback")
     }
+#endif
     checkResult(CVDisplayLinkStart(link), "CVDisplayLinkStart")
     log.verbose("DisplayLink started")
   }

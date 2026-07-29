@@ -34,6 +34,12 @@ Temporary Items
 build/
 DerivedData/
 
+## nix build result symlink
+result
+
+## Xcode generated
+*/project.xcworkspace/xcshareddata/
+
 ## Various settings
 *.pbxuser
 !default.pbxuser
@@ -108,11 +114,7 @@ browser/Firefox_Open_In_IINA/*
 *.xcarchive
 /.vscode
 
-deps/include
-deps/lib
-deps/executable
-deps/plugins
-deps/lib*
-
-# Nix
-result
+deps/
+.home/
+.spm/
+.tmp/
