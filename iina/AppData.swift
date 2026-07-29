@@ -243,7 +243,9 @@ struct Constants {
   /// Official IINA release version numbers, as integers.
   /// See also:
   /// 1. `CURRENT_PROJECT_VERSION` & `MARKETING_VERSION` in `Deployment.xcconfig`.
-  /// 2. "Current Project Version" & "Marketing Version" fields of the `iina` target of the Xcode project.
+  /// 2. After modifying (1) above, close the project & reopen in Xcode, then verify that
+  ///    "Current Project Version" & "Marketing Version" fields of the `iina` target of the Xcode project match their
+  ///    corresponding values from (1).
   struct BuildNumber {
     static let V1_0 = 1
     static let V1_1 = 2
@@ -261,6 +263,7 @@ struct Constants {
     static let V1_5_2 = 14
     static let V1_5_3 = 15
     static let V1_5_4 = 16
+    static let V1_6 = 17
   }
 
   struct Menu {

@@ -181,7 +181,7 @@
 		D13350952D06B7EC00201623 /* GeometryTransform.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13350942D06B7E200201623 /* GeometryTransform.swift */; };
 		D1347A2D2B04879C00B37B0E /* VideoGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1347A2C2B04879C00B37B0E /* VideoGeometry.swift */; };
 		D135572A2D4AF5C500F26A79 /* SliderHoverIndicator.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13557292D4AF5C500F26A79 /* SliderHoverIndicator.swift */; };
-		D13912612F28991400540624 /* Playlistt_ContextMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13912602F28990B00540624 /* Playlistt_ContextMenu.swift */; };
+		D13912612F28991400540624 /* Playlist_ContextMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13912602F28990B00540624 /* Playlist_ContextMenu.swift */; };
 		D13912642F29547200540624 /* OrderedCollections in Frameworks */ = {isa = PBXBuildFile; productRef = D13912632F29547200540624 /* OrderedCollections */; };
 		D13912662F295C8300540624 /* Playlist_Subviews.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13912652F295C7E00540624 /* Playlist_Subviews.swift */; };
 		D13A7F0C2D39E5E900840277 /* TimeoutTimer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13A7F0B2D39E5E400840277 /* TimeoutTimer.swift */; };
@@ -1805,7 +1805,7 @@
 		D13350942D06B7E200201623 /* GeometryTransform.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeometryTransform.swift; sourceTree = "<group>"; };
 		D1347A2C2B04879C00B37B0E /* VideoGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoGeometry.swift; sourceTree = "<group>"; };
 		D13557292D4AF5C500F26A79 /* SliderHoverIndicator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SliderHoverIndicator.swift; sourceTree = "<group>"; };
-		D13912602F28990B00540624 /* Playlistt_ContextMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Playlistt_ContextMenu.swift; sourceTree = "<group>"; };
+		D13912602F28990B00540624 /* Playlist_ContextMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Playlist_ContextMenu.swift; sourceTree = "<group>"; };
 		D13912652F295C7E00540624 /* Playlist_Subviews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Playlist_Subviews.swift; sourceTree = "<group>"; };
 		D13A7F0B2D39E5E400840277 /* TimeoutTimer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeoutTimer.swift; sourceTree = "<group>"; };
 		D13A7F0D2D3A03A300840277 /* VideoView_DisplayLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoView_DisplayLink.swift; sourceTree = "<group>"; };
@@ -1824,7 +1824,7 @@
 		D14BC5E12FAD31990059E900 /* libavformat.62.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libavformat.62.dylib; path = deps/lib/libavformat.62.dylib; sourceTree = "<absolute>"; };
 		D14BC5E22FAD31990059E900 /* libavutil.60.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libavutil.60.dylib; path = deps/lib/libavutil.60.dylib; sourceTree = "<absolute>"; };
 		D14BC5E32FAD31990059E900 /* libb2.1.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libb2.1.dylib; path = deps/lib/libb2.1.dylib; sourceTree = "<absolute>"; };
-		D14BC5E42FAD31990059E900 /* libbluray.3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libbluray.3.dylib; path = "deps/lib/libbluray.3.dylib"; sourceTree = "<absolute>"; };
+		D14BC5E42FAD31990059E900 /* libbluray.3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libbluray.3.dylib; path = deps/lib/libbluray.3.dylib; sourceTree = "<absolute>"; };
 		D14BC5E52FAD31990059E900 /* libbrotlicommon.1.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libbrotlicommon.1.dylib; path = deps/lib/libbrotlicommon.1.dylib; sourceTree = "<absolute>"; };
 		D14BC5E62FAD31990059E900 /* libbrotlidec.1.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libbrotlidec.1.dylib; path = deps/lib/libbrotlidec.1.dylib; sourceTree = "<absolute>"; };
 		D14BC5E72FAD31990059E900 /* libbrotlienc.1.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libbrotlienc.1.dylib; path = deps/lib/libbrotlienc.1.dylib; sourceTree = "<absolute>"; };
@@ -1860,7 +1860,7 @@
 		D14BC6192FAD31990059E900 /* libopenjp2.7.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libopenjp2.7.dylib; path = deps/lib/libopenjp2.7.dylib; sourceTree = "<absolute>"; };
 		D14BC61C2FAD31990059E900 /* libp11-kit.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libp11-kit.0.dylib"; path = "deps/lib/libp11-kit.0.dylib"; sourceTree = "<absolute>"; };
 		D14BC61D2FAD31990059E900 /* libpcre2-8.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libpcre2-8.0.dylib"; path = "deps/lib/libpcre2-8.0.dylib"; sourceTree = "<absolute>"; };
-		D14BC61E2FAD31990059E900 /* libplacebo.360.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libplacebo.360.dylib; path = "deps/lib/libplacebo.360.dylib"; sourceTree = "<absolute>"; };
+		D14BC61E2FAD31990059E900 /* libplacebo.360.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libplacebo.360.dylib; path = deps/lib/libplacebo.360.dylib; sourceTree = "<absolute>"; };
 		D14BC61F2FAD31990059E900 /* libpng16.16.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libpng16.16.dylib; path = deps/lib/libpng16.16.dylib; sourceTree = "<absolute>"; };
 		D14BC6202FAD31990059E900 /* librist.4.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = librist.4.dylib; path = deps/lib/librist.4.dylib; sourceTree = "<absolute>"; };
 		D14BC6212FAD31990059E900 /* librubberband.3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = librubberband.3.dylib; path = deps/lib/librubberband.3.dylib; sourceTree = "<absolute>"; };
@@ -3123,7 +3123,6 @@
 				8461BA641E42344D008BB852 /* Executables */,
 				848290731D95978100C3C76C /* Frameworks */,
 				D1C8309A2F7CC48E00C4C938 /* README.md */,
-				D1FE0E392EC997EC00DC94D3 /* flake.nix */,
 				D1C411882FD93A0D008CA27C /* Recovered References */,
 			);
 			indentWidth = 2;
@@ -3287,7 +3286,7 @@
 				8400D5CB1E1AB2F9006785F5 /* QuickSettingViewController.xib */,
 				8460FBA71D6497490081841B /* PlaylistViewController.swift */,
 				D13912652F295C7E00540624 /* Playlist_Subviews.swift */,
-				D13912602F28990B00540624 /* Playlistt_ContextMenu.swift */,
+				D13912602F28990B00540624 /* Playlist_ContextMenu.swift */,
 				8400D5CE1E1AB2FF006785F5 /* PlaylistViewController.xib */,
 				845FB0C61D39462E00C011E0 /* FloatingControlBar.swift */,
 				D19CFD8F2E5885AB00746611 /* TopBar.swift */,
@@ -3949,7 +3948,7 @@
 				D188CB2228D6DE1900F166FD /* InputBinding.swift in Sources */,
 				D1491F882CEF544400DB0A06 /* SeekPreview.swift in Sources */,
 				E35306EF2147A8CE008FE492 /* JavascriptPlugin.swift in Sources */,
-				D13912612F28991400540624 /* Playlistt_ContextMenu.swift in Sources */,
+				D13912612F28991400540624 /* Playlist_ContextMenu.swift in Sources */,
 				845ABEAC1D4D19C000BFB15B /* MPVTrack.swift in Sources */,
 				513A4FFA29B53F8100A8EA7D /* Atomic.swift in Sources */,
 				E38099C32FC05B2E00D3333E /* SettingsPageAdvanced.swift in Sources */,
@@ -5494,12 +5493,10 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
-				CURRENT_PROJECT_VERSION = 16;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = PG2MG2559L;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GCC_PREPROCESSOR_DEFINITIONS = "GL_SILENCE_DEPRECATION=1";
-				MARKETING_VERSION = 1.5.4;
 				SKIP_INSTALL = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_STRICT_CONCURRENCY = complete;
@@ -5512,7 +5509,6 @@
 			baseConfigurationReference = 496498882919E47900CD61A5 /* iina.xcconfig */;
 			buildSettings = {
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
-				CURRENT_PROJECT_VERSION = 16;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = PG2MG2559L;
 				GCC_PREPROCESSOR_DEFINITIONS = "GL_SILENCE_DEPRECATION=1";
@@ -5526,7 +5522,6 @@
 					"$(PROJECT_DIR)/deps/lib",
 					"$(PROJECT_DIR)",
 				);
-				MARKETING_VERSION = 1.5.4;
 				OTHER_SWIFT_FLAGS = "";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.iina-advance";
 				SKIP_INSTALL = NO;
@@ -5558,12 +5553,10 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
-				CURRENT_PROJECT_VERSION = 16;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = PG2MG2559L;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GCC_PREPROCESSOR_DEFINITIONS = "GL_SILENCE_DEPRECATION=1";
-				MARKETING_VERSION = 1.5.4;
 				SKIP_INSTALL = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_STRICT_CONCURRENCY = complete;
@@ -5576,7 +5569,6 @@
 			baseConfigurationReference = 496498882919E47900CD61A5 /* iina.xcconfig */;
 			buildSettings = {
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
-				CURRENT_PROJECT_VERSION = 16;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = PG2MG2559L;
 				GCC_PREPROCESSOR_DEFINITIONS = "GL_SILENCE_DEPRECATION=1";
@@ -5590,7 +5582,6 @@
 					"$(PROJECT_DIR)/deps/lib",
 					"$(PROJECT_DIR)",
 				);
-				MARKETING_VERSION = 1.5.4;
 				OTHER_SWIFT_FLAGS = "";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.iina-advance";
 				SKIP_INSTALL = NO;
@@ -5623,12 +5614,10 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
-				CURRENT_PROJECT_VERSION = 16;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = PG2MG2559L;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GCC_PREPROCESSOR_DEFINITIONS = "GL_SILENCE_DEPRECATION=1";
-				MARKETING_VERSION = 1.5.4;
 				SKIP_INSTALL = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_STRICT_CONCURRENCY = complete;
@@ -5643,12 +5632,10 @@
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CODE_SIGN_IDENTITY = "Apple Development";
-				CURRENT_PROJECT_VERSION = 16;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = PG2MG2559L;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GCC_PREPROCESSOR_DEFINITIONS = "GL_SILENCE_DEPRECATION=1";
-				MARKETING_VERSION = 1.5.4;
 				SKIP_INSTALL = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_STRICT_CONCURRENCY = complete;
@@ -5661,7 +5648,6 @@
 			baseConfigurationReference = 496498882919E47900CD61A5 /* iina.xcconfig */;
 			buildSettings = {
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
-				CURRENT_PROJECT_VERSION = 16;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = PG2MG2559L;
 				GCC_PREPROCESSOR_DEFINITIONS = "GL_SILENCE_DEPRECATION=1";
@@ -5675,7 +5661,6 @@
 					"$(PROJECT_DIR)/deps/lib",
 					"$(PROJECT_DIR)",
 				);
-				MARKETING_VERSION = 1.5.4;
 				OTHER_SWIFT_FLAGS = "";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.iina-advance";
 				SKIP_INSTALL = NO;
@@ -5692,7 +5677,6 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application";
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 16;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = PG2MG2559L;
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = PG2MG2559L;
@@ -5708,7 +5692,6 @@
 					"$(PROJECT_DIR)/deps/lib",
 					"$(PROJECT_DIR)",
 				);
-				MARKETING_VERSION = 1.5.4;
 				OTHER_CODE_SIGN_FLAGS = "--deep --timestamp";
 				OTHER_SWIFT_FLAGS = "";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.iina-advance";
