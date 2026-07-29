@@ -251,23 +251,36 @@ extension PlayerWindowController {
     exitMusicModeButton.target = self
     exitMusicModeButton.action = #selector(backBtnAction(_:))
 
-    let trafficLightBtnSize = NSWindow.standardWindowButton(.closeButton, for: .titled)?.frame.size ?? NSSize(width: 14, height: 14)
+    let trafficLightBtnSize: NSSize = Constants.trafficLightButtonSize
+    let btnPadding: CGFloat
+    if #available(macOS 26.0, *) {
+      btnPadding = 1.0
+    } else {
+      btnPadding = 0.0
+    }
 
-    let btnPadding = 1.0
     let bgPadding = 4.0
     let bgViewHeight = trafficLightBtnSize.height + ((btnPadding + bgPadding) * 2)
     let btnWidth = trafficLightBtnSize.width + (btnPadding * 2)
     let bgViewTopOffset: CGFloat = (Constants.standardTitleBarHeight - bgViewHeight) * 0.5
     let bgViewLeadingOffset = bgViewTopOffset
     miniPlayerTrafficLightsBGView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: bgViewTopOffset).isActive = true
+    var bgViewTrailingOffset: CGFloat
     if window!.styleMask.contains(.titled) {
       let zoomBtn = trafficLightButtons.last!
       let zoomBtnOriginLocalCoords = zoomBtn.bounds.origin
       let zoomBtnOriginInWinX = window!.contentView!.convert(zoomBtnOriginLocalCoords, from: zoomBtn).x
-      miniPlayerTrafficLightsBGView.trailingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: zoomBtnOriginInWinX + btnWidth + bgViewLeadingOffset).isActive = true
+      bgViewTrailingOffset = zoomBtnOriginInWinX + btnWidth + bgViewLeadingOffset
+      if #unavailable(macOS 26.0) {
+        bgViewTrailingOffset += 1
+      }
     } else {
-      miniPlayerTrafficLightsBGView.trailingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 75).isActive = true
+      bgViewTrailingOffset = 74
+      if #unavailable(macOS 26.0) {
+        bgViewTrailingOffset -= 10
+      }
     }
+    miniPlayerTrafficLightsBGView.trailingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: bgViewTrailingOffset).isActive = true
     miniPlayerTrafficLightsBGView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: bgViewTopOffset).isActive = true
     miniPlayerTrafficLightsBGView.bottomAnchor.constraint(equalTo: miniPlayerTrafficLightsBGView.topAnchor, constant: bgViewHeight).isActive = true
     miniPlayerTrafficLightsBGView.roundCorners(withRadius: bgViewHeight * 0.5)
