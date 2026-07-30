@@ -737,8 +737,6 @@ final class PlayerCore: NSObject {
 
           if case .restoring(let priorState) = sessionState {
 
-
-            
             priorState.restoreMpvProperties(to: self)
 
             /// Player was already paused in `PlayerSaveState.restoreTo()`.

@@ -101,9 +101,6 @@ extension PlayerWindowController {
       log.verbose("[Load] Configuring window for CoreAnimation")
       contentView.configureSubtreeForCoreAnimation()
 
-      // Make sure to set this inside the animation task! See note above
-      loaded = true
-
       if !currentLayout.isMusicMode || geo.musicMode.isViewportShown {
         // When restoring, need to set size of video ASAP or else it will briefly display with wrong initial size.
         // Also, can hangs result if video is not added to window by the time fileLoaded is called?
@@ -116,6 +113,9 @@ extension PlayerWindowController {
           viewportView.apply(geo.windowed)
         }
       }
+
+      // Make sure to set this inside the animation task! See note above
+      loaded = true
 
       if player.disableUI { hideFadeableViews() }
 
@@ -264,7 +264,7 @@ extension PlayerWindowController {
     let btnWidth = trafficLightBtnSize.width + (btnPadding * 2)
     let bgViewTopOffset: CGFloat = (Constants.standardTitleBarHeight - bgViewHeight) * 0.5
     let bgViewLeadingOffset = bgViewTopOffset
-    miniPlayerTrafficLightsBGView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: bgViewTopOffset).isActive = true
+    miniPlayerTrafficLightsBGView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: bgViewLeadingOffset).isActive = true
     var bgViewTrailingOffset: CGFloat
     if window!.styleMask.contains(.titled) {
       let zoomBtn = trafficLightButtons.last!
@@ -272,7 +272,7 @@ extension PlayerWindowController {
       let zoomBtnOriginInWinX = window!.contentView!.convert(zoomBtnOriginLocalCoords, from: zoomBtn).x
       bgViewTrailingOffset = zoomBtnOriginInWinX + btnWidth + bgViewLeadingOffset
       if #unavailable(macOS 26.0) {
-        bgViewTrailingOffset += 1
+        bgViewTrailingOffset += 2
       }
     } else {
       bgViewTrailingOffset = 74
