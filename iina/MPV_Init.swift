@@ -364,6 +364,13 @@ extension MPVController {
 
     // - Network / cache settings
 
+    if !player.isPresentInUserOptions(MPVOption.Cache.streamBufferSize) {
+      // The default stream buffer size of 128KB is very small, and can lead to hiccups when streaming
+      // a media via a disk in Macbook's SDCard slot. Setting this to a larger value helps this while
+      // not resulting in noticeable adverse effects.
+      setOptionString(MPVOption.Cache.streamBufferSize, "8MiB")
+    }
+
     if !player.isPresentInUserOptions(MPVOption.Cache.cache) {
       setUserOption(PK.enableCache, type: .other, forName: MPVOption.Cache.cache,
                     verboseIfDefault: true) { key in
