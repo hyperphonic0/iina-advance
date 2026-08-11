@@ -224,22 +224,20 @@ struct GeometryTransform: Sendable {
 
       // MARK: - STAGE 3
       // -- main queue -------------------------------------------------------------------------
-      Task { @MainActor in
-        pwc.animationPipeline.submitInstantTask { [self] in
-          // Do not reference these variables until inside this animation task to ensure serial access
-          let inputLayout = pwc.currentLayout
+      pwc.animationPipeline.submitInstantTask { [self] in
+        // Do not reference these variables until inside this animation task to ensure serial access
+        let inputLayout = pwc.currentLayout
 
-          // Update context's geo with current window frame
-          let inputGeoSet = pwc.buildGeoSet(layoutMode: inputLayout.mode,
-                                            forceWinFrameUpdate: !gtfSessionState.isStartingSession)
-          log.verbose("[GTF:\(name)] Input geoSet=\(inputGeoSet)")
+        // Update context's geo with current window frame
+        let inputGeoSet = pwc.buildGeoSet(layoutMode: inputLayout.mode,
+                                          forceWinFrameUpdate: !gtfSessionState.isStartingSession)
+        log.verbose("[GTF:\(name)] Input geoSet=\(inputGeoSet)")
 
-          let ctxStage3 = GeometryTransform.ContextStage3(ctxStage2, gtfSessionState: gtfSessionState,
-                                                          inputGeoSet: inputGeoSet, outputVidGeo: outputVideoGeoReadOnly,
-                                                          inputLayout: inputLayout)
+        let ctxStage3 = GeometryTransform.ContextStage3(ctxStage2, gtfSessionState: gtfSessionState,
+                                                        inputGeoSet: inputGeoSet, outputVidGeo: outputVideoGeoReadOnly,
+                                                        inputLayout: inputLayout)
 
-          doMainQueueWork(ctxStage3)
-        }
+        doMainQueueWork(ctxStage3)
       }
     }
   }
@@ -823,15 +821,22 @@ extension PlayerWindowController {
                                                   isWindowInitialLayout: true, outputGeoSet)
     var tasks: [IINAAnimation.Task] = []
 
+    if #unavailable(macOS 26.0) {
+      for task in buildTasks(for: initialTransition) {
+        tasks.append(task)
+      }
+    }
     tasks.append(.instantTask { [self] in
-      // For initial layout (when window is first shown), to avoid jitteriness when drawing, do all the layout
-      // in a single animation block.
-      do {
-        for task in buildTasks(for: initialTransition) {
-          try task.runFunc()
+      if #available(macOS 26.0, *) {
+        // For initial layout (when window is first shown), to avoid jitteriness when drawing, do all the layout
+        // in a single animation block.
+        do {
+          for task in buildTasks(for: initialTransition) {
+            try task.runFunc()
+          }
+        } catch {
+          log.error("[GTF:\(ctx.name)] Failed to run initial layout tasks: \(error)")
         }
-      } catch {
-        log.error("[GTF:\(ctx.name)] Failed to run initial layout tasks: \(error)")
       }
 
       // Reset other views to initial minimums:

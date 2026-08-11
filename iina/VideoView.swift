@@ -108,7 +108,10 @@ class VideoView: NSView {
       }
       isUninited = true
     }
+
+#if !USE_GPU_NEXT
     glLayer?.deinitGLRendering()
+#endif
     log.verbose("VideoView uninit done")
   }
 
@@ -218,7 +221,9 @@ class VideoView: NSView {
 
   func enterAsynchronousMode() {
     displayActive()
+#if !USE_GPU_NEXT
     glLayer?.enterAsynchronousMode()
+#endif
   }
 
   /// Returns `true` if screenScaleFactor changed
@@ -244,11 +249,14 @@ class VideoView: NSView {
     log.verbose("Refreshing all VideoView display state")
     updateDisplayLink()
     refreshContentsScale()
+#if !USE_GPU_NEXT
     refreshEdrMode()
+#endif
   }
 
   // MARK: - Color
 
+#if !USE_GPU_NEXT
   func setICCProfile() {
     guard let glLayer else {
       // TODO: is this relevant for Metal layer?
@@ -439,4 +447,5 @@ class VideoView: NSView {
         return doAfter(true)
       }
     }
+#endif
 }

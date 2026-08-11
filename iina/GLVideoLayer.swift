@@ -36,7 +36,8 @@ class GLVideoLayer: CAOpenGLLayer {
   var lastRenderTime: TimeInterval = CFAbsoluteTimeGetCurrent()
 
   /// To enable `LOG_VIDEO_LAYER`:
-  /// 1. In Xcode, go to `iina` project > select `iina` target > Build Settings > search for `Custom Flags` (under `Swift Compiler`)
+  /// 1. In Xcode, go to `iina` project > select `iina` target > Build Settings > search for `Other Swift Flags`
+  /// (under `Swift Compiler - Custom Flags`)
   /// 2. Set flag using -D prefix (without white spaces), for Debug, Release, etc. So this is: `-DLOG_VIDEO_LAYER`
 #if LOG_VIDEO_LAYER
   // For measuring frames per second

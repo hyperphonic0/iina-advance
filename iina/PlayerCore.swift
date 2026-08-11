@@ -737,8 +737,6 @@ final class PlayerCore: NSObject {
 
           if case .restoring(let priorState) = sessionState {
 
-
-            
             priorState.restoreMpvProperties(to: self)
 
             /// Player was already paused in `PlayerSaveState.restoreTo()`.
@@ -2451,10 +2449,12 @@ final class PlayerCore: NSObject {
   }
 
   func refreshEdrMode() {
+#if !USE_GPU_NEXT
     guard let pwc, pwc.loaded else { return }
     pwc.animationPipeline.submitInstantTask { [self] in
       videoView.refreshEdrMode()
     }
+#endif
   }
 
   /// *Enqueues*

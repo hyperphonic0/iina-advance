@@ -364,6 +364,13 @@ extension MPVController {
 
     // - Network / cache settings
 
+    if !player.isPresentInUserOptions(MPVOption.Cache.streamBufferSize) {
+      // The default stream buffer size of 128KB is very small, and can lead to hiccups when streaming
+      // a media via a disk in Macbook's SDCard slot. Setting this to a larger value helps this while
+      // not resulting in noticeable adverse effects.
+      setOptionString(MPVOption.Cache.streamBufferSize, "8MiB")
+    }
+
     if !player.isPresentInUserOptions(MPVOption.Cache.cache) {
       setUserOption(PK.enableCache, type: .other, forName: MPVOption.Cache.cache,
                     verboseIfDefault: true) { key in
@@ -547,6 +554,8 @@ extension MPVController {
         chkErr(setString(MPVOption.Window.keepaspect, no, level: .verbose))
       }
 
+      /// Targets > iina > search for "Other Swift Flags" (under "Swift Compiler: Custom Flags"):
+      /// Add `-DUSE_GPU_NEXT`
 #if USE_GPU_NEXT
       log.verbose("Using gpu-next + Vulkan rendering")
       let widPtr = UnsafeMutablePointer<Int64>.allocate(capacity: 1)
@@ -595,8 +604,6 @@ extension MPVController {
   /// hardware decoding support on this Mac. This is not comprehensive. This method only covers the recent codecs whose support
   /// for hardware decoding varies among Macs. This merely reduces the dependence upon the FFmpeg fallback to software decoding
   /// feature in some cases.
-  /// - ToDo: **REMOVE** workaround for FFmpeg not supporting AV1 hardware decoding when upgrading to a FFmpeg version
-  ///         that supports it.
   private func adjustCodecWhiteList() {
     // Allow the user to override this behavior.
     guard !player.isPresentInUserOptions(MPVOption.Video.hwdecCodecs) else {
@@ -625,17 +632,6 @@ extension MPVController {
       // any of them retain the codec in the option value.
       for codecType in codecTypes {
         if HardwareDecodeCapabilities.shared.isSupported(codecType) {
-          if codecType == kCMVideoCodecType_AV1 {
-            // WORKAROUND missing support for AV1 hardware decoding.
-            // This Mac supports AV1 hardware decoding, but the version of FFmpeg IINA is using does
-            // not. FFmpeg will try to use hardware decoding, which will fail. FFmpeg will then fall
-            // back to software decoding. When FFmpeg does this it logs the warning message "Error
-            // while decoding frame (hardware decoding)!" which is alarming to users. Prevent this
-            // by removing AV1 from the codecs whitelist.
-            needsAdjustment = true
-            log.debug("FFmpeg does not support av1 hardware decoding")
-            continue codecLoop
-          }
           adjusted.append(codec)
           continue codecLoop
         }

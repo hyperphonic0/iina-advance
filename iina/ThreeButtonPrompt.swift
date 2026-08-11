@@ -191,15 +191,15 @@ fileprivate struct ThreeButtonPromptContent: View {
 }
 
 
-#Preview {
-  ThreeButtonPromptContent(
-    title: "Problem Restoring Windows",
-    message: "Test Message",
-    primaryTitle: "No, Quit",
-    middleTitle: "Discard 2 Windows",
-    cancelTitle: "Keep Waiting",
-    primaryAction: {},
-    middleAction: {},
-    cancelAction: {}
-  )
-}
+//#Preview {
+//  ThreeButtonPromptContent(
+//    title: "Problem Restoring Windows",
+//    message: "Test Message",
+//    primaryTitle: "No, Quit",
+//    middleTitle: "Discard 2 Windows",
+//    cancelTitle: "Keep Waiting",
+//    primaryAction: {},
+//    middleAction: {},
+//    cancelAction: {}
+//  )
+//}

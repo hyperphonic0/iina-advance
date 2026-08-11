@@ -649,7 +649,6 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
   @MainActor
   func addViewportAndSubviewsToWindowIfNeeded() {
     guard let window else { return }
-    assert(loaded, "Must not be called if not done loading the window!")
 
     var didAddSubviewToViewport = false
     do {
@@ -920,22 +919,17 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
     window!.displaysWhenScreenProfileChanges = true
 
     /// Need this as a kludge to ensure it runs after tasks in `transformGeometry`
-    DispatchQueue.main.async { [self] in
-      var animationTasks: [IINAAnimation.Task] = []
+    animationPipeline.submitInstantTask{ [self] in
+      refreshKeyWindowStatus()
+      // Need to call this here, or else when opening directly to fullscreen, window title is just "Window"
+      updateTitle()
+      window?.isExcludedFromWindowsMenu = false
+      videoView.enterAsynchronousMode()  // needed if restoring while paused
 
-      animationTasks.append(.instantTask { [self] in
-        refreshKeyWindowStatus()
-        // Need to call this here, or else when opening directly to fullscreen, window title is just "Window"
-        updateTitle()
-        window?.isExcludedFromWindowsMenu = false
-        videoView.enterAsynchronousMode()  // needed if restoring while paused
-      })
-
-      let pendingTasks = pendingVideoGeoUpdateTasks
+      var animationTasks: [IINAAnimation.Task] = pendingVideoGeoUpdateTasks
       pendingVideoGeoUpdateTasks = []
-      if !pendingTasks.isEmpty {
-        log.verbose("After opening window: will run \(pendingTasks.count) pending vidGeo update tasks")
-        animationTasks += pendingTasks
+      if !animationTasks.isEmpty {
+        log.verbose("After opening window: will run \(animationTasks.count) pending vidGeo update tasks")
       }
 
       animationTasks.append(.instantTask { [self] in
