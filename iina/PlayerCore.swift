@@ -669,6 +669,13 @@ final class PlayerCore: NSObject {
     if playback.isNetworkResource, isInteractivePlayer {
       AppDelegate.shared.openURLWindow.showLoadingScreen(playerCore: self)
     }
+    if isIdleOrUnused {
+      // Set info.currentPlayback immediately to ensure it is non-nil. This is a workaround for the case of opening
+      // multiple player windows at once, which will repeatedly call PlayerManager's getIdleOrCreateNew(). By
+      // synchronously setting currentPlayback before the next iteration in the loop, we ensure that we don't
+      // end up returning the same player multiple times.
+      info.currentPlayback = playback
+    }
     __openPlayerWindow(ids, playback, isInteractivePlayer: isInteractivePlayer)
   }
 

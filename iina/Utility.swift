@@ -39,8 +39,10 @@ class Utility {
 
   // MARK: - Logs, alerts
 
-  static func showAlert(_ key: String, comment: String? = nil, arguments: [CVarArg]? = nil, style: NSAlert.Style = .critical,
-                        sheetWindow: NSWindow? = nil, suppressionKey: PK? = nil, disableMenus: Bool = false, logAlert: Bool = true) {
+  static func showAlert(_ key: String, comment: String? = nil, arguments: [CVarArg]? = nil,
+                        style: NSAlert.Style = .critical,
+                        sheetWindow: NSWindow? = nil, suppressionKey: PK? = nil, disableMenus: Bool = false,
+                        logAlert: Bool = true) {
     DispatchQueue.main.async {
       let alert = NSAlert()
       if let suppressionKey = suppressionKey {

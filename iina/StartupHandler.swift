@@ -244,12 +244,6 @@ final class StartupHandler {
       shouldOpenNewWindows = useNewWindows ?? Preference.bool(for: .alwaysOpenInNewWindow)
     }
 
-    if !isDoneLaunching, !shouldOpenNewWindows {
-      // Use only if opening single window.
-      // If multiple windows, don't wait; open each as soon as it loads
-      isAwaitingNewWindowsForOpenedFile = true
-    }
-
     var totalFilesOpened = 0
     var totalExistingFilesShown = 0
 
@@ -318,6 +312,12 @@ final class StartupHandler {
         totalFilesOpened += playerFilesOpened
         lastPlayer = player
       }
+    }
+
+    if !isDoneLaunching, pwcsForOpenFiles.count == 1 {
+      // Use only if opening single window.
+      // If multiple windows, don't wait; open each as soon as it loads
+      isAwaitingNewWindowsForOpenedFile = true
     }
 
     if let cli, cli.isStdin {
