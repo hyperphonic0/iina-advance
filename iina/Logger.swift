@@ -696,7 +696,7 @@ struct Logger {
 
   static func fatal(_ message: String, _ cleanup: Callback = {}) -> Never {
     log(message, level: .error)
-    log(Thread.callStackSymbols.joined(separator: "\n"))
+    log("Call stack: " + Thread.callStackSymbols.joined(separator: "\n"))
     showAlertAndExit(message, cleanup)
   }
 
@@ -715,8 +715,16 @@ struct Logger {
   private static func showAlertAndExit(_ message: String, _ cleanup: Callback = {}) -> Never {
     // Ensure we are on the main thread so that we display the alert instead of crashing
     DispatchQueue.main.execOrSync {
-      // Set logAlert to false to avoid recursion
-      Utility.showAlert("fatal_error", arguments: [message], logAlert: false)
+      let key = "alert.fatal_error"
+      let format = NSLocalizedString(key, comment: key)
+      let alert = NSAlert()
+      alert.alertStyle = .critical
+      alert.messageText = NSLocalizedString("alert.title_error", comment: "Error")
+      alert.informativeText = String(format: format, arguments: [message])
+
+      NSSound.beep()
+      alert.runModal()
+
       cleanup()
       exit(1)
     }
